@@ -21,6 +21,9 @@
   <meta name="twitter:description" content="Soy yo, en tu Telegram, todos los días. Te respondo lo que te pasa con mi voz y te acompaño hasta que lo resuelvas.">
   <meta name="twitter:image" content="/og-image.png">
   
+  <!-- PayPal SDK -->
+  <script src="https://www.paypal.com/sdk/js?client-id=BAAO9DoNAnF_ntNNJpSVh5wysjrKQZnQJwx8QGa233KhObpBpk2RygN65IGF9URCrSSHrJ27RhZCfSulJM&components=hosted-buttons&disable-funding=venmo&currency=USD"></script>
+
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -101,9 +104,9 @@
         <a href="#faq" class="hover:text-white transition-colors">FAQ</a>
       </nav>
 
-      <a href="https://wa.me/542236151152?text=Hola%20Germ%C3%A1n%2C%20quiero%20reservar%20mi%20lugar%20en%20la%20preventa%20de%20la%20app." target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#E8401A] hover:bg-[#FF5733] text-white font-medium text-sm transition-all shadow-lg shadow-brand-orange/20">
-        <i data-lucide="message-circle" class="w-4 h-4"></i>
-        <span>Preventa USD 27</span>
+      <a href="#precio" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#E8401A] hover:bg-[#FF5733] text-white font-medium text-sm transition-all shadow-lg shadow-brand-orange/20">
+        <i data-lucide="credit-card" class="w-4 h-4"></i>
+        <span>Preventa USD 30</span>
       </a>
     </div>
   </header>
@@ -144,7 +147,7 @@
             <span class="flex h-2 w-2 rounded-full bg-[#E8401A] animate-ping"></span>
             <span class="font-semibold text-[#E8401A]">Preventa Exclusiva (Lotes limitados)</span>
             <span class="text-zinc-500">•</span>
-            <span>USD 27 / $30.000 ARS Pago Único</span>
+            <span>USD 30 / $33.000 ARS Pago Único</span>
           </div>
 
           <h1 class="font-serif text-5xl sm:text-6xl md:text-7xl font-normal tracking-tight text-white leading-[1.08]">
@@ -157,7 +160,7 @@
           </p>
 
           <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
-            <a href="https://wa.me/542236151152?text=Hola%20Germ%C3%A1n%2C%20quiero%20reservar%20mi%20lugar%20en%20la%20preventa%20de%20la%20app." target="_blank" rel="noopener" class="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-[#E8401A] hover:bg-[#FF5733] text-white font-semibold text-lg transition-all shadow-xl shadow-brand-orange/25">
+            <a href="#precio" class="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-[#E8401A] hover:bg-[#FF5733] text-white font-semibold text-lg transition-all shadow-xl shadow-brand-orange/25">
               <span>Reservá tu lugar en la preventa</span>
               <i data-lucide="arrow-right" class="w-5 h-5"></i>
             </a>
@@ -530,18 +533,66 @@
 
   <!-- PRECIO -->
   <section id="precio" class="py-24 bg-[#09090B] text-center">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-      <h2 class="font-serif text-5xl sm:text-6xl font-normal text-white">
-        Un solo pago. <span class="orange-gradient-text italic font-serif">USD 27 / $30.000 ARS.</span> Acceso de por vida.
-      </h2>
-      <p class="text-xl text-zinc-300 font-light">
-        Sin suscripción, sin renovaciones, sin letra chica. Lo comprás una vez y es tuyo para siempre.
-      </p>
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      <div class="space-y-4 max-w-3xl mx-auto">
+        <h2 class="font-serif text-5xl sm:text-6xl font-normal text-white">
+          Un solo pago. <span class="orange-gradient-text italic font-serif">USD 30 / $33.000 ARS.</span> Acceso de por vida.
+        </h2>
+        <p class="text-xl text-zinc-300 font-light">
+          Sin suscripción, sin renovaciones, sin letra chica. Elegí tu medio de pago preferido:
+        </p>
+      </div>
 
-      <a href="https://wa.me/542236151152?text=Hola%20Germ%C3%A1n%2C%20quiero%20reservar%20mi%20lugar%20en%20la%20preventa%20de%20la%20app." target="_blank" rel="noopener" class="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-[#E8401A] hover:bg-[#FF5733] text-white font-bold text-xl shadow-2xl">
-        <span>Reservar en preventa por USD 27</span>
-        <i data-lucide="arrow-right" class="w-6 h-6"></i>
-      </a>
+      <!-- Payment Methods Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left max-w-4xl mx-auto">
+        
+        <!-- Mercado Pago Card -->
+        <div class="p-8 rounded-3xl glass-card border border-zinc-800 space-y-6 flex flex-col justify-between hover:border-[#009EE3]/50 transition-all">
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="px-3 py-1 rounded-full text-xs font-semibold bg-[#009EE3]/15 text-[#009EE3] border border-[#009EE3]/30">
+                🇦🇷 Argentina (ARS)
+              </span>
+              <span class="text-2xl font-bold font-serif text-white">$33.000 ARS</span>
+            </div>
+            <h3 class="text-2xl font-bold text-white">Mercado Pago</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed">
+              Pago único con tarjeta de crédito, débito o dinero en cuenta a través de Mercado Pago.
+            </p>
+          </div>
+          <div class="pt-4">
+            <a href="https://mpago.la/19ZmNmf" target="_blank" rel="noopener" class="w-full inline-flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-[#009EE3] hover:bg-[#008AC7] text-white font-semibold text-base transition-all shadow-lg shadow-[#009EE3]/20">
+              <span>Pagar $33.000 ARS con Mercado Pago</span>
+              <i data-lucide="arrow-right" class="w-5 h-5"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- PayPal Card -->
+        <div class="p-8 rounded-3xl glass-card border border-zinc-800 space-y-6 flex flex-col justify-between hover:border-amber-500/50 transition-all">
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                🌎 Internacional (USD)
+              </span>
+              <span class="text-2xl font-bold font-serif text-white">USD 30</span>
+            </div>
+            <h3 class="text-2xl font-bold text-white">PayPal / Tarjeta</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed">
+              Pago único en dólares desde cualquier país con cuenta PayPal o tarjeta internacional.
+            </p>
+          </div>
+          <div class="pt-4 flex justify-center min-h-[55px] items-center">
+            <div id="paypal-container-BAAO9DoNAnF_ntNNJpSVh5wysjrKQZnQJwx8QGa233KhObpBpk2RygN65IGF9URCrSSHrJ27RhZCfSulJM" class="w-full flex justify-center"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="flex items-center justify-center gap-2 text-xs sm:text-sm text-zinc-400 pt-4">
+        <i data-lucide="shield-check" class="w-5 h-5 text-emerald-400"></i>
+        <span>Acceso de por vida • Sin mensualidades</span>
+      </div>
     </div>
   </section>
 
@@ -555,6 +606,12 @@
     function toggleAudio() {
       const container = document.getElementById('audio-wave');
       container.classList.toggle('animate-pulse');
+    }
+
+    if (typeof paypal !== 'undefined' && paypal.HostedButtons) {
+      paypal.HostedButtons({
+        hostedButtonId: "BAAO9DoNAnF_ntNNJpSVh5wysjrKQZnQJwx8QGa233KhObpBpk2RygN65IGF9URCrSSHrJ27RhZCfSulJM",
+      }).render("#paypal-container-BAAO9DoNAnF_ntNNJpSVh5wysjrKQZnQJwx8QGa233KhObpBpk2RygN65IGF9URCrSSHrJ27RhZCfSulJM");
     }
   </script>
 </body>
