@@ -583,11 +583,10 @@
             </p>
           </div>
           <div class="pt-4 space-y-3">
-            <a href="https://wa.me/542236151152?text=Hola%20Germ%C3%A1n%2C%20quiero%20pagar%20USD%2030%20por%20PayPal" target="_blank" rel="noopener" class="w-full inline-flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-[#FFC439] hover:bg-[#F2B52D] text-[#003087] font-bold text-base transition-all shadow-lg shadow-[#FFC439]/20">
-              <span>Pagar USD 30 con PayPal</span>
-              <i data-lucide="arrow-right" class="w-5 h-5"></i>
+            <div id="paypal-container-BAAO9DoNAnF_ntNNJpSVh5wysjrKQZnQJwx8QGa233KhObpBpk2RygN65IGF9URCrSSHrJ27RhZCfSulJM" class="w-full flex justify-center min-h-[50px]"></div>
+            <a href="https://wa.me/542236151152?text=Hola%20Germ%C3%A1n%2C%20quiero%20pagar%20USD%2030%20por%20PayPal" target="_blank" rel="noopener" class="w-full inline-flex items-center justify-center gap-2 text-xs text-zinc-400 hover:text-white transition-colors pt-1">
+              <span>¿Tenés dudas o querés pagar por otro medio? Escribime por WhatsApp</span>
             </a>
-            <div id="paypal-container-BAAO9DoNAnF_ntNNJpSVh5wysjrKQZnQJwx8QGa233KhObpBpk2RygN65IGF9URCrSSHrJ27RhZCfSulJM" class="w-full flex justify-center empty:hidden"></div>
           </div>
         </div>
 
@@ -612,11 +611,20 @@
       container.classList.toggle('animate-pulse');
     }
 
-    if (typeof paypal !== 'undefined' && paypal.HostedButtons) {
-      paypal.HostedButtons({
-        hostedButtonId: "BAAO9DoNAnF_ntNNJpSVh5wysjrKQZnQJwx8QGa233KhObpBpk2RygN65IGF9URCrSSHrJ27RhZCfSulJM",
-      }).render("#paypal-container-BAAO9DoNAnF_ntNNJpSVh5wysjrKQZnQJwx8QGa233KhObpBpk2RygN65IGF9URCrSSHrJ27RhZCfSulJM");
+    function initPayPalButton() {
+      if (window.paypal && window.paypal.HostedButtons) {
+        const container = document.getElementById("paypal-container-BAAO9DoNAnF_ntNNJpSVh5wysjrKQZnQJwx8QGa233KhObpBpk2RygN65IGF9URCrSSHrJ27RhZCfSulJM");
+        if (container && container.children.length === 0) {
+          window.paypal.HostedButtons({
+            hostedButtonId: "BAAO9DoNAnF_ntNNJpSVh5wysjrKQZnQJwx8QGa233KhObpBpk2RygN65IGF9URCrSSHrJ27RhZCfSulJM",
+          }).render("#paypal-container-BAAO9DoNAnF_ntNNJpSVh5wysjrKQZnQJwx8QGa233KhObpBpk2RygN65IGF9URCrSSHrJ27RhZCfSulJM");
+        }
+      } else {
+        setTimeout(initPayPalButton, 200);
+      }
     }
+    document.addEventListener("DOMContentLoaded", initPayPalButton);
+    initPayPalButton();
   </script>
 </body>
 </html>
