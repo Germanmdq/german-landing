@@ -108,7 +108,7 @@
     0 8px 18px -12px rgba(30, 22, 35, .22);
   color: var(--ink);
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: start;
   gap: 16px;
   text-align: left;
@@ -158,7 +158,9 @@
   display: grid;
   gap: 8px;
   margin: 3px 0 0;
+  min-width: 0;
   max-width: 245px;
+  overflow: hidden;
 }
 
 .category-card small {
@@ -169,12 +171,22 @@
 }
 
 .category-card b {
-  font-size: clamp(25px, 6.4vw, 31px);
-  line-height: 1;
-  letter-spacing: -1px;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow-wrap: anywhere;
+  font-size: clamp(21px, 5.7vw, 28px);
+  line-height: 1.06;
+  letter-spacing: -.8px;
 }
 
 .category-card em {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
   max-width: 225px;
   font-size: 14px;
   line-height: 1.38;
@@ -418,6 +430,34 @@
 .subscription-card b { color: var(--ink); font-size: 21px; }
 .subscription-card span { color: var(--muted); font-size: 14px; line-height: 1.45; }
 .account-logout { margin-top: 6px; border: 1px solid rgba(150,82,102,.26); background: #fff; color: #965266; }
+
+.library-browser { display: grid; align-content: start; gap: 14px; }
+.library-search { height: 56px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border: 1px solid rgba(150,82,102,.18); border-radius: 18px; background: #fff; box-shadow: 0 10px 24px rgba(47,31,36,.07); }
+.library-search span { color: #965266; font-size: 28px; line-height: 1; }
+.library-search input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 16px; }
+.library-filters { display: flex; gap: 8px; overflow-x: auto; padding: 1px 1px 6px; scrollbar-width: none; }
+.library-filters::-webkit-scrollbar { display: none; }
+.library-filters button { flex: 0 0 auto; min-height: 36px; padding: 0 14px; border: 1px solid rgba(150,82,102,.18); border-radius: 99px; background: #fff; color: #716c73; font-size: 13px; font-weight: 700; }
+.library-filters button.active { border-color: #965266; background: #965266; color: #fff; }
+.audio-player-card { position: relative; display: grid; grid-template-columns: 54px minmax(0,1fr); gap: 13px; align-items: center; padding: 17px; border-radius: 24px; background: #965266; color: #fff; box-shadow: 0 18px 36px rgba(98,51,67,.27); overflow: hidden; }
+.audio-player-card::after { content: ''; position: absolute; right: -54px; top: -74px; width: 180px; height: 180px; border: 1px solid rgba(255,255,255,.2); border-radius: 50%; }
+.audio-play { width: 54px; height: 54px; border: 0; border-radius: 50%; background: #fff; color: #965266; font-size: 19px; font-weight: 800; z-index: 1; }
+.audio-player-copy { display: grid; gap: 3px; min-width: 0; z-index: 1; }
+.audio-player-copy p { margin: 0; font-size: 10px; font-weight: 800; letter-spacing: .14em; opacity: .76; }
+.audio-player-copy b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; }
+.audio-player-copy span { font-size: 12px; opacity: .8; }
+.audio-progress { grid-column: 1 / -1; width: 100%; height: 4px; accent-color: #fff; z-index: 1; }
+.library-count { margin: 3px 0 -1px; color: var(--muted); font-size: 13px; }
+.library-content-list { display: grid; gap: 10px; }
+.library-content-card { display: grid; grid-template-columns: 46px minmax(0,1fr) 20px; gap: 11px; align-items: start; padding: 14px; border: 1px solid rgba(150,82,102,.13); border-radius: 20px; background: #fff; box-shadow: 0 10px 24px rgba(47,31,36,.07); cursor: pointer; }
+.library-content-card > span { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 15px; background: #f8e9ee; font-size: 22px; }
+.library-content-card > div { display: grid; gap: 4px; min-width: 0; }
+.library-content-card p { margin: 0; color: #965266; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.library-content-card b { color: var(--ink); font-size: 16px; line-height: 1.18; }
+.library-content-card em { color: var(--muted); font-size: 13px; line-height: 1.35; font-style: normal; }
+.library-content-card small { color: #965266; font-size: 11px; line-height: 1.3; }
+.library-content-card i { padding-top: 10px; color: #965266; font-size: 25px; font-style: normal; }
+.library-empty { margin: 25px 0 0; color: var(--muted); text-align: center; font-size: 14px; }
 
 @keyframes deck-card-in {
   from { opacity: 0; transform: translateY(24px) scale(.97); }

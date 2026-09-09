@@ -15,6 +15,7 @@ import './onboarding.css';
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'consultas' | 'notificaciones' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[] };
 type DeckItem = { icon: string; title: string; detail: string; tone: string; children?: DeckItem[]; reader?: ReaderContent; notificationPanel?: boolean; accountPanel?: boolean; action?: 'logout' };
+type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
 type FlowStage = 'entry' | 'install' | 'login' | 'onboarding' | 'app';
 type DeviceKind = 'ios' | 'android' | 'desktop';
@@ -24,6 +25,8 @@ const palette = ['#965266', '#B16C7F', '#CD8798', '#E7A9B5'];
 const icons = ['●', '◆', '✦', '○'];
 const cleanParagraphs = (text: string) => text.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
 const leaf = (title: string, index: number, detail = ''): DeckItem => ({ icon: icons[index % icons.length], title, detail, tone: palette[index % palette.length] });
+const toTags = (value: unknown): string[] => Array.isArray(value) ? value.filter((tag): tag is string => typeof tag === 'string') : typeof value === 'string' ? value.split(',').map((tag) => tag.trim()).filter(Boolean) : [];
+const firstText = (record: Record<string, unknown>, keys: string[]) => keys.map((key) => record[key]).find((value): value is string => typeof value === 'string' && value.length > 0);
 
 const planNodes: DeckItem[] = content.plans.map((plan, planIndex) => ({
   icon: ['💞', '💫', '🌿'][planIndex],
@@ -190,6 +193,55 @@ function AccountPanel({ user, onBack, onNameSaved, onLogout }: { user: User; onB
       {message && <p className="account-message">{message}</p>}
       <section className="subscription-card"><p> SUSCRIPCIÓN</p><b>Plan gratuito</b><span>Tu cuenta está activa. Los próximos planes pagos aparecerán acá.</span></section>
       <button className="account-logout" onClick={onLogout}>Cerrar sesión</button>
+    </div>
+  </section>;
+}
+
+function AudioPlayer({ entry }: { entry: LibraryEntry }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const toggle = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) await audio.play().catch(() => undefined);
+    else audio.pause();
+  };
+  useEffect(() => {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({ title: entry.title, artist: 'Asistente Germán', album: 'Biblioteca' });
+    }
+  }, [entry.title]);
+  return <section className="audio-player-card">
+    <audio ref={audioRef} src={entry.audioUrl} preload="metadata" playsInline onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => { setPlaying(false); setProgress(0); }} onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)} onTimeUpdate={(event) => setProgress(event.currentTarget.currentTime)} />
+    <button className="audio-play" onClick={toggle} aria-label={playing ? 'Pausar audio' : 'Escuchar audio'}>{playing ? 'Ⅱ' : '▶'}</button>
+    <div className="audio-player-copy"><p>ESCUCHÁ AHORA</p><b>{entry.title}</b><span>{entry.duration || 'Audio disponible'}</span></div>
+    <input className="audio-progress" type="range" min="0" max={duration || 1} step="0.1" value={progress} onChange={(event) => { const next = Number(event.target.value); if (audioRef.current) audioRef.current.currentTime = next; setProgress(next); }} aria-label="Progreso del audio" />
+  </section>;
+}
+
+function LibraryPanel({ entries, onBack, onRead }: { entries: LibraryEntry[]; onBack: () => void; onRead: (entry: LibraryEntry) => void }) {
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState('Todo');
+  const tags = Array.from(new Set(entries.flatMap((entry) => entry.tags))).slice(0, 12);
+  const filters = ['Todo', 'Conferencias', 'Audios', ...tags];
+  const visible = entries.filter((entry) => {
+    const haystack = `${entry.title} ${entry.excerpt} ${entry.type} ${entry.tags.join(' ')}`.toLocaleLowerCase();
+    const matchesQuery = haystack.includes(query.trim().toLocaleLowerCase());
+    const matchesFilter = filter === 'Todo' || (filter === 'Conferencias' && /conference|conferencia/i.test(entry.type)) || (filter === 'Audios' && Boolean(entry.audioUrl)) || entry.tags.some((tag) => tag.toLocaleLowerCase() === filter.toLocaleLowerCase());
+    return matchesQuery && matchesFilter;
+  });
+  const featuredAudio = visible.find((entry) => entry.audioUrl) || entries.find((entry) => entry.audioUrl);
+  return <section className="reader-section library-section">
+    <FixedHeader eyebrow="PARA ESCUCHAR Y LEER" title="Tu biblioteca" subtitle="Buscá por conferencia, tema o etiqueta." onBack={onBack} />
+    <div className="reader-body library-browser">
+      <label className="library-search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en la biblioteca" /></label>
+      <div className="library-filters">{filters.map((item) => <button key={item} className={filter === item ? 'active' : ''} onClick={() => setFilter(item)}>{item}</button>)}</div>
+      {featuredAudio && <AudioPlayer entry={featuredAudio} />}
+      <p className="library-count">{visible.length} {visible.length === 1 ? 'resultado' : 'resultados'}</p>
+      <div className="library-content-list">{visible.map((entry) => <article key={entry.id} className="library-content-card" onClick={() => onRead(entry)}><span>{entry.audioUrl ? '🎙️' : '📖'}</span><div><p>{entry.type || 'Contenido'}</p><b>{entry.title}</b><em>{entry.excerpt || 'Abrí para leer o escuchar.'}</em><small>{entry.tags.map((tag) => `#${tag}`).join(' ')}</small></div><i>›</i></article>)}</div>
+      {!visible.length && <p className="library-empty">No encontramos contenidos con esa búsqueda.</p>}
     </div>
   </section>;
 }
@@ -402,13 +454,12 @@ export default function App() {
   const [reader, setReader] = useState<ReaderContent | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const [libraryItems, setLibraryItems] = useState<DeckItem[]>([]);
+  const [libraryItems, setLibraryItems] = useState<LibraryEntry[]>([]);
   const current = trail.at(-1);
   const screen = useMemo<Screen>(() => {
     if (current) return { eyebrow: trail.length === 1 ? screens[tab].title.toUpperCase() : trail.at(-2)?.title.toUpperCase() || screens[tab].eyebrow, title: current.title, subtitle: current.detail, items: current.children || [] };
-    if (tab === 'biblioteca' && libraryItems.length) return { ...screens.biblioteca, items: screens.biblioteca.items.map((item) => item.title === 'Conferencias' ? { ...item, detail: `${libraryItems.length} contenidos conectados.`, children: libraryItems } : item) };
     return screens[tab];
-  }, [current, tab, trail, libraryItems]);
+  }, [current, tab, trail]);
   const back = () => {
     if (reader) return setReader(null);
     if (notificationsOpen) return setNotificationsOpen(false);
@@ -445,15 +496,25 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    supabase.from('content_items').select('id,title,excerpt,body,content_type').eq('is_published', true).order('published_at', { ascending: false }).limit(100).then(({ data }) => {
+    supabase.from('content_items').select('*').eq('is_published', true).order('published_at', { ascending: false }).limit(250).then(({ data }) => {
       if (!data) return;
-      setLibraryItems(data.map((item, index) => ({
-        icon: item.content_type === 'lecture' ? '🎙️' : '📖',
-        title: item.title,
-        detail: item.excerpt || 'Disponible para leer y escuchar.',
-        tone: palette[index % palette.length],
-        reader: { title: item.title, eyebrow: 'BIBLIOTECA', detail: item.excerpt || 'Enseñanza completa.', paragraphs: cleanParagraphs(item.body || item.excerpt || '') },
-      })));
+      setLibraryItems(data.map((value) => {
+        const item = value as Record<string, unknown>;
+        const source = firstText(item, ['audio_url', 'audioUrl', 'media_url', 'mediaUrl', 'file_url', 'fileUrl']);
+        const path = firstText(item, ['audio_path', 'audioPath', 'storage_path', 'storagePath']);
+        const bucket = firstText(item, ['audio_bucket', 'audioBucket', 'bucket']) || 'audios';
+        const audioUrl = source || (path ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/${bucket}/${path}` : undefined);
+        return {
+          id: String(item.id),
+          title: firstText(item, ['title', 'name']) || 'Sin título',
+          excerpt: firstText(item, ['excerpt', 'description', 'summary']) || '',
+          body: firstText(item, ['body', 'content', 'text']) || '',
+          type: firstText(item, ['content_type', 'type', 'category']) || 'Contenido',
+          tags: toTags(item.tags || item.tag_list || item.labels || item.topics),
+          audioUrl,
+          duration: firstText(item, ['duration', 'audio_duration']),
+        };
+      }));
     });
   }, []);
 
@@ -493,6 +554,7 @@ export default function App() {
   }
   if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} onBack={back} onNameSaved={setUserName} onLogout={logout} /></main>;
   if (reader) return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} /></main>;
+  if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || '') })} /></main>;
   if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel onBack={back} /></main>;
   return <main className="app-shell app-main section-app"><section className="feature-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} /><Deck key={`${tab}-${trail.map((item) => item.title).join('/')}`} items={screen.items} onSelect={select} /></section></main>;
 }
