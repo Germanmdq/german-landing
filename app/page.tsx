@@ -326,14 +326,12 @@ function InstallGate({ onContinue }: { onContinue: () => void }) {
     await installPrompt.prompt();
     const choice = await installPrompt.userChoice;
     if (choice.outcome === 'accepted') {
-      localStorage.setItem('german-pwa-added', 'yes');
       onContinue();
     }
     setInstallPrompt(null);
   };
 
   const continueFlow = () => {
-    localStorage.setItem('german-pwa-added', 'yes');
     onContinue();
   };
 
@@ -542,8 +540,9 @@ export default function App() {
 
   if (stage === 'entry') return <main className="app-shell brain-intro"><p className="intro-brand">ASISTENTE GERMÁN</p><h1>Todo lo que necesitás,<br /><em>en un solo lugar.</em></h1><BrainFolder open={false} onOpen={() => {
     const standalone = window.matchMedia('(display-mode: standalone)').matches || ('standalone' in navigator && Boolean((navigator as Navigator & { standalone?: boolean }).standalone));
-    const acknowledged = localStorage.getItem('german-pwa-added') === 'yes';
-    if (standalone || acknowledged) {
+    // Only the browser's real standalone mode proves the app is still installed.
+    // A saved acknowledgement becomes stale as soon as the user removes the PWA.
+    if (standalone) {
       if (session?.user) return void authenticated(session.user);
       return setStage('login');
     }
