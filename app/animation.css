@@ -1,0 +1,28 @@
+/* Mobile-first motion system: character, progress and gentle visual cues. */
+.app-label{font-size:10px;letter-spacing:1.55px;color:var(--muted);font-weight:850}
+.motion-german{position:relative;z-index:2;width:236px;height:236px;overflow:hidden;border-radius:28px;background:#7d1e3a;box-shadow:0 18px 40px rgba(93,28,54,.22);transform:rotate(-2deg)}
+.motion-german img{display:block;width:100%;height:100%;object-fit:cover;object-position:center top}
+.motion-german:after{content:"";position:absolute;inset:0;border:1px solid rgba(255,255,255,.52);border-radius:inherit;pointer-events:none}
+.home-welcome{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:13px}
+.motion-compact{width:108px;height:112px;border-radius:22px;transform:rotate(3deg);margin-right:3px;box-shadow:0 12px 24px rgba(93,28,54,.15)}
+.avatar{background:#7d2547}.attention-mark{font-size:23px}
+.reaction-button{border:1px solid #e7c2d2;background:#fff7fa;color:#86234f;border-radius:999px;padding:10px 13px;font-weight:800;font-size:13px;transition:transform .2s ease,background .2s ease,color .2s ease}.reaction-button:active{transform:scale(.96)}.reaction-button.reacted{background:#84244d;color:#fff;border-color:#84244d}
+
+/* The opening is deliberately simple: video character + moving attention symbols. */
+.cinematic-intro{min-height:100dvh;overflow:hidden;background:radial-gradient(circle at 48% 20%,#9b2f58 0%,#631735 40%,#260817 100%);color:#fff;isolation:isolate}
+.cinematic-intro:before{content:"";position:absolute;width:420px;height:420px;border-radius:50%;border:1px solid rgba(255,220,230,.2);top:-135px;left:50%;transform:translateX(-50%);z-index:-1}.cinematic-intro:after{content:"";position:absolute;width:320px;height:320px;border-radius:50%;border:1px solid rgba(255,220,230,.16);top:-82px;left:50%;transform:translateX(-50%);z-index:-1}
+.brain{position:absolute;z-index:1;font-size:29px;filter:drop-shadow(0 9px 10px rgba(34,0,16,.24));animation:floatBrain 5.2s ease-in-out infinite}.brain-one{left:7%;top:15%;animation-delay:-1.2s}.brain-two{right:8%;top:24%;font-size:24px;animation-delay:-3.4s}.brain-three{left:18%;top:48%;font-size:21px;animation-delay:-4.1s}.brain-four{right:15%;top:54%;font-size:19px;animation-delay:-2.1s}
+.intro-star{position:absolute;z-index:1;color:#ffc3d8;font-size:27px;animation:twinkle 2.5s ease-in-out infinite}.star-one{right:13%;top:12%}.star-two{left:12%;top:34%;animation-delay:-1.3s}.star-three{right:24%;top:45%;font-size:20px;animation-delay:-.5s}
+.comic-arrival{position:absolute;z-index:2;top:6%;left:50%;width:min(86vw,390px);height:min(60vh,495px);transform:translateX(-50%);overflow:visible;border-radius:0;background:transparent;filter:drop-shadow(0 24px 32px rgba(27,2,12,.34));animation:arrive .92s cubic-bezier(.16,.85,.27,1.14) both}.comic-arrival img{display:block;width:100%;height:100%;object-fit:cover;object-position:center top;mask-image:linear-gradient(to bottom,#000 72%,transparent 100%);animation:characterBreathe 3.4s 1s ease-in-out infinite}
+.wave-mark{position:absolute;z-index:3;left:3%;top:38%;width:34px;height:34px;border:3px solid #ffe7f0;border-left-color:transparent;border-bottom-color:transparent;border-radius:50%;opacity:0;transform:rotate(30deg);animation:waveHello 1.85s 1.05s ease-out infinite}.wave-b{left:0%;top:33%;animation-delay:1.27s}.wave-c{left:7%;top:43%;animation-delay:1.49s}.hello-bubble{position:absolute;z-index:4;right:-1%;top:20%;padding:11px 14px;border-radius:17px 17px 17px 4px;background:#fff;color:#7d2147;font-size:13px;font-weight:850;box-shadow:0 10px 22px rgba(56,3,25,.2);opacity:0;animation:bubbleIn .45s 1.35s cubic-bezier(.16,.85,.27,1.14) forwards}
+.intro-copy{position:absolute;z-index:3;bottom:max(38px,env(safe-area-inset-bottom));left:26px;right:26px;text-align:left;animation:rise .7s .25s both}.intro-copy p{font-size:10px;letter-spacing:1.8px;font-weight:850;color:#f6c1d4;margin:0}.intro-copy h1{font-size:43px;line-height:1.01;letter-spacing:-2.2px;margin:13px 0 20px;max-width:355px}.intro-copy h1 em{color:#ffb0cf;font-style:normal}.intro-line{display:block;width:54px;height:3px;border-radius:3px;background:#ffafd0;margin-bottom:22px}.intro-copy button{border:0;background:#fff;color:#7a1d45;border-radius:18px;width:100%;min-height:57px;font-weight:850;font-size:17px;box-shadow:0 10px 28px rgba(23,1,12,.24)}.intro-copy button b{font-size:22px;float:right;margin-right:20px}
+
+@keyframes arrive{from{opacity:0;transform:translateX(-50%) translateY(80px) scale(.8)}65%{opacity:1;transform:translateX(-50%) translateY(-10px) scale(1.025)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
+@keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes floatBrain{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-14px) rotate(7deg)}}
+@keyframes twinkle{0%,100%{opacity:.32;transform:scale(.7) rotate(0)}50%{opacity:1;transform:scale(1.18) rotate(18deg)}}
+@keyframes characterBreathe{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-7px) rotate(.45deg)}}
+@keyframes waveHello{0%{opacity:0;transform:scale(.42) rotate(30deg)}18%{opacity:.95}100%{opacity:0;transform:scale(1.5) rotate(30deg)}}
+@keyframes bubbleIn{from{opacity:0;transform:translateY(12px) scale(.8)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-height:740px) and (max-width:599px){.comic-arrival{top:3%;height:52vh;width:min(78vw,330px)}.intro-copy h1{font-size:37px}.motion-german{height:205px;width:205px}.motion-compact{height:98px;width:96px}}
+@media(prefers-reduced-motion:reduce){.brain,.intro-star,.comic-arrival,.intro-copy{animation:none}}
