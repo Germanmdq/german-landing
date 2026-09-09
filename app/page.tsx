@@ -11,10 +11,11 @@ import './mobile-fixes.css';
 import './category-deck.css';
 import './german-entry.css';
 import './onboarding.css';
+import './account.css';
 
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'consultas' | 'notificaciones' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[] };
-type DeckItem = { icon: string; title: string; detail: string; tone: string; children?: DeckItem[]; reader?: ReaderContent; notificationPanel?: boolean; action?: 'logout' };
+type DeckItem = { icon: string; title: string; detail: string; tone: string; children?: DeckItem[]; reader?: ReaderContent; notificationPanel?: boolean; accountPanel?: boolean; action?: 'logout' };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
 type FlowStage = 'entry' | 'install' | 'login' | 'onboarding' | 'app';
 type DeviceKind = 'ios' | 'android' | 'desktop';
@@ -90,11 +91,10 @@ const screens: Record<Tab, Screen> = {
     { icon: '⚙️', title: 'Preferencias', detail: 'Elegí los tipos de avisos que querés recibir.', tone: palette[2], notificationPanel: true },
   ] },
   espacio: { eyebrow: 'MI PERFIL', title: 'Tu espacio', subtitle: 'Tu cuenta y tus elecciones.', items: [
-    { icon: '👤', title: 'Mi cuenta', detail: 'Datos personales y acceso.', tone: palette[0] },
+    { icon: '👤', title: 'Mi cuenta', detail: 'Nombre, mail, suscripción y acceso.', tone: palette[0], accountPanel: true },
     { icon: '⭐', title: 'Favoritos', detail: 'Prácticas, audios y lecturas guardadas.', tone: palette[1] },
     { icon: '📈', title: 'Mi avance', detail: 'Progreso real de tus prácticas.', tone: palette[2] },
     { icon: '⚙️', title: 'Configuración', detail: 'Horarios, zona y apariencia.', tone: palette[3] },
-    { icon: '↪️', title: 'Cerrar sesión', detail: 'Salir de esta cuenta.', tone: palette[0], action: 'logout' },
   ] },
 };
 
@@ -112,8 +112,8 @@ function DeckCard({ item, index, last, onClick }: { item: DeckItem; index: numbe
   return <div className={`category-row${last ? ' is-last' : ''}`}>
     <button className="category-card" style={{ '--category-index': index, '--category-tone': item.tone } as React.CSSProperties} onClick={onClick}>
       <span className="category-icon">{item.icon}</span>
-      <p><small>{item.children || item.reader || item.notificationPanel || item.action ? 'ABRIR' : 'OPCIÓN'}</small><b>{item.title}</b>{item.detail && <em>{item.detail}</em>}</p>
-      <i className="category-arrow">{item.children || item.reader || item.notificationPanel || item.action ? '›' : '↑'}</i>
+      <p><small>{item.children || item.reader || item.notificationPanel || item.accountPanel || item.action ? 'ABRIR' : 'OPCIÓN'}</small><b>{item.title}</b>{item.detail && <em>{item.detail}</em>}</p>
+      <i className="category-arrow">{item.children || item.reader || item.notificationPanel || item.accountPanel || item.action ? '›' : '↑'}</i>
     </button>
   </div>;
 }
@@ -160,6 +160,39 @@ function NotificationsPanel({ onBack }: { onBack: () => void }) {
 
 function Reader({ content: reader, onBack }: { content: ReaderContent; onBack: () => void }) {
   return <section className="reader-section"><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} /><article className="reader-body">{reader.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</article></section>;
+}
+
+function AccountPanel({ user, onBack, onNameSaved, onLogout }: { user: User; onBack: () => void; onNameSaved: (name: string) => void; onLogout: () => void }) {
+  const [name, setName] = useState(user.user_metadata?.full_name || localStorage.getItem('german-user-name') || '');
+  const [message, setMessage] = useState('');
+  const [saving, setSaving] = useState(false);
+  const save = async () => {
+    const fullName = name.trim();
+    if (!fullName) return setMessage('Escribí tu nombre para guardarlo.');
+    setSaving(true);
+    setMessage('');
+    const provider = user.app_metadata?.provider || 'email';
+    const [authResult, profileResult] = await Promise.all([
+      supabase.auth.updateUser({ data: { full_name: fullName } }),
+      supabase.from('profiles').upsert({ id: user.id, email: user.email, full_name: fullName, auth_provider: provider }),
+    ]);
+    setSaving(false);
+    const error = authResult.error || profileResult.error;
+    if (error) return setMessage(error.message);
+    onNameSaved(fullName.split(/\s+/)[0]);
+    setMessage('Cambios guardados.');
+  };
+  return <section className="reader-section account-section">
+    <FixedHeader eyebrow="MI PERFIL" title="Mi cuenta" subtitle="Tus datos y tu acceso a la aplicación." onBack={onBack} />
+    <div className="reader-body account-settings">
+      <label>Correo electrónico<input value={user.email || ''} readOnly aria-readonly="true" /></label>
+      <label>Nombre<input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" /></label>
+      <button className="account-save" onClick={save} disabled={saving}>{saving ? 'Guardando…' : 'Guardar cambios'}</button>
+      {message && <p className="account-message">{message}</p>}
+      <section className="subscription-card"><p> SUSCRIPCIÓN</p><b>Plan gratuito</b><span>Tu cuenta está activa. Los próximos planes pagos aparecerán acá.</span></section>
+      <button className="account-logout" onClick={onLogout}>Cerrar sesión</button>
+    </div>
+  </section>;
 }
 
 function BrainFolder({ open, onOpen, onGo, userName = 'Martín' }: { open: boolean; onOpen: () => void; onGo: (tab: Tab) => void; userName?: string }) {
@@ -219,7 +252,7 @@ function detectDevice(): DeviceKind {
 }
 
 function GermanBadge() {
-  return <div className="gate-german"><img src="/german-welcome.png" alt="Germán saludando" /></div>;
+  return <div className="gate-german" role="img" aria-label="Germán saludando">👋</div>;
 }
 
 function InstallGate({ onContinue }: { onContinue: () => void }) {
@@ -369,6 +402,7 @@ export default function App() {
   const [trail, setTrail] = useState<DeckItem[]>([]);
   const [reader, setReader] = useState<ReaderContent | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [libraryItems, setLibraryItems] = useState<DeckItem[]>([]);
   const current = trail.at(-1);
   const screen = useMemo<Screen>(() => {
@@ -379,6 +413,7 @@ export default function App() {
   const back = () => {
     if (reader) return setReader(null);
     if (notificationsOpen) return setNotificationsOpen(false);
+    if (accountOpen) return setAccountOpen(false);
     if (trail.length) return setTrail((value) => value.slice(0, -1));
     setMainMenu(true);
   };
@@ -397,6 +432,7 @@ export default function App() {
     }
     if (selected.reader) return setReader(selected.reader);
     if (selected.notificationPanel) return setNotificationsOpen(true);
+    if (selected.accountPanel) return setAccountOpen(true);
     if (selected.children) setTrail((value) => [...value, selected]);
   };
 
@@ -456,6 +492,7 @@ export default function App() {
   if (stage === 'app' && mainMenu) {
     return <main className="app-shell brain-intro category-open"><BrainFolder open onOpen={() => undefined} userName={userName} onGo={(target) => { setTab(target); setTrail([]); setReader(null); setMainMenu(false); }} /></main>;
   }
+  if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} onBack={back} onNameSaved={setUserName} onLogout={logout} /></main>;
   if (reader) return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} /></main>;
   if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel onBack={back} /></main>;
   return <main className="app-shell app-main section-app"><section className="feature-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} /><Deck key={`${tab}-${trail.map((item) => item.title).join('/')}`} items={screen.items} onSelect={select} /></section></main>;

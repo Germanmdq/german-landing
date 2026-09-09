@@ -8,8 +8,6 @@ self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
   event.waitUntil(self.registration.showNotification(data.title || 'Asistente Germán', {
     body: data.body || 'Germán te dejó una práctica.',
-    icon: '/german-welcome.png',
-    badge: '/german-welcome.png',
     data: { url: data.url || '/' },
   }));
 });
