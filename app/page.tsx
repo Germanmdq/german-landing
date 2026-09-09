@@ -326,7 +326,7 @@ function LoginGate({ onAuthenticated }: { onAuthenticated: (user: User) => void 
   </main>;
 }
 
-function OnboardingGate({ user, onComplete }: { user: User; onComplete: (name: string) => void }) {
+function OnboardingGate({ user, onComplete, onLogout }: { user: User; onComplete: (name: string) => void; onLogout: () => void }) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState(user.user_metadata?.full_name?.trim().split(/\s+/)[0] || '');
   const [message, setMessage] = useState('');
@@ -356,6 +356,7 @@ function OnboardingGate({ user, onComplete }: { user: User; onComplete: (name: s
     {step === 0 && <><p className="gate-kicker">EMPECEMOS</p><h1>¿Cómo querés que te llame?</h1><p className="gate-copy">Este nombre va a acompañarte en toda la experiencia.</p><label className="name-field">Tu nombre<input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder="Martín" /></label><button className="gate-primary" disabled={!name.trim()} onClick={() => setStep(1)}>Continuar <span>→</span></button></>}
     {step === 1 && <><p className="gate-kicker">EN EL MOMENTO JUSTO</p><h1>Activá tus notificaciones.</h1><p className="gate-copy">Así vas a recibir las prácticas y novedades importantes.</p><div className="notification-illustration">🔔<i>✦</i><i>✦</i></div><button className="gate-primary" onClick={requestNotifications}>Activar notificaciones</button><button className="gate-secondary" onClick={() => setStep(2)}>Ahora no</button></>}
     {step === 2 && <><p className="gate-kicker">TODO LISTO</p><h1>Este espacio ya es tuyo, <em>{name || 'Martín'}.</em></h1><p className="gate-copy">Tus prácticas, lecturas y consultas te esperan.</p><button className="gate-primary" onClick={finish}>Entrar al asistente <span>→</span></button>{message && <p className="form-message">{message}</p>}</>}
+    <button className="gate-secondary" onClick={onLogout}>Cerrar sesión</button>
   </main>;
 }
 
@@ -381,14 +382,17 @@ export default function App() {
     if (trail.length) return setTrail((value) => value.slice(0, -1));
     setMainMenu(true);
   };
+  const logout = () => {
+    void supabase.auth.signOut().finally(() => {
+      setSession(null);
+      setTrail([]);
+      setMainMenu(true);
+      setStage('login');
+    });
+  };
   const select = (selected: DeckItem) => {
     if (selected.action === 'logout') {
-      void supabase.auth.signOut().finally(() => {
-        setSession(null);
-        setTrail([]);
-        setMainMenu(true);
-        setStage('login');
-      });
+      logout();
       return;
     }
     if (selected.reader) return setReader(selected.reader);
@@ -437,7 +441,7 @@ export default function App() {
 
   if (stage === 'install') return <InstallGate onContinue={continueAfterInstall} />;
   if (stage === 'login') return <LoginGate onAuthenticated={authenticated} />;
-  if (stage === 'onboarding' && session?.user) return <OnboardingGate user={session.user} onComplete={(name) => { setUserName(name); setStage('app'); }} />;
+  if (stage === 'onboarding' && session?.user) return <OnboardingGate user={session.user} onComplete={(name) => { setUserName(name); setStage('app'); }} onLogout={logout} />;
   if (stage === 'onboarding') return <LoginGate onAuthenticated={authenticated} />;
 
   if (stage === 'entry') return <main className="app-shell brain-intro"><p className="intro-brand">ASISTENTE GERMÁN</p><h1>Todo lo que necesitás,<br /><em>en un solo lugar.</em></h1><BrainFolder open={false} onOpen={() => {
