@@ -165,6 +165,7 @@ function BrainFolder({ open, onOpen, onGo, userName = 'Martín' }: { open: boole
   const videoRef = useRef<HTMLVideoElement>(null);
   const [soundOn, setSoundOn] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
+  const videoStart = 0.22;
   const items = mainCategories.map(([target, icon, title, detail, tone]) => ({ target, item: { icon, title, detail, tone } as DeckItem }));
   const toggleSound = async () => {
     const video = videoRef.current;
@@ -174,7 +175,20 @@ function BrainFolder({ open, onOpen, onGo, userName = 'Martín' }: { open: boole
     setSoundOn(next);
     if (next) await video.play().catch(() => setSoundOn(false));
   };
-  return <section className={open ? 'brain-folder brain-folder-open category-deck' : 'brain-folder'}><div className="brain-orbit" aria-hidden="true"><i /><i /><i /></div>{!open ? <div className={`brain-launch german-launch german-video-launch${videoReady ? ' is-video-ready' : ''}`}><video ref={videoRef} src="/german-real-intro.mp4" autoPlay muted loop playsInline preload="auto" onLoadedData={() => setVideoReady(true)} aria-label="Germán animado saludando" /><button className="german-enter" onClick={onOpen} aria-label="Entrar a Asistente Germán"><b>Entrar</b><small>Tocá a Germán</small></button><button className="german-sound" onClick={toggleSound} aria-label={soundOn ? 'Silenciar video' : 'Activar sonido del video'} aria-pressed={soundOn}>{soundOn ? '🔊' : '🔇'}</button></div> : <section className="categories-section"><header className="assistant-welcome"><p>Hola, ¿cómo estás, {userName}?</p><h1>Bienvenido al<strong>Asistente de Germán</strong></h1></header><div className="category-list">{items.map(({ target, item }, index) => <DeckCard key={item.title} item={item} index={index} last={index === items.length - 1} onClick={() => onGo(target)} />)}<div className="deck-end-space" aria-hidden="true" /></div></section>}</section>;
+  const prepareVideo = async () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.currentTime = Math.min(videoStart, Math.max(0, video.duration - 0.1));
+    await video.play().catch(() => undefined);
+  };
+  const replayVideo = async () => {
+    const video = videoRef.current;
+    if (!video) return;
+    setVideoReady(false);
+    video.currentTime = videoStart;
+    await video.play().catch(() => undefined);
+  };
+  return <section className={open ? 'brain-folder brain-folder-open category-deck' : 'brain-folder'}><div className="brain-orbit" aria-hidden="true"><i /><i /><i /></div>{!open ? <div className={`brain-launch german-launch german-video-launch${videoReady ? ' is-video-ready' : ''}`}><video ref={videoRef} src="/german-real-intro.mp4" autoPlay muted playsInline preload="auto" onLoadedMetadata={prepareVideo} onPlaying={() => requestAnimationFrame(() => requestAnimationFrame(() => setVideoReady(true)))} onEnded={replayVideo} aria-label="Germán animado saludando" /><button className="german-enter" onClick={onOpen} aria-label="Entrar a Asistente Germán"><b>Entrar</b><small>Tocá a Germán</small></button><button className="german-sound" onClick={toggleSound} aria-label={soundOn ? 'Silenciar video' : 'Activar sonido del video'} aria-pressed={soundOn}>{soundOn ? '🔊' : '🔇'}</button></div> : <section className="categories-section"><header className="assistant-welcome"><p>Hola, ¿cómo estás, {userName}?</p><h1>Bienvenido al<strong>Asistente de Germán</strong></h1></header><div className="category-list">{items.map(({ target, item }, index) => <DeckCard key={item.title} item={item} index={index} last={index === items.length - 1} onClick={() => onGo(target)} />)}<div className="deck-end-space" aria-hidden="true" /></div></section>}</section>;
 }
 
 const installSteps: Record<DeviceKind, Array<[string, string]>> = {
@@ -276,7 +290,11 @@ function LoginGate({ onAuthenticated }: { onAuthenticated: (user: User) => void 
     setBusy(true);
     setMessage('');
     const result = mode === 'signup'
-      ? await supabase.auth.signUp({ email, password })
+      ? await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/` },
+        })
       : await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (result.error) return setMessage(result.error.message);
