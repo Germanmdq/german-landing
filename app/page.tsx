@@ -18,8 +18,6 @@ type DeckItem = { icon: string; title: string; detail: string; tone: string; chi
 type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
 type FlowStage = 'entry' | 'install' | 'login' | 'onboarding' | 'app';
-type DeviceKind = 'ios' | 'android' | 'desktop';
-type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> };
 
 const palette = ['#965266', '#B16C7F', '#CD8798', '#E7A9B5'];
 const icons = ['●', '◆', '✦', '○'];
@@ -276,88 +274,19 @@ function BrainFolder({ open, onOpen, onGo, userName = 'Martín' }: { open: boole
   return <section className={open ? 'brain-folder brain-folder-open category-deck' : 'brain-folder'}><div className="brain-orbit" aria-hidden="true"><i /><i /><i /></div>{!open ? <div className={`brain-launch german-launch german-video-launch${videoReady ? ' is-video-ready' : ''}`}><video ref={videoRef} src="/german-real-intro.mp4" autoPlay muted playsInline preload="auto" onLoadedMetadata={prepareVideo} onPlaying={() => requestAnimationFrame(() => requestAnimationFrame(() => setVideoReady(true)))} onEnded={replayVideo} aria-label="Germán animado saludando" /><button className="german-enter" onClick={onOpen} aria-label="Entrar a Asistente Germán"><b>Entrar</b><small>Tocá a Germán</small></button><button className="german-sound" onClick={toggleSound} aria-label={soundOn ? 'Silenciar video' : 'Activar sonido del video'} aria-pressed={soundOn}>{soundOn ? '🔊' : '🔇'}</button></div> : <section className="categories-section"><header className="assistant-welcome"><p>Hola, ¿cómo estás, {userName}?</p><h1>Bienvenido al<strong>Asistente de Germán</strong></h1></header><div className="category-list">{items.map(({ target, item }, index) => <DeckCard key={item.title} item={item} index={index} last={index === items.length - 1} onClick={() => onGo(target)} />)}<div className="deck-end-space" aria-hidden="true" /></div></section>}</section>;
 }
 
-const installSteps: Record<DeviceKind, Array<[string, string]>> = {
-  ios: [
-    ['↥', 'Abrí esta página en Safari y tocá Compartir.'],
-    ['＋', 'Bajá en el menú y tocá “Agregar a inicio”.'],
-    ['✓', 'Confirmá tocando “Agregar”.'],
-  ],
-  android: [
-    ['•••', 'Tocá el menú de tres puntos de Chrome.'],
-    ['＋', 'Elegí “Instalar app” o “Agregar a la pantalla principal”.'],
-    ['✓', 'Confirmá la instalación.'],
-  ],
-  desktop: [
-    ['⬇', 'Buscá el icono Instalar en la barra de direcciones.'],
-    ['•••', 'Si no aparece, abrí el menú de Chrome o Edge.'],
-    ['✓', 'Elegí “Instalar Asistente Germán” y confirmá.'],
-  ],
-};
-
-function detectDevice(): DeviceKind {
-  const agent = navigator.userAgent.toLowerCase();
-  const ios = /iphone|ipad|ipod/.test(agent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  if (ios) return 'ios';
-  if (/android/.test(agent)) return 'android';
-  return 'desktop';
-}
-
 function GermanBadge() {
   return <div className="gate-german"><img src="/german-welcome.png" alt="Germán saludando" /></div>;
 }
 
 function InstallGate({ onContinue }: { onContinue: () => void }) {
-  const [device, setDevice] = useState<DeviceKind>('desktop');
-  const [modalOpen, setModalOpen] = useState(false);
-  const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
-
-  useEffect(() => {
-    setDevice(detectDevice());
-    const capturePrompt = (event: Event) => {
-      event.preventDefault();
-      setInstallPrompt(event as InstallPromptEvent);
-    };
-    window.addEventListener('beforeinstallprompt', capturePrompt);
-    return () => window.removeEventListener('beforeinstallprompt', capturePrompt);
-  }, []);
-
-  const installDirectly = async () => {
-    if (!installPrompt) return setModalOpen(true);
-    await installPrompt.prompt();
-    const choice = await installPrompt.userChoice;
-    if (choice.outcome === 'accepted') {
-      onContinue();
-    }
-    setInstallPrompt(null);
-  };
-
-  const continueFlow = () => {
-    onContinue();
-  };
-
   return <main className="app-shell gate-screen install-gate">
     <GermanBadge />
     <p className="gate-kicker">ASISTENTE GERMÁN</p>
     <h1>Estás ante la primera aplicación sobre <em>manifestación consciente</em> en español.</h1>
     <p className="gate-copy">Agregala a tu pantalla de inicio para que funcione correctamente y puedas recibir tus prácticas en el momento justo.</p>
     <div className="gate-actions">
-      {installPrompt && device !== 'ios'
-        ? <button className="gate-primary" onClick={installDirectly}>Instalar <span>↓</span></button>
-        : <button className="gate-primary" onClick={() => setModalOpen(true)}>Cómo agregarla <span>→</span></button>}
-      <button className="gate-secondary" onClick={continueFlow}>Ya la agregué, continuar</button>
+      <button className="gate-secondary" onClick={onContinue}>Ya la agregué, continuar</button>
     </div>
-
-    {modalOpen && <div className="install-modal-backdrop" role="presentation" onClick={() => setModalOpen(false)}>
-      <section className="install-modal" role="dialog" aria-modal="true" aria-labelledby="install-title" onClick={(event) => event.stopPropagation()}>
-        <button className="modal-close" onClick={() => setModalOpen(false)} aria-label="Cerrar">×</button>
-        <p className="gate-kicker">{device === 'ios' ? 'IPHONE · IPAD' : device === 'android' ? 'ANDROID · CHROME' : 'COMPUTADORA'}</p>
-        <h2 id="install-title">Cómo agregarla</h2>
-        {device === 'ios' && <p className="safari-warning">En iPhone y iPad abrila con Safari. Chrome no muestra esta opción.</p>}
-        <div className="install-demo" aria-label="Demostración visual de instalación"><div className="demo-browser"><i /><i /><i /><b>{device === 'ios' ? '↥' : '•••'}</b></div><div className="demo-hand">☝️</div></div>
-        <ol className="install-steps">{installSteps[device].map(([icon, step], index) => <li key={step}><span>{icon}</span><p><b>{index + 1}</b>{step}</p></li>)}</ol>
-        <button className="gate-primary" onClick={() => setModalOpen(false)}>Entendido</button>
-      </section>
-    </div>}
   </main>;
 }
 
