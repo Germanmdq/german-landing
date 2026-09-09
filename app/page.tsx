@@ -423,20 +423,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    Promise.all([
-      supabase.from('content_items').select('*').eq('is_published', true).order('published_at', { ascending: false }).limit(250),
-      supabase.from('content_assets').select('content_id,asset_type,source_url,storage_path,duration_seconds').eq('asset_type', 'audio').order('sort_order', { ascending: true }).limit(500),
-    ]).then(([contentResult, assetResult]) => {
-      if (!contentResult.data) return;
-      const audioByContent = new Map<string, Record<string, unknown>>();
-      for (const value of assetResult.data || []) {
-        const asset = value as Record<string, unknown>;
-        const contentId = String(asset.content_id || '');
-        if (contentId && !audioByContent.has(contentId)) audioByContent.set(contentId, asset);
-      }
-      setLibraryItems(contentResult.data.map((value) => {
+    supabase
+      .from('content_items')
+      .select('*,content_assets(asset_type,source_url,storage_path,duration_seconds,sort_order)')
+      .eq('is_published', true)
+      .eq('content_assets.asset_type', 'audio')
+      .order('published_at', { ascending: false })
+      .limit(250)
+      .then(({ data }) => {
+      if (!data) return;
+      setLibraryItems(data.map((value) => {
         const item = value as Record<string, unknown>;
-        const asset = audioByContent.get(String(item.id));
+        const assets = Array.isArray(item.content_assets) ? item.content_assets as Record<string, unknown>[] : [];
+        const asset = assets.sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))[0];
         const source = firstText(asset || item, ['source_url', 'audio_url', 'audioUrl', 'media_url', 'mediaUrl', 'file_url', 'fileUrl']);
         const path = firstText(asset || item, ['audio_path', 'audioPath', 'storage_path', 'storagePath']);
         const bucket = firstText(item, ['audio_bucket', 'audioBucket', 'bucket']) || 'audios';
