@@ -14,7 +14,7 @@ import './onboarding.css';
 
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'consultas' | 'notificaciones' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[] };
-type DeckItem = { icon: string; title: string; detail: string; tone: string; children?: DeckItem[]; reader?: ReaderContent; notificationPanel?: boolean };
+type DeckItem = { icon: string; title: string; detail: string; tone: string; children?: DeckItem[]; reader?: ReaderContent; notificationPanel?: boolean; action?: 'logout' };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
 type FlowStage = 'entry' | 'install' | 'login' | 'onboarding' | 'app';
 type DeviceKind = 'ios' | 'android' | 'desktop';
@@ -94,6 +94,7 @@ const screens: Record<Tab, Screen> = {
     { icon: '⭐', title: 'Favoritos', detail: 'Prácticas, audios y lecturas guardadas.', tone: palette[1] },
     { icon: '📈', title: 'Mi avance', detail: 'Progreso real de tus prácticas.', tone: palette[2] },
     { icon: '⚙️', title: 'Configuración', detail: 'Horarios, zona y apariencia.', tone: palette[3] },
+    { icon: '↪️', title: 'Cerrar sesión', detail: 'Salir de esta cuenta.', tone: palette[0], action: 'logout' },
   ] },
 };
 
@@ -111,8 +112,8 @@ function DeckCard({ item, index, last, onClick }: { item: DeckItem; index: numbe
   return <div className={`category-row${last ? ' is-last' : ''}`}>
     <button className="category-card" style={{ '--category-index': index, '--category-tone': item.tone } as React.CSSProperties} onClick={onClick}>
       <span className="category-icon">{item.icon}</span>
-      <p><small>{item.children || item.reader || item.notificationPanel ? 'ABRIR' : 'OPCIÓN'}</small><b>{item.title}</b>{item.detail && <em>{item.detail}</em>}</p>
-      <i className="category-arrow">{item.children || item.reader || item.notificationPanel ? '›' : '↑'}</i>
+      <p><small>{item.children || item.reader || item.notificationPanel || item.action ? 'ABRIR' : 'OPCIÓN'}</small><b>{item.title}</b>{item.detail && <em>{item.detail}</em>}</p>
+      <i className="category-arrow">{item.children || item.reader || item.notificationPanel || item.action ? '›' : '↑'}</i>
     </button>
   </div>;
 }
@@ -327,36 +328,34 @@ function LoginGate({ onAuthenticated }: { onAuthenticated: (user: User) => void 
 
 function OnboardingGate({ user, onComplete }: { user: User; onComplete: (name: string) => void }) {
   const [step, setStep] = useState(0);
-  const [name, setName] = useState(user.user_metadata?.full_name?.split(' ')[0] || '');
-  const [times, setTimes] = useState({ morning: '07:50', noon: '12:30', afternoon: '17:00', night: '22:45' });
+  const [name, setName] = useState(user.user_metadata?.full_name?.trim().split(/\s+/)[0] || '');
   const [message, setMessage] = useState('');
 
   const requestNotifications = async () => {
     if ('Notification' in window) await Notification.requestPermission();
-    setStep(3);
+    setStep(2);
   };
 
   const finish = async () => {
-    setMessage('Guardando…');
     const fullName = name.trim() || 'Martín';
+    setMessage('Guardando…');
     const provider = user.app_metadata?.provider || 'email';
     const [profileResult, settingsResult] = await Promise.all([
       supabase.from('profiles').upsert({ id: user.id, email: user.email, full_name: fullName, auth_provider: provider }),
-      supabase.from('user_settings').upsert({ user_id: user.id, ...times, installation_acknowledged: true, onboarding_completed: true, updated_at: new Date().toISOString() }),
+      supabase.from('user_settings').upsert({ user_id: user.id, installation_acknowledged: true, onboarding_completed: true, updated_at: new Date().toISOString() }),
     ]);
     const error = profileResult.error || settingsResult.error;
-    if (error) return setMessage(`No pudimos guardar: ${error.message}`);
+    if (error) setMessage(`La cuenta funciona, pero no pudimos guardar esos datos: ${error.message}`);
     localStorage.setItem('german-user-name', fullName);
     onComplete(fullName);
   };
 
   return <main className="app-shell gate-screen onboarding-gate">
-    <div className="step-dots">{[0, 1, 2, 3].map((item) => <i key={item} className={item <= step ? 'active' : ''} />)}</div>
+    <div className="step-dots">{[0, 1, 2].map((item) => <i key={item} className={item <= step ? 'active' : ''} />)}</div>
     <GermanBadge />
     {step === 0 && <><p className="gate-kicker">EMPECEMOS</p><h1>¿Cómo querés que te llame?</h1><p className="gate-copy">Este nombre va a acompañarte en toda la experiencia.</p><label className="name-field">Tu nombre<input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder="Martín" /></label><button className="gate-primary" disabled={!name.trim()} onClick={() => setStep(1)}>Continuar <span>→</span></button></>}
-    {step === 1 && <><p className="gate-kicker">TUS HORARIOS</p><h1>¿Cuándo querés volver a vos?</h1><p className="gate-copy">Después vas a poder cambiarlos desde Configuración.</p><div className="time-grid">{([['morning', 'Mañana', '☀️'], ['noon', 'Mediodía', '◐'], ['afternoon', 'Tarde', '🌤️'], ['night', 'Noche', '🌙']] as const).map(([key, label, icon]) => <label key={key}><span>{icon} {label}</span><input type="time" value={times[key]} onChange={(event) => setTimes({ ...times, [key]: event.target.value })} /></label>)}</div><button className="gate-primary" onClick={() => setStep(2)}>Continuar <span>→</span></button></>}
-    {step === 2 && <><p className="gate-kicker">EN EL MOMENTO JUSTO</p><h1>Activá tus notificaciones.</h1><p className="gate-copy">Así vas a recibir cada práctica en los horarios que acabás de elegir.</p><div className="notification-illustration">🔔<i>✦</i><i>✦</i></div><button className="gate-primary" onClick={requestNotifications}>Activar notificaciones</button><button className="gate-secondary" onClick={() => setStep(3)}>Ahora no</button></>}
-    {step === 3 && <><p className="gate-kicker">TODO LISTO</p><h1>Este espacio ya es tuyo, <em>{name || 'Martín'}.</em></h1><p className="gate-copy">Tus prácticas, lecturas y consultas te esperan.</p><button className="gate-primary" onClick={finish}>Entrar al asistente <span>→</span></button>{message && <p className="form-message">{message}</p>}</>}
+    {step === 1 && <><p className="gate-kicker">EN EL MOMENTO JUSTO</p><h1>Activá tus notificaciones.</h1><p className="gate-copy">Así vas a recibir las prácticas y novedades importantes.</p><div className="notification-illustration">🔔<i>✦</i><i>✦</i></div><button className="gate-primary" onClick={requestNotifications}>Activar notificaciones</button><button className="gate-secondary" onClick={() => setStep(2)}>Ahora no</button></>}
+    {step === 2 && <><p className="gate-kicker">TODO LISTO</p><h1>Este espacio ya es tuyo, <em>{name || 'Martín'}.</em></h1><p className="gate-copy">Tus prácticas, lecturas y consultas te esperan.</p><button className="gate-primary" onClick={finish}>Entrar al asistente <span>→</span></button>{message && <p className="form-message">{message}</p>}</>}
   </main>;
 }
 
@@ -383,6 +382,15 @@ export default function App() {
     setMainMenu(true);
   };
   const select = (selected: DeckItem) => {
+    if (selected.action === 'logout') {
+      void supabase.auth.signOut().finally(() => {
+        setSession(null);
+        setTrail([]);
+        setMainMenu(true);
+        setStage('login');
+      });
+      return;
+    }
     if (selected.reader) return setReader(selected.reader);
     if (selected.notificationPanel) return setNotificationsOpen(true);
     if (selected.children) setTrail((value) => [...value, selected]);
@@ -413,6 +421,11 @@ export default function App() {
   const authenticated = async (user: User) => {
     const { data: sessionData } = await supabase.auth.getSession();
     setSession(sessionData.session);
+    const firstName = user.user_metadata?.full_name?.trim().split(/\s+/)[0];
+    if (firstName) {
+      setUserName(firstName);
+      localStorage.setItem('german-user-name', firstName);
+    }
     const { data } = await supabase.from('user_settings').select('onboarding_completed').eq('user_id', user.id).maybeSingle();
     setMainMenu(true);
     setStage(data?.onboarding_completed ? 'app' : 'onboarding');
