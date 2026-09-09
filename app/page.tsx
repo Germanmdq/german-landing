@@ -13,7 +13,7 @@ import './german-entry.css';
 import './onboarding.css';
 
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'consultas' | 'notificaciones' | 'espacio';
-type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[] };
+type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string };
 type DeckItem = { icon: string; title: string; detail: string; tone: string; children?: DeckItem[]; reader?: ReaderContent; notificationPanel?: boolean; accountPanel?: boolean; action?: 'logout' };
 type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
@@ -159,7 +159,7 @@ function NotificationsPanel({ onBack }: { onBack: () => void }) {
 }
 
 function Reader({ content: reader, onBack }: { content: ReaderContent; onBack: () => void }) {
-  return <section className="reader-section"><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} /><article className="reader-body">{reader.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</article></section>;
+  return <section className="reader-section"><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} /><article className="reader-body">{reader.audioUrl && <AudioPlayer title={reader.title} audioUrl={reader.audioUrl} durationLabel={reader.duration} />}{reader.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</article></section>;
 }
 
 function AccountPanel({ user, onBack, onNameSaved, onLogout }: { user: User; onBack: () => void; onNameSaved: (name: string) => void; onLogout: () => void }) {
@@ -195,7 +195,7 @@ function AccountPanel({ user, onBack, onNameSaved, onLogout }: { user: User; onB
   </section>;
 }
 
-function AudioPlayer({ entry }: { entry: LibraryEntry }) {
+function AudioPlayer({ title, audioUrl, durationLabel }: { title: string; audioUrl: string; durationLabel?: string }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -208,13 +208,13 @@ function AudioPlayer({ entry }: { entry: LibraryEntry }) {
   };
   useEffect(() => {
     if ('mediaSession' in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({ title: entry.title, artist: 'Asistente Germán', album: 'Biblioteca' });
+      navigator.mediaSession.metadata = new MediaMetadata({ title, artist: 'Asistente Germán', album: 'Biblioteca' });
     }
-  }, [entry.title]);
+  }, [title]);
   return <section className="audio-player-card">
-    <audio ref={audioRef} src={entry.audioUrl} preload="metadata" playsInline onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => { setPlaying(false); setProgress(0); }} onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)} onTimeUpdate={(event) => setProgress(event.currentTarget.currentTime)} />
+    <audio ref={audioRef} src={audioUrl} preload="metadata" playsInline onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => { setPlaying(false); setProgress(0); }} onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)} onTimeUpdate={(event) => setProgress(event.currentTarget.currentTime)} />
     <button className="audio-play" onClick={toggle} aria-label={playing ? 'Pausar audio' : 'Escuchar audio'}>{playing ? 'Ⅱ' : '▶'}</button>
-    <div className="audio-player-copy"><p>ESCUCHÁ AHORA</p><b>{entry.title}</b><span>{entry.duration || 'Audio disponible'}</span></div>
+    <div className="audio-player-copy"><p>ESCUCHÁ AHORA</p><b>{title}</b><span>{durationLabel || 'Audio disponible'}</span></div>
     <input className="audio-progress" type="range" min="0" max={duration || 1} step="0.1" value={progress} onChange={(event) => { const next = Number(event.target.value); if (audioRef.current) audioRef.current.currentTime = next; setProgress(next); }} aria-label="Progreso del audio" />
   </section>;
 }
@@ -236,7 +236,7 @@ function LibraryPanel({ entries, onBack, onRead }: { entries: LibraryEntry[]; on
     <div className="reader-body library-browser">
       <label className="library-search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en la biblioteca" /></label>
       <div className="library-filters">{filters.map((item) => <button key={item} className={filter === item ? 'active' : ''} onClick={() => setFilter(item)}>{item}</button>)}</div>
-      {featuredAudio && <AudioPlayer entry={featuredAudio} />}
+      {featuredAudio?.audioUrl && <AudioPlayer title={featuredAudio.title} audioUrl={featuredAudio.audioUrl} durationLabel={featuredAudio.duration} />}
       <p className="library-count">{visible.length} {visible.length === 1 ? 'resultado' : 'resultados'}</p>
       <div className="library-content-list">{visible.map((entry) => <article key={entry.id} className="library-content-card" onClick={() => onRead(entry)}><span>{entry.audioUrl ? '🎙️' : '📖'}</span><div><p>{entry.type || 'Contenido'}</p><b>{entry.title}</b><em>{entry.excerpt || 'Abrí para leer o escuchar.'}</em><small>{entry.tags.map((tag) => `#${tag}`).join(' ')}</small></div><i>›</i></article>)}</div>
       {!visible.length && <p className="library-empty">No encontramos contenidos con esa búsqueda.</p>}
@@ -423,14 +423,25 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    supabase.from('content_items').select('*').eq('is_published', true).order('published_at', { ascending: false }).limit(250).then(({ data }) => {
-      if (!data) return;
-      setLibraryItems(data.map((value) => {
+    Promise.all([
+      supabase.from('content_items').select('*').eq('is_published', true).order('published_at', { ascending: false }).limit(250),
+      supabase.from('content_assets').select('content_id,asset_type,source_url,storage_path,duration_seconds').eq('asset_type', 'audio').order('sort_order', { ascending: true }).limit(500),
+    ]).then(([contentResult, assetResult]) => {
+      if (!contentResult.data) return;
+      const audioByContent = new Map<string, Record<string, unknown>>();
+      for (const value of assetResult.data || []) {
+        const asset = value as Record<string, unknown>;
+        const contentId = String(asset.content_id || '');
+        if (contentId && !audioByContent.has(contentId)) audioByContent.set(contentId, asset);
+      }
+      setLibraryItems(contentResult.data.map((value) => {
         const item = value as Record<string, unknown>;
-        const source = firstText(item, ['audio_url', 'audioUrl', 'media_url', 'mediaUrl', 'file_url', 'fileUrl']);
-        const path = firstText(item, ['audio_path', 'audioPath', 'storage_path', 'storagePath']);
+        const asset = audioByContent.get(String(item.id));
+        const source = firstText(asset || item, ['source_url', 'audio_url', 'audioUrl', 'media_url', 'mediaUrl', 'file_url', 'fileUrl']);
+        const path = firstText(asset || item, ['audio_path', 'audioPath', 'storage_path', 'storagePath']);
         const bucket = firstText(item, ['audio_bucket', 'audioBucket', 'bucket']) || 'audios';
         const audioUrl = source || (path ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/${bucket}/${path}` : undefined);
+        const durationSeconds = typeof asset?.duration_seconds === 'number' ? asset.duration_seconds : undefined;
         return {
           id: String(item.id),
           title: firstText(item, ['title', 'name']) || 'Sin título',
@@ -439,7 +450,7 @@ export default function App() {
           type: firstText(item, ['content_type', 'type', 'category']) || 'Contenido',
           tags: toTags(item.tags || item.tag_list || item.labels || item.topics),
           audioUrl,
-          duration: firstText(item, ['duration', 'audio_duration']),
+          duration: durationSeconds ? `${Math.round(durationSeconds / 60)} min` : firstText(item, ['duration', 'audio_duration']),
         };
       }));
     });
@@ -482,7 +493,7 @@ export default function App() {
   }
   if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} onBack={back} onNameSaved={setUserName} onLogout={logout} /></main>;
   if (reader) return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} /></main>;
-  if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || '') })} /></main>;
+  if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} /></main>;
   if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel onBack={back} /></main>;
   return <main className="app-shell app-main section-app"><section className="feature-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} /><Deck key={`${tab}-${trail.map((item) => item.title).join('/')}`} items={screen.items} onSelect={select} /></section></main>;
 }
