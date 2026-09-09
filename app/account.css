@@ -1,8 +1,0 @@
-.gate-german {
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  font-size: 42px;
-}
-
-.gate-german img { display: none; }

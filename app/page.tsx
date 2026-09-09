@@ -11,7 +11,6 @@ import './mobile-fixes.css';
 import './category-deck.css';
 import './german-entry.css';
 import './onboarding.css';
-import './account.css';
 
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'consultas' | 'notificaciones' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[] };
@@ -252,7 +251,7 @@ function detectDevice(): DeviceKind {
 }
 
 function GermanBadge() {
-  return <div className="gate-german" role="img" aria-label="Germán saludando">👋</div>;
+  return <div className="gate-german"><img src="/german-welcome.png" alt="Germán saludando" /></div>;
 }
 
 function InstallGate({ onContinue }: { onContinue: () => void }) {
