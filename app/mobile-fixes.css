@@ -1,8 +1,0 @@
-/* Safari: el avatar del encabezado no puede heredar el tamaño del retrato. */
-.avatar.avatar-small{width:42px!important;height:42px!important;border-width:2px!important}.app-main{overflow:visible!important}.app-main .screen-content{overflow:visible!important}
-
-/* Tarjetas consecutivas: al bajar, cada una queda fija y monta sobre la anterior. */
-.card-stack{padding-bottom:64px!important;gap:28px!important}.stack-card{top:calc(76px + var(--stack-index) * 18px)!important;z-index:calc(30 + var(--stack-index))!important;box-shadow:0 27px 45px -12px color-mix(in srgb,var(--stack-tone),#1c1920 58%)!important;border:1px solid #ffffff35}.stack-card.current{top:calc(76px + var(--stack-index) * 18px)!important;box-shadow:0 27px 45px -12px color-mix(in srgb,var(--stack-tone),#1c1920 58%)!important}.stack-card + .stack-card{margin-top:0}.stack-card:active{box-shadow:0 18px 30px -10px color-mix(in srgb,var(--stack-tone),#1c1920 58%)!important}
-
-/* Los seis accesos entran en una grilla clara de tres por dos. */
-.brain-folder-open{height:390px!important}.brain-menu-grid{grid-template-columns:repeat(3,1fr)!important;gap:12px 9px!important}.brain-menu-grid button span{width:62px!important;height:62px!important;border-radius:20px!important;font-size:29px!important}.brain-menu-grid button b{font-size:11px!important}.brain-menu-grid button:nth-child(4),.brain-menu-grid button:nth-child(5),.brain-menu-grid button:nth-child(6){grid-column:auto!important}

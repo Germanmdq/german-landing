@@ -2,15 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
+import { ArrowLeft, Bell, BookOpen, ChevronRight, LogOut, Pause, Play, Search } from 'lucide-react';
 import content from './content.generated.json';
 import { supabase } from './lib/supabase';
+import { BorderBeam, MagicCard, ShimmerButton } from './components/magic-ui';
 import './brain.css';
-import './modern-ui.css';
-import './interaction-fixes.css';
-import './mobile-fixes.css';
-import './category-deck.css';
 import './german-entry.css';
-import './onboarding.css';
+import './magic-ui.css';
 
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'consultas' | 'notificaciones' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string };
@@ -110,11 +108,11 @@ const mainCategories: Array<[Tab, string, string, string, string]> = [
 
 function DeckCard({ item, index, last, onClick }: { item: DeckItem; index: number; last: boolean; onClick?: () => void }) {
   return <div className={`category-row${last ? ' is-last' : ''}`}>
-    <button className="category-card" style={{ '--category-index': index, '--category-tone': item.tone } as React.CSSProperties} onClick={onClick}>
+    <MagicCard className="category-card" delay={Math.min(index * .045, .24)} style={{ '--category-index': index, '--category-tone': item.tone } as React.CSSProperties} onClick={onClick}>
       <span className="category-icon">{item.icon}</span>
       <p><small>{item.children || item.reader || item.notificationPanel || item.accountPanel || item.action ? 'ABRIR' : 'OPCIÓN'}</small><b>{item.title}</b>{item.detail && <em>{item.detail}</em>}</p>
-      <i className="category-arrow">{item.children || item.reader || item.notificationPanel || item.accountPanel || item.action ? '›' : '↑'}</i>
-    </button>
+      <i className="category-arrow"><ChevronRight size={21} strokeWidth={2.2} /></i>
+    </MagicCard>
   </div>;
 }
 
@@ -123,7 +121,7 @@ function Deck({ items, onSelect }: { items: DeckItem[]; onSelect: (item: DeckIte
 }
 
 function FixedHeader({ eyebrow, title, subtitle, onBack }: { eyebrow: string; title: string; subtitle: string; onBack: () => void }) {
-  return <header className="feature-header"><button className="visible-back" onClick={onBack}>← Volver</button><p>{eyebrow}</p><h1>{title}</h1><small>{subtitle}</small></header>;
+  return <header className="feature-header"><button className="visible-back" onClick={onBack}><ArrowLeft size={18} /> Volver</button><p>{eyebrow}</p><h1>{title}</h1><small>{subtitle}</small></header>;
 }
 
 function NotificationsPanel({ onBack }: { onBack: () => void }) {
@@ -149,7 +147,7 @@ function NotificationsPanel({ onBack }: { onBack: () => void }) {
   return <section className="reader-section">
     <FixedHeader eyebrow="NOTIFICACIONES" title="Tus horarios" subtitle="Los horarios quedan guardados en este dispositivo." onBack={onBack} />
     <div className="reader-body notification-settings">
-      {permission !== 'unsupported' && <button className="notification-permission" onClick={requestPermission}>{permission === 'granted' ? '✓ Notificaciones activadas' : permission === 'denied' ? 'Permiso bloqueado en el navegador' : 'Activar notificaciones'}</button>}
+      {permission !== 'unsupported' && <ShimmerButton className="notification-permission" onClick={requestPermission}><Bell size={18} />{permission === 'granted' ? 'Notificaciones activadas' : permission === 'denied' ? 'Permiso bloqueado en el navegador' : 'Activar notificaciones'}</ShimmerButton>}
       <label>Mañana<input type="time" value={times.morning} onChange={(event) => updateTime('morning', event.target.value)} /></label>
       <label>Mediodía<input type="time" value={times.noon} onChange={(event) => updateTime('noon', event.target.value)} /></label>
       <label>Tarde<input type="time" value={times.afternoon} onChange={(event) => updateTime('afternoon', event.target.value)} /></label>
@@ -187,10 +185,10 @@ function AccountPanel({ user, onBack, onNameSaved, onLogout }: { user: User; onB
     <div className="reader-body account-settings">
       <label>Correo electrónico<input value={user.email || ''} readOnly aria-readonly="true" /></label>
       <label>Nombre<input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" /></label>
-      <button className="account-save" onClick={save} disabled={saving}>{saving ? 'Guardando…' : 'Guardar cambios'}</button>
+      <ShimmerButton className="account-save" onClick={save} disabled={saving}>{saving ? 'Guardando…' : 'Guardar cambios'}</ShimmerButton>
       {message && <p className="account-message">{message}</p>}
       <section className="subscription-card"><p> SUSCRIPCIÓN</p><b>Plan gratuito</b><span>Tu cuenta está activa. Los próximos planes pagos aparecerán acá.</span></section>
-      <button className="account-logout" onClick={onLogout}>Cerrar sesión</button>
+      <button className="account-logout" onClick={onLogout}><LogOut size={17} /> Cerrar sesión</button>
     </div>
   </section>;
 }
@@ -212,8 +210,9 @@ function AudioPlayer({ title, audioUrl, durationLabel }: { title: string; audioU
     }
   }, [title]);
   return <section className="audio-player-card">
+    <BorderBeam duration={8} />
     <audio ref={audioRef} src={audioUrl} preload="metadata" playsInline onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => { setPlaying(false); setProgress(0); }} onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)} onTimeUpdate={(event) => setProgress(event.currentTarget.currentTime)} />
-    <button className="audio-play" onClick={toggle} aria-label={playing ? 'Pausar audio' : 'Escuchar audio'}>{playing ? 'Ⅱ' : '▶'}</button>
+    <button className="audio-play" onClick={toggle} aria-label={playing ? 'Pausar audio' : 'Escuchar audio'}>{playing ? <Pause size={21} fill="currentColor" /> : <Play size={21} fill="currentColor" />}</button>
     <div className="audio-player-copy"><p>ESCUCHÁ AHORA</p><b>{title}</b><span>{durationLabel || 'Audio disponible'}</span></div>
     <input className="audio-progress" type="range" min="0" max={duration || 1} step="0.1" value={progress} onChange={(event) => { const next = Number(event.target.value); if (audioRef.current) audioRef.current.currentTime = next; setProgress(next); }} aria-label="Progreso del audio" />
   </section>;
@@ -234,11 +233,11 @@ function LibraryPanel({ entries, onBack, onRead }: { entries: LibraryEntry[]; on
   return <section className="reader-section library-section">
     <FixedHeader eyebrow="PARA ESCUCHAR Y LEER" title="Tu biblioteca" subtitle="Buscá por conferencia, tema o etiqueta." onBack={onBack} />
     <div className="reader-body library-browser">
-      <label className="library-search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en la biblioteca" /></label>
+      <label className="library-search"><Search size={20} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en la biblioteca" /></label>
       <div className="library-filters">{filters.map((item) => <button key={item} className={filter === item ? 'active' : ''} onClick={() => setFilter(item)}>{item}</button>)}</div>
       {featuredAudio?.audioUrl && <AudioPlayer title={featuredAudio.title} audioUrl={featuredAudio.audioUrl} durationLabel={featuredAudio.duration} />}
       <p className="library-count">{visible.length} {visible.length === 1 ? 'resultado' : 'resultados'}</p>
-      <div className="library-content-list">{visible.map((entry) => <article key={entry.id} className="library-content-card" onClick={() => onRead(entry)}><span>{entry.audioUrl ? '🎙️' : '📖'}</span><div><p>{entry.type || 'Contenido'}</p><b>{entry.title}</b><em>{entry.excerpt || 'Abrí para leer o escuchar.'}</em><small>{entry.tags.map((tag) => `#${tag}`).join(' ')}</small></div><i>›</i></article>)}</div>
+      <div className="library-content-list">{visible.map((entry, index) => <MagicCard key={entry.id} delay={Math.min(index * .025, .2)} className="library-content-card" onClick={() => onRead(entry)}><span>{entry.audioUrl ? '🎙️' : <BookOpen size={22} />}</span><div><p>{entry.type || 'Contenido'}</p><b>{entry.title}</b><em>{entry.excerpt || 'Abrí para leer o escuchar.'}</em><small>{entry.tags.map((tag) => `#${tag}`).join(' ')}</small></div><i><ChevronRight size={20} /></i></MagicCard>)}</div>
       {!visible.length && <p className="library-empty">No encontramos contenidos con esa búsqueda.</p>}
     </div>
   </section>;
@@ -285,7 +284,7 @@ function InstallGate({ onContinue }: { onContinue: () => void }) {
     <h1>Estás ante la primera aplicación sobre <em>manifestación consciente</em> en español.</h1>
     <p className="gate-copy">Agregala a tu pantalla de inicio para que funcione correctamente y puedas recibir tus prácticas en el momento justo.</p>
     <div className="gate-actions">
-      <button className="gate-secondary" onClick={onContinue}>Ya la agregué, continuar</button>
+      <ShimmerButton className="gate-primary" onClick={onContinue}>Ya la agregué, continuar</ShimmerButton>
     </div>
   </main>;
 }
@@ -331,7 +330,7 @@ function LoginGate({ onAuthenticated }: { onAuthenticated: (user: User) => void 
       <label>Correo<input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="vos@email.com" /></label>
       <label>Contraseña<input type="password" required minLength={6} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo 6 caracteres" /></label>
       {message && <p className="form-message">{message}</p>}
-      <button className="gate-primary" disabled={busy}>{busy ? 'Un momento…' : mode === 'signup' ? 'Crear cuenta' : 'Entrar'}</button>
+      <ShimmerButton className="gate-primary" disabled={busy}>{busy ? 'Un momento…' : mode === 'signup' ? 'Crear cuenta' : 'Entrar'}</ShimmerButton>
     </form>
     <button className="gate-secondary" onClick={() => { setMode(mode === 'signup' ? 'signin' : 'signup'); setMessage(''); }}>{mode === 'signup' ? 'Ya tengo cuenta' : 'Quiero crear una cuenta'}</button>
   </main>;
@@ -364,9 +363,9 @@ function OnboardingGate({ user, onComplete, onLogout }: { user: User; onComplete
   return <main className="app-shell gate-screen onboarding-gate">
     <div className="step-dots">{[0, 1, 2].map((item) => <i key={item} className={item <= step ? 'active' : ''} />)}</div>
     <GermanBadge />
-    {step === 0 && <><p className="gate-kicker">EMPECEMOS</p><h1>¿Cómo querés que te llame?</h1><p className="gate-copy">Este nombre va a acompañarte en toda la experiencia.</p><label className="name-field">Tu nombre<input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder="Martín" /></label><button className="gate-primary" disabled={!name.trim()} onClick={() => setStep(1)}>Continuar <span>→</span></button></>}
-    {step === 1 && <><p className="gate-kicker">EN EL MOMENTO JUSTO</p><h1>Activá tus notificaciones.</h1><p className="gate-copy">Así vas a recibir las prácticas y novedades importantes.</p><div className="notification-illustration">🔔<i>✦</i><i>✦</i></div><button className="gate-primary" onClick={requestNotifications}>Activar notificaciones</button><button className="gate-secondary" onClick={() => setStep(2)}>Ahora no</button></>}
-    {step === 2 && <><p className="gate-kicker">TODO LISTO</p><h1>Este espacio ya es tuyo, <em>{name || 'Martín'}.</em></h1><p className="gate-copy">Tus prácticas, lecturas y consultas te esperan.</p><button className="gate-primary" onClick={finish}>Entrar al asistente <span>→</span></button>{message && <p className="form-message">{message}</p>}</>}
+    {step === 0 && <><p className="gate-kicker">EMPECEMOS</p><h1>¿Cómo querés que te llame?</h1><p className="gate-copy">Este nombre va a acompañarte en toda la experiencia.</p><label className="name-field">Tu nombre<input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder="Martín" /></label><ShimmerButton className="gate-primary" disabled={!name.trim()} onClick={() => setStep(1)}>Continuar <span>→</span></ShimmerButton></>}
+    {step === 1 && <><p className="gate-kicker">EN EL MOMENTO JUSTO</p><h1>Activá tus notificaciones.</h1><p className="gate-copy">Así vas a recibir las prácticas y novedades importantes.</p><div className="notification-illustration"><Bell size={54} /><i>✦</i><i>✦</i></div><ShimmerButton className="gate-primary" onClick={requestNotifications}>Activar notificaciones</ShimmerButton><button className="gate-secondary" onClick={() => setStep(2)}>Ahora no</button></>}
+    {step === 2 && <><p className="gate-kicker">TODO LISTO</p><h1>Este espacio ya es tuyo, <em>{name || 'Martín'}.</em></h1><p className="gate-copy">Tus prácticas, lecturas y consultas te esperan.</p><ShimmerButton className="gate-primary" onClick={finish}>Entrar al asistente <span>→</span></ShimmerButton>{message && <p className="form-message">{message}</p>}</>}
     <button className="gate-secondary" onClick={onLogout}>Cerrar sesión</button>
   </main>;
 }
