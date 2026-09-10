@@ -9,4 +9,11 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: 'Germán Asistente', statusBarStyle: 'default' },
 };
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#D92D35' };
-export default function Layout({children}:Readonly<{children:React.ReactNode}>){return <html lang="es"><body>{children}</body></html>}
+export default function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html lang="es" suppressHydrationWarning>
+      <body suppressHydrationWarning>{children}</body>
+    </html>
+  );
+}
+
