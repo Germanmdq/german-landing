@@ -5,8 +5,8 @@ const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY 
 
 export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
+    persistSession: process.env.NODE_ENV !== 'development',
+    autoRefreshToken: process.env.NODE_ENV !== 'development',
+    detectSessionInUrl: process.env.NODE_ENV !== 'development',
   },
 });

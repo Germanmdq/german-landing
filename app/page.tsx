@@ -2,13 +2,18 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { ArrowLeft, Bell, BookOpen, ChevronRight, Heart, LogOut, Pause, Play, Search, Trash2 } from 'lucide-react';
+import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, ArrowLeft, ArrowUpRight, Headphones, Sparkles, Volume2, VolumeX, Bell, BookOpen, ChevronRight, Heart, LogOut, Pause, Play, Search, Trash2 } from 'lucide-react';
 import content from './content.generated.json';
 import { supabase } from './lib/supabase';
 import { MagicCard, ShimmerButton } from './components/magic-ui';
 import './brain.css';
 import './german-entry.css';
 import './magic-ui.css';
+import './modern-ui.css';
+import './components/day-one-carousel.css';
+import { DayOneCarousel } from './components/day-one-carousel';
+import { SearchPopup } from './components/search-popup';
+import { TimePicker } from './components/time-picker';
 
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'consultas' | 'notificaciones' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string };
@@ -17,6 +22,8 @@ type LibraryEntry = { id: string; title: string; excerpt: string; body: string; 
 type FavoriteRecord = { id: string; title: string; detail: string; icon: string; tone: string; reader?: ReaderContent };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
 type FlowStage = 'entry' | 'install' | 'login' | 'onboarding' | 'app';
+
+const localPreview = process.env.NODE_ENV === 'development';
 
 const palette = ['#D92D35', '#E5484D', '#F2555A', '#FF6B6F'];
 const icons = ['●', '◆', '✦', '○'];
@@ -109,10 +116,30 @@ const mainCategories: Array<[Tab, string, string, string, string]> = [
   ['consultas', '💭', 'Consultas', 'Preguntá lo que te está pasando.', palette[1]],
 ];
 
+function CategoryIcon({ item }: { item: DeckItem }) {
+  const title = item.title.toLowerCase();
+  const Icon = /perfil|cuenta/.test(title) ? UserRound
+    : /horario/.test(title) ? Clock3
+    : /configura|preferencia/.test(title) ? Settings2
+    : /notifica/.test(title) ? Bell
+    : /favorito|guardad/.test(title) ? Bookmark
+    : /avance|progreso/.test(title) ? TrendingUp
+    : /biblioteca|lectura|leer/.test(title) ? BookOpen
+    : /consulta|pregunt|respuesta/.test(title) ? MessageCircle
+    : /propia/.test(title) ? SlidersHorizontal
+    : /medita/.test(title) ? Flower2
+    : /audio|escuchar/.test(title) ? Headphones
+    : /noche/.test(title) ? Moon
+    : /mañana/.test(title) ? Sun
+    : /día|recorrido|práctica/.test(title) ? Route
+    : item.reader ? BookOpen : Sparkles;
+  return <Icon size={30} strokeWidth={1.6} aria-hidden="true" />;
+}
+
 function DeckCard({ item, index, last, onClick, favorite, onFavorite }: { item: DeckItem; index: number; last: boolean; onClick?: () => void; favorite?: boolean; onFavorite?: () => void }) {
   return <div className={`category-row${last ? ' is-last' : ''}`}>
     <MagicCard className="category-card" delay={Math.min(index * .045, .24)} style={{ '--category-index': index, '--category-tone': item.tone } as React.CSSProperties} onClick={onClick}>
-      <span className="category-icon">{item.icon}</span>
+      <span className="category-icon"><CategoryIcon item={item} /></span>
       <p><small>{item.children || item.reader || item.notificationPanel || item.accountPanel || item.action ? 'ABRIR' : 'OPCIÓN'}</small><b>{item.title}</b>{item.detail && <em>{item.detail}</em>}</p>
       <span className="category-actions">
         {onFavorite && <span role="button" tabIndex={0} className={`favorite-button${favorite ? ' is-favorite' : ''}`} onClick={(event) => { event.stopPropagation(); onFavorite(); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onFavorite(); } }} aria-label={favorite ? `Quitar ${item.title} de favoritos` : `Guardar ${item.title} en favoritos`}><Heart size={19} fill={favorite ? 'currentColor' : 'none'} /></span>}
@@ -127,11 +154,13 @@ function Deck({ items, onSelect, favorites, onToggleFavorite }: { items: DeckIte
 }
 
 function FixedHeader({ eyebrow, title, subtitle, onBack }: { eyebrow: string; title: string; subtitle: string; onBack: () => void }) {
-  return <header className="feature-header"><button className="visible-back" onClick={onBack}><ArrowLeft size={18} /> Volver</button><p>{eyebrow}</p><h1>{title}</h1><small>{subtitle}</small></header>;
+  return <><header className="feature-header"><p>{eyebrow}</p><h1>{title}</h1><small>{subtitle}</small></header><nav className="bottom-back" aria-label="Navegación"><button onClick={onBack}><ArrowLeft size={22} /><span>Volver</span></button></nav></>;
 }
 
 function NotificationsPanel({ onBack }: { onBack: () => void }) {
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
+  const [editingTime, setEditingTime] = useState<'morning' | 'noon' | 'afternoon' | 'night' | null>(null);
+  const timeLabels = { morning: 'Mañana', noon: 'Mediodía', afternoon: 'Tarde', night: 'Noche' };
   const [times, setTimes] = useState({ morning: '07:50', noon: '12:30', afternoon: '17:00', night: '22:45' });
   useEffect(() => {
     if (!('Notification' in window)) setPermission('unsupported');
@@ -154,10 +183,8 @@ function NotificationsPanel({ onBack }: { onBack: () => void }) {
     <FixedHeader eyebrow="NOTIFICACIONES" title="Tus horarios" subtitle="Los horarios quedan guardados en este dispositivo." onBack={onBack} />
     <div className="reader-body notification-settings">
       {permission !== 'unsupported' && <ShimmerButton className="notification-permission" onClick={requestPermission}><Bell size={18} />{permission === 'granted' ? 'Notificaciones activadas' : permission === 'denied' ? 'Permiso bloqueado en el navegador' : 'Activar notificaciones'}</ShimmerButton>}
-      <label>Mañana<input type="time" value={times.morning} onChange={(event) => updateTime('morning', event.target.value)} /></label>
-      <label>Mediodía<input type="time" value={times.noon} onChange={(event) => updateTime('noon', event.target.value)} /></label>
-      <label>Tarde<input type="time" value={times.afternoon} onChange={(event) => updateTime('afternoon', event.target.value)} /></label>
-      <label>Noche<input type="time" value={times.night} onChange={(event) => updateTime('night', event.target.value)} /></label>
+      {(Object.keys(timeLabels) as (keyof typeof times)[]).map((key) => <button key={key} className="notification-time-row" onClick={() => setEditingTime(key)} aria-label={`Cambiar horario de ${timeLabels[key]}: ${times[key]}`} aria-haspopup="dialog"><span>{timeLabels[key]}</span><span className="notification-time-value">{times[key]}<ChevronRight size={17} /></span></button>)}
+      {editingTime && <TimePicker label={timeLabels[editingTime]} value={times[editingTime]} onCancel={() => setEditingTime(null)} onSave={(value) => { updateTime(editingTime, value); setEditingTime(null); }} />}
     </div>
   </section>;
 }
@@ -225,6 +252,7 @@ function AudioPlayer({ title, audioUrl, durationLabel }: { title: string; audioU
 
 function LibraryPanel({ entries, onBack, onRead, favorites, onToggleFavorite }: { entries: LibraryEntry[]; onBack: () => void; onRead: (entry: LibraryEntry) => void; favorites: FavoriteRecord[]; onToggleFavorite: (favorite: FavoriteRecord) => void }) {
   const [query, setQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [filter, setFilter] = useState('Todo');
   const tags = Array.from(new Set(entries.flatMap((entry) => entry.tags))).slice(0, 12);
   const filters = ['Todo', 'Conferencias', 'Audios', ...tags];
@@ -239,7 +267,7 @@ function LibraryPanel({ entries, onBack, onRead, favorites, onToggleFavorite }: 
     <FixedHeader eyebrow="PARA ESCUCHAR Y LEER" title="Tu biblioteca" subtitle="Buscá por conferencia, tema o etiqueta." onBack={onBack} />
     <div className="reader-body library-browser">
       <section className="library-controls">
-        <label className="library-search"><Search size={20} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en la biblioteca" /></label>
+        <div className="library-search-toolbar"><button className="search-trigger" onClick={() => setSearchOpen(true)} aria-haspopup="dialog"><span>{query || 'Buscar'}</span><Search size={20} /></button>{query && <button className="search-reset" onClick={() => setQuery('')}>Limpiar búsqueda</button>}</div>{searchOpen && <SearchPopup value={query} onClose={() => setSearchOpen(false)} onApply={(value) => { setQuery(value); setSearchOpen(false); }} />}
         <div className="library-filters">{filters.map((item) => <button key={item} className={filter === item ? 'active' : ''} onClick={() => setFilter(item)}>{item}</button>)}</div>
       </section>
       {featuredAudio?.audioUrl && <section className="library-featured-audio"><p>REPRODUCIR AHORA</p><AudioPlayer title={featuredAudio.title} audioUrl={featuredAudio.audioUrl} durationLabel={featuredAudio.duration} /></section>}
@@ -280,7 +308,7 @@ function BrainFolder({ open, onOpen, onGo, userName = 'Martín' }: { open: boole
     video.currentTime = Math.min(videoStart, Math.max(0, video.duration - 0.1));
     await video.play().catch(() => undefined);
   };
-  return <section className={open ? 'brain-folder brain-folder-open category-deck' : 'brain-folder'}><div className="brain-orbit" aria-hidden="true"><i /><i /><i /></div>{!open ? <div className={`brain-launch german-launch german-video-launch${videoReady ? ' is-video-ready' : ''}`}><video ref={videoRef} src="/german-real-intro.mp4?v=3" autoPlay loop muted playsInline preload="auto" onLoadedMetadata={prepareVideo} onCanPlay={(event) => { setVideoReady(true); void event.currentTarget.play().catch(() => undefined); }} onPlaying={() => setVideoReady(true)} aria-label="Germán animado saludando" /><button className="german-enter" onClick={onOpen} aria-label="Entrar a Asistente Germán"><b>Entrar</b><small>Tocá a Germán</small></button><button className="german-sound" onClick={toggleSound} aria-label={soundOn ? 'Silenciar video' : 'Activar sonido del video'} aria-pressed={soundOn}>{soundOn ? '🔊' : '🔇'}</button></div> : <section className="categories-section"><header className="assistant-welcome"><p>Hola, ¿cómo estás, {userName}?</p><h1>Bienvenido al<strong>Asistente de Germán</strong></h1></header><div className="category-list">{items.map(({ target, item }, index) => <DeckCard key={item.title} item={item} index={index} last={index === items.length - 1} onClick={() => onGo(target)} />)}<div className="deck-end-space" aria-hidden="true" /></div></section>}</section>;
+  return <section className={open ? 'brain-folder brain-folder-open category-deck' : 'brain-folder'}><div className="brain-orbit" aria-hidden="true"><i /><i /><i /></div>{!open ? <div className={`brain-launch german-launch german-video-launch${videoReady ? ' is-video-ready' : ''}`}><video ref={videoRef} src="/german-real-intro.mp4?v=3" poster="/german-welcome.png" autoPlay loop muted playsInline preload="auto" onLoadedMetadata={prepareVideo} onCanPlay={(event) => { setVideoReady(true); void event.currentTarget.play().catch(() => undefined); }} onPlaying={() => setVideoReady(true)} aria-label="Germán animado saludando" /><button className="german-enter" onClick={onOpen} aria-label="Entrar a Asistente Germán"><span>Entrar a mi espacio</span><ArrowUpRight size={21} /></button><button className="german-sound" onClick={toggleSound} aria-label={soundOn ? 'Silenciar video' : 'Activar sonido del video'} aria-pressed={soundOn}>{soundOn ? <Volume2 size={19} /> : <VolumeX size={19} />}</button></div> : <section className="categories-section"><header className="assistant-welcome"><p>Hola, ¿cómo estás, {userName}?</p><h1>Bienvenido al<strong>Asistente de Germán</strong></h1></header><div className="category-list">{items.map(({ target, item }, index) => <DeckCard key={item.title} item={item} index={index} last={index === items.length - 1} onClick={() => onGo(target)} />)}<div className="deck-end-space" aria-hidden="true" /></div></section>}</section>;
 }
 
 function GermanBadge() {
@@ -380,8 +408,14 @@ function OnboardingGate({ user, onComplete, onLogout }: { user: User; onComplete
   </main>;
 }
 
+function LocalAccount({ name, onBack, onSave }: { name: string; onBack: () => void; onSave: (name: string) => void }) {
+  const [draft, setDraft] = useState(name);
+  const [message, setMessage] = useState('');
+  return <section className="reader-section"><FixedHeader eyebrow="MI PERFIL" title="Mi cuenta" subtitle="Tu nombre queda guardado en este dispositivo." onBack={onBack} /><form className="reader-body account-settings" onSubmit={(event) => { event.preventDefault(); if (!draft.trim()) return; localStorage.setItem('german-user-name', draft.trim()); onSave(draft.trim()); setMessage('Nombre guardado.'); }}><label>Nombre<input value={draft} onChange={(event) => setDraft(event.target.value)} required autoComplete="given-name" /></label><ShimmerButton className="account-save" type="submit">Guardar cambios</ShimmerButton><p role="status" className="account-message">{message}</p></form></section>;
+}
+
 export default function App() {
-  const [stage, setStage] = useState<FlowStage>('entry');
+  const [stage, setStage] = useState<FlowStage>(localPreview ? 'app' : 'entry');
   const [session, setSession] = useState<Session | null>(null);
   const [userName, setUserName] = useState('Martín');
   const [mainMenu, setMainMenu] = useState(true);
@@ -407,6 +441,7 @@ export default function App() {
     setMainMenu(true);
   };
   const logout = () => {
+    if (localPreview) { setTrail([]); setMainMenu(true); setStage('app'); return; }
     void supabase.auth.signOut().finally(() => {
       setSession(null);
       setTrail([]);
@@ -435,19 +470,21 @@ export default function App() {
   };
 
   useEffect(() => {
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => undefined);
+    if (!localPreview && 'serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => undefined);
     const savedName = localStorage.getItem('german-user-name');
     if (savedName) setUserName(savedName);
     const savedFavorites = localStorage.getItem('german-favorites');
     if (savedFavorites) {
       try { setFavorites(JSON.parse(savedFavorites) as FavoriteRecord[]); } catch { localStorage.removeItem('german-favorites'); }
     }
+    if (localPreview) { setStage('app'); return; }
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
     return () => listener.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
+    if (localPreview) return;
     supabase
       .from('content_items')
       .select('*,content_assets(asset_type,source_url,storage_path,duration_seconds,sort_order)')
@@ -493,6 +530,7 @@ export default function App() {
     setStage(data?.onboarding_completed ? 'app' : 'onboarding');
   };
   const continueAfterInstall = () => {
+    if (localPreview) return setStage('app');
     if (session?.user) return void authenticated(session.user);
     setStage('login');
   };
@@ -502,7 +540,8 @@ export default function App() {
   if (stage === 'onboarding' && session?.user) return <OnboardingGate user={session.user} onComplete={(name) => { setUserName(name); setStage('app'); }} onLogout={logout} />;
   if (stage === 'onboarding') return <LoginGate onAuthenticated={authenticated} />;
 
-  if (stage === 'entry') return <main className="app-shell brain-intro"><p className="intro-brand">ASISTENTE GERMÁN</p><h1>Todo lo que necesitás,<br /><em>en un solo lugar.</em></h1><BrainFolder open={false} onOpen={() => {
+  if (stage === 'entry') return <main className="app-shell brain-intro welcome-modern"><header className="welcome-topbar"><a href="/" className="welcome-wordmark">germán<span>.</span></a><span>Tu espacio personal</span></header><div className="welcome-editorial"><p className="intro-brand"><span /> ASISTENTE GERMÁN</p><h1>Volvé a vos.<br /><em>Todo empieza<br />por adentro.</em></h1><p className="welcome-description">Prácticas, audios y respuestas para acompañarte en tu manifestación consciente.</p><div className="welcome-topics"><span><Headphones size={17} /> Audios</span><span><Sparkles size={17} /> Prácticas</span><span><BookOpen size={17} /> Biblioteca</span></div></div><BrainFolder open={false} onOpen={() => {
+    if (localPreview) return setStage('app');
     const standalone = window.matchMedia('(display-mode: standalone)').matches || ('standalone' in navigator && Boolean((navigator as Navigator & { standalone?: boolean }).standalone));
     // Only the browser's real standalone mode proves the app is still installed.
     // A saved acknowledgement becomes stale as soon as the user removes the PWA.
@@ -511,14 +550,16 @@ export default function App() {
       return setStage('login');
     }
     setStage('install');
-  }} onGo={() => undefined} /><p className="intro-hint">Prácticas, audios, biblioteca y respuestas para vos.</p></main>;
+  }} onGo={() => undefined} /><footer className="welcome-footer"><span>Un momento para vos. Todos los días.</span><span>ASISTENTE GERMÁN <span aria-hidden="true">↗</span></span></footer></main>;
   if (stage === 'app' && mainMenu) {
-    return <main className="app-shell brain-intro category-open"><BrainFolder open onOpen={() => undefined} userName={userName} onGo={(target) => { setTab(target); setTrail([]); setReader(null); setMainMenu(false); }} /></main>;
+    return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome"><p>Hola, ¿cómo estás, {userName}?</p><h1>Bienvenido al<strong>Asistente de Germán</strong></h1></header><DayOneCarousel label="Secciones del Asistente de Germán" items={mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/mi-perfil.png' : target === 'notificaciones' ? '/notificaciones.png' : target === 'biblioteca' ? '/biblioteca-mujer.png' : target === 'talleres' ? '/practicas-guiadas-hombre.png' : target === 'propia' ? '/tu-propia-practica-mujer.png' : undefined }))} onSelect={(item) => { setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section></main>;
   }
+  if (accountOpen && localPreview) return <main className="app-shell app-main section-app"><LocalAccount name={userName} onBack={back} onSave={setUserName} /></main>;
   if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} onBack={back} onNameSaved={setUserName} onLogout={logout} /></main>;
   if (reader) { const favorite = deckFavorite({ icon: '📖', title: reader.title, detail: reader.detail, tone: palette[0], reader }); return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} favorite={favorites.some((item) => item.title === reader.title)} onFavorite={() => { const exact = favorites.find((item) => item.title === reader.title); toggleFavorite(exact || favorite); }} /></main>; }
   if (favoritesOpen) return <main className="app-shell app-main section-app"><FavoritesPanel favorites={favorites} onBack={back} onOpen={(favorite) => { if (favorite.reader) setReader(favorite.reader); }} onRemove={toggleFavorite} /></main>;
   if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} /></main>;
   if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel onBack={back} /></main>;
-  return <main className="app-shell app-main section-app"><section className="feature-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} /><Deck key={`${tab}-${trail.map((item) => item.title).join('/')}`} items={screen.items} onSelect={select} favorites={favorites} onToggleFavorite={toggleFavorite} /></section></main>;
+  if (current?.title === 'Día 1') return <main className="app-shell app-main section-app day-one-screen"><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} /><DayOneCarousel items={screen.items} onSelect={select} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section></main>;
+  return <main className="app-shell app-main section-app day-one-screen"><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} /><DayOneCarousel key={`${tab}-${trail.map((item) => item.title).join('/')}`} label={screen.title} items={screen.items} onSelect={select} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section></main>;
 }

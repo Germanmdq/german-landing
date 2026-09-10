@@ -15,10 +15,10 @@ export function MagicCard({ children, className = '', delay = 0, style, ...props
       {...props}
       className={`magic-card ${className}`}
       style={style}
-      initial={{ opacity: 0, y: 18, scale: 0.985 }}
+      initial={className.includes('category-card') ? false : { opacity: 0, y: 18, scale: 0.985 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.42, delay, ease: [0.22, 1, 0.36, 1] }}
-      whileTap={{ scale: 0.985 }}
+      whileTap={className.includes('category-card') ? undefined : { scale: 0.985 }}
       onPointerMove={(event) => {
         const rect = event.currentTarget.getBoundingClientRect();
         event.currentTarget.style.setProperty('--pointer-x', `${event.clientX - rect.left}px`);
