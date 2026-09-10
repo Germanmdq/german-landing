@@ -1,4 +1,4 @@
-# Plan de animación — Asistente Germán
+# Plan de animación — Germán Asistente
 
 ## Principio
 

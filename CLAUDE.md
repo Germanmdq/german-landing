@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-"Asistente Germán" is a standalone mobile PWA (independent from the "landing" project despite the folder name). First delivery: an interactive welcome flow and a demo interest selection. No Supabase auth or active workshops yet; no personal data is stored. See `PROJECT_MAP.md` for the full screen flow (mermaid diagram) and `ANIMATION_PLAN.md` for the animation system and planned dotLottie pieces.
+"Germán Asistente" is a standalone mobile PWA (independent from the "landing" project despite the folder name). First delivery: an interactive welcome flow and a demo interest selection. No Supabase auth or active workshops yet; no personal data is stored. See `PROJECT_MAP.md` for the full screen flow (mermaid diagram) and `ANIMATION_PLAN.md` for the animation system and planned dotLottie pieces.
 
 ## Commands
 

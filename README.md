@@ -1,4 +1,4 @@
-# Asistente Germán · App móvil
+# Germán Asistente · App móvil
 
 Proyecto independiente de la landing. Primera entrega: bienvenida interactiva y selección de interés de demostración. Sin conexión a Supabase, autenticación ni talleres activos. No guarda datos personales.
 

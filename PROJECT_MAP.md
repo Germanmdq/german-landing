@@ -1,4 +1,4 @@
-# Asistente Germán — mapa del proyecto
+# Germán Asistente — mapa del proyecto
 
 Este directorio es el proyecto local real de la PWA. La conversación de Codex sirve para trabajar sobre él, pero el código y los recursos permanecen guardados en esta carpeta.
 
@@ -44,7 +44,7 @@ flowchart TD
 - `app/content.generated.json`: contenido real de los tres planes de 7 días y las 15 meditaciones por momento.
 - `app/magic-ui.css`: sistema visual completo, tarjetas, montaje, biblioteca, reproductor, formularios y responsive móvil.
 - `app/components/magic-ui.tsx`: componentes reutilizables Magic Card, Shimmer Button y Border Beam.
-- `app/german-entry.css`: entrada circular con el video de Germán.
+- `public/videos/video-german.webm`: video de presentación con canal alpha, pantalla de intro.
 - `public/images/german-welcome.png`: imagen principal.
 - `public/sw.js`: recepción de notificaciones push y apertura directa de la aplicación.
 - `scripts/generate-content.mjs`: transforma el documento maestro en datos utilizables por la aplicación.

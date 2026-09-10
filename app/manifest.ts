@@ -4,7 +4,7 @@ export const dynamic = 'force-static';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Asistente Germán',
+    name: 'Germán Asistente',
     short_name: 'Germán',
     description: 'Prácticas, meditaciones, lecturas y consultas para dirigir tu atención.',
     id: '/',

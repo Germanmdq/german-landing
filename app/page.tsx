@@ -241,7 +241,7 @@ function AudioPlayer({ title, audioUrl, durationLabel }: { title: string; audioU
   };
   useEffect(() => {
     if ('mediaSession' in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({ title, artist: 'Asistente Germán', album: 'Biblioteca' });
+      navigator.mediaSession.metadata = new MediaMetadata({ title, artist: 'Germán Asistente', album: 'Biblioteca' });
     }
   }, [title]);
   return <section className="audio-player-card">
@@ -291,7 +291,7 @@ function FavoritesPanel({ favorites, onBack, onOpen, onRemove }: { favorites: Fa
 }
 
 function VideoIntro({ onFinish }: { onFinish: () => void }) {
-  return <div className="video-intro" onClick={onFinish}><video className="video-intro-video" src="/videos/video-german.webm" autoPlay muted playsInline preload="auto" onEnded={onFinish} aria-label="Presentación de Asistente Germán" /></div>;
+  return <div className="video-intro" onClick={onFinish}><video className="video-intro-video" src="/videos/video-german.webm" autoPlay muted playsInline preload="auto" onEnded={onFinish} aria-label="Presentación de Germán Asistente" /></div>;
 }
 
 function GermanBadge() {
@@ -301,7 +301,7 @@ function GermanBadge() {
 function InstallGate({ onContinue }: { onContinue: () => void }) {
   return <main className="app-shell gate-screen install-gate">
     <GermanBadge />
-    <p className="gate-kicker">ASISTENTE GERMÁN</p>
+    <p className="gate-kicker">GERMÁN ASISTENTE</p>
     <h1>Estás ante la primera aplicación sobre <em>manifestación consciente</em> en español.</h1>
     <p className="gate-copy">Agregala a tu pantalla de inicio para que funcione correctamente y puedas recibir tus prácticas en el momento justo.</p>
     <div className="gate-actions">
@@ -535,7 +535,7 @@ export default function App() {
   if (stage === 'onboarding') return <LoginGate onAuthenticated={authenticated} />;
 
   if (stage === 'app' && mainMenu) {
-    return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome"><p>Hola, ¿cómo estás, {userName}?</p><h1>Bienvenido al<strong>Asistente de Germán</strong></h1></header><DayOneCarousel label="Secciones del Asistente de Germán" items={mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/mi-perfil-mujer-movil-serena.png' : target === 'notificaciones' ? '/images/notificaciones.png' : target === 'biblioteca' ? '/images/biblioteca-lectora.png' : target === 'talleres' ? '/images/practicas-guiadas-hombre.png' : target === 'propia' ? '/images/tu-propia-practica-mujer.png' : target === 'meditaciones' ? '/images/meditaciones-hombre.png' : target === 'consultas' ? '/images/consultas-mujer.png' : undefined, imageSize: ['espacio', 'biblioteca', 'talleres'].includes(target) ? 'compact' as const : undefined }))} onSelect={(item) => { setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section></main>;
+    return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome"><p>Hola, ¿cómo estás, {userName}?</p><h1>Bienvenido a<strong>Germán Asistente</strong></h1></header><DayOneCarousel label="Secciones de Germán Asistente" items={mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/mi-perfil-mujer-movil-serena.png' : target === 'notificaciones' ? '/images/notificaciones.png' : target === 'biblioteca' ? '/images/biblioteca-lectora.png' : target === 'talleres' ? '/images/practicas-guiadas-hombre.png' : target === 'propia' ? '/images/tu-propia-practica-mujer.png' : target === 'meditaciones' ? '/images/meditaciones-hombre.png' : target === 'consultas' ? '/images/consultas-mujer.png' : undefined, imageSize: ['espacio', 'biblioteca', 'talleres'].includes(target) ? 'compact' as const : undefined }))} onSelect={(item) => { setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section></main>;
   }
   if (accountOpen && localPreview) return <main className="app-shell app-main section-app"><LocalAccount name={userName} onBack={back} onSave={setUserName} /></main>;
   if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} onBack={back} onNameSaved={setUserName} onLogout={logout} /></main>;
