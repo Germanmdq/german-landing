@@ -291,7 +291,7 @@ function FavoritesPanel({ favorites, onBack, onOpen, onRemove }: { favorites: Fa
 }
 
 function VideoIntro({ onFinish }: { onFinish: () => void }) {
-  return <div className="video-intro" onClick={onFinish}><video className="video-intro-video" src="/videos/german-intro.mp4" autoPlay muted playsInline preload="auto" onEnded={onFinish} aria-label="Presentación de Asistente Germán" /></div>;
+  return <div className="video-intro" onClick={onFinish}><video className="video-intro-video" src="/videos/video-german.webm" autoPlay muted playsInline preload="auto" onEnded={onFinish} aria-label="Presentación de Asistente Germán" /></div>;
 }
 
 function GermanBadge() {
