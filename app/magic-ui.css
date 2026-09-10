@@ -260,20 +260,23 @@ button, input { font-family: inherit !important; }
   -webkit-backdrop-filter: blur(18px);
 }
 
-.visible-back {
-  min-height: 36px;
-  margin: 0 0 8px;
-  padding: 0 13px;
+.header-back {
+  min-height: 30px;
+  margin: 0 0 10px;
+  padding: 0;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  border: 1px solid var(--ui-line);
-  border-radius: 999px;
-  background: rgba(255,255,255,.8);
+  gap: 2px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
   color: var(--ui-accent);
-  font-size: 14px;
-  font-weight: 680;
+  font-size: 17px;
+  font-weight: 400;
 }
+.header-back svg { width: 22px; height: 22px; }
+.header-back:active { opacity: .55; }
 
 .feature-header > p { margin: 0 0 5px; color: var(--ui-accent); font-size: 10px; line-height: 1; letter-spacing: .17em; font-weight: 800; }
 .feature-header h1 {

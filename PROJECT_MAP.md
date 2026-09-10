@@ -45,7 +45,7 @@ flowchart TD
 - `app/magic-ui.css`: sistema visual completo, tarjetas, montaje, biblioteca, reproductor, formularios y responsive móvil.
 - `app/components/magic-ui.tsx`: componentes reutilizables Magic Card, Shimmer Button y Border Beam.
 - `app/german-entry.css`: entrada circular con el video de Germán.
-- `public/german-welcome.png`: imagen principal.
+- `public/images/german-welcome.png`: imagen principal.
 - `public/sw.js`: recepción de notificaciones push y apertura directa de la aplicación.
 - `scripts/generate-content.mjs`: transforma el documento maestro en datos utilizables por la aplicación.
 - `out/`: versión estática generada para probar desde la Mac o el teléfono.

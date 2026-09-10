@@ -86,6 +86,6 @@
 
 .day-one-open:has(.day-one-illustration) { display: flex; flex-direction: column; }
 .day-one-open:has(.day-one-illustration) .day-one-caption { position: relative; top: auto; left: auto; right: auto; margin: 32px var(--day-caption-left) 12px; flex: 0 0 auto; z-index: 1; }
-.day-one-visual { display: flex; min-height: 0; flex: 1 1 0; padding: 0 12px 20px; overflow: hidden; }
-.day-one-illustration { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; object-position: center bottom; pointer-events: none; }
-.day-one-illustration--compact { transform: scale(.8); transform-origin: center bottom; }
+.day-one-visual { display: flex; align-items: center; justify-content: center; min-height: 0; flex: 1 1 0; padding: 0 12px 20px; overflow: hidden; }
+.day-one-illustration { display: block; width: 100%; height: auto; max-height: 200px; object-fit: contain; pointer-events: none; }
+.day-one-illustration--compact { transform: scale(.8); }
