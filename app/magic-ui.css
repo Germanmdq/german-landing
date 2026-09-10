@@ -95,30 +95,6 @@ button, input { font-family: inherit !important; }
 @property --beam-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
 @keyframes magic-beam { to { --beam-angle: 360deg; } }
 
-/* Home: título fijo y dos tarjetas visibles, como se definió. */
-.brain-intro.category-open {
-  display: block;
-  width: 100%;
-  height: 100svh;
-  min-height: 0;
-  overflow: hidden;
-  padding: 0;
-  background: #fff !important;
-  text-align: left;
-}
-
-.category-open .brain-folder { display: block; width: 100%; max-width: none; height: 100%; margin: 0; }
-.category-open .brain-orbit { display: none; }
-
-.categories-section {
-  width: 100%;
-  height: 100svh;
-  display: grid;
-  grid-template-rows: 184px minmax(0, 1fr);
-  overflow: hidden;
-  background: #fff;
-}
-
 .assistant-welcome {
   position: relative;
   z-index: 30;
@@ -454,7 +430,6 @@ button, input { font-family: inherit !important; }
 @keyframes bell-spark { 50% { transform: scale(1.3) rotate(14deg); opacity: .5; } }
 
 @media (max-width: 380px) {
-  .categories-section { grid-template-rows: 174px minmax(0,1fr); }
   .assistant-welcome { height: 174px; padding-inline: 20px; }
   .category-list, .feature-list, .reader-body { padding-inline: 18px; }
   .category-card { min-height: 172px; padding: 18px; gap: 11px; }

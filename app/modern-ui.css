@@ -11,53 +11,6 @@
   --ui-radius: 22px;
 }
 .app-shell { box-shadow: none; }
-.welcome-modern.app-shell {
-  max-width: 1200px;
-  min-height: min(850px, 100svh);
-  padding: 0 64px;
-  margin: 0 auto;
-  border: 0;
-  border-radius: 0;
-  display: grid;
-  grid-template-columns: 1.15fr 1fr;
-  grid-template-rows: 110px 1fr 90px;
-  column-gap: 64px;
-  text-align: left;
-  background: #f7f8fa !important;
-  overflow: visible;
-}
-.welcome-topbar { grid-column: 1/-1; display: flex; align-items: center; justify-content: space-between; width: 100%; border-bottom: 1px solid var(--ui-line); }
-.welcome-wordmark { color: var(--ink); text-decoration: none; font-size: 32px; font-weight: 800; letter-spacing: -2px; }
-.welcome-wordmark span { color: var(--rose); }
-.welcome-topbar > span { font-size: 14px; color: var(--muted); }
-.welcome-editorial { padding: 50px 0; }
-.welcome-modern .intro-brand { display: flex; align-items: center; gap: 9px; margin-bottom: 28px; font-size: 12px; letter-spacing: 1.7px; }
-.intro-brand > span { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.welcome-modern h1 { max-width: none; font-size: clamp(44px, 5.4vw, 68px); line-height: 1.04; letter-spacing: -.065em; font-weight: 650; }
-.welcome-modern h1 em { color: var(--rose); }
-.welcome-description { max-width: 355px; margin: 26px 0; color: var(--muted); font-size: 17px; line-height: 1.65; }
-.welcome-topics { display: flex; flex-wrap: wrap; gap: 18px; }
-.welcome-topics > span { display: flex; align-items: center; gap: 7px; font-size: 14px; color: #454750; }
-.welcome-topics svg { color: var(--rose); }
-.welcome-modern .brain-folder { width: 100%; max-width: none; height: auto; margin: 38px 0; }
-.welcome-modern .brain-orbit { display: none; }
-.welcome-modern .german-video-launch {
-  width: 100% !important;
-  height: 440px !important;
-  border: 0 !important;
-  border-radius: 140px 140px 28px 28px !important;
-  box-shadow: 0 22px 50px #78202815 !important;
-  background: #c72933 !important;
-}
-.welcome-modern .german-video-launch video { opacity: 1; border-radius: 0; object-position: center; transform: none; }
-.welcome-modern .german-video-launch::after { border-radius: 0; background: linear-gradient(transparent 50%, #30070b90); }
-.welcome-modern .german-enter { inset: auto 20px 20px; width: calc(100% - 40px); min-height: 58px; padding: 16px 20px; border-radius: 16px; background: #fff; color: #25252a; flex-direction: row; justify-content: space-between; font-size: 16px; font-weight: 650; transition: background .2s; }
-.welcome-modern .german-enter:hover { background: #fff0f0; }
-.welcome-modern .german-enter svg { color: var(--rose); }
-.welcome-modern .german-sound { top: 25px; right: 25px; width: 44px; height: 44px; color: white; border-color: #ffffff40; }
-.welcome-footer { grid-column: 1/-1; width: 100%; display: flex; justify-content: space-between; gap: 20px; align-items: center; border-top: 1px solid var(--ui-line); color: var(--muted); font-size: 13px; }
-.welcome-footer > span:last-child { font-size: 12px; letter-spacing: 1.2px; }
-.welcome-footer > span:last-child span { margin-left: 12px; color: var(--rose); }
 .magic-card { background: white; box-shadow: 0 3px 12px #20212705; }
 .magic-card::before { display: none; }
 .category-list, .feature-list, .reader-body { background: var(--ui-bg); scrollbar-width: thin; scroll-snap-type: none; }
@@ -80,24 +33,6 @@
 .library-content-card { box-shadow: 0 3px 12px #20212705; }
 .library-content-card em, .favorite-content-card em { font-size: 14px; }
 button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid #a91e29; outline-offset: 4px; }
-/* The PWA keeps a single mobile layout at every viewport width. */
-@media (min-width: 0px) {
-  .welcome-modern.app-shell { min-height: 100svh; max-width: 480px; padding: 0 26px; grid-template-columns: 1fr; grid-template-rows: auto; gap: 0; }
-  .welcome-topbar { min-height: 78px; }
-  .welcome-wordmark { font-size: 29px; }
-  .welcome-topbar > span { font-size: 12px; }
-  .welcome-editorial { padding: 32px 0 20px; }
-  .welcome-modern .intro-brand { margin-bottom: 18px; }
-  .welcome-modern h1 { font-size: clamp(40px, 10vw, 48px); }
-  .welcome-modern h1 em br { display: none; }
-  .welcome-description { font-size: 16px; margin: 18px 0; }
-  .welcome-topics { gap: 16px; }
-  .welcome-modern .brain-folder { margin: 4px 0 28px; }
-  .welcome-modern .german-video-launch { height: 340px !important; border-radius: 100px 100px 24px 24px !important; }
-  .welcome-footer { min-height: 70px; padding: 16px 0; }
-  .welcome-footer > span:last-child { display: none; }
-}
-
 @media (min-width: 600px) {
   .app-shell { max-width: 480px; margin: 0 auto; border-radius: 0; min-height: 100svh; border-block: 0; }
 }

@@ -2,12 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, ChevronLeft, ArrowUpRight, Headphones, Sparkles, Volume2, VolumeX, Bell, BookOpen, ChevronRight, Heart, LogOut, Pause, Play, Search, Trash2 } from 'lucide-react';
+import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, ChevronLeft, Headphones, Sparkles, Bell, BookOpen, ChevronRight, Heart, LogOut, Pause, Play, Search, Trash2 } from 'lucide-react';
 import content from './content.generated.json';
 import { supabase } from './lib/supabase';
 import { MagicCard, ShimmerButton } from './components/magic-ui';
-import './brain.css';
-import './german-entry.css';
 import './magic-ui.css';
 import './modern-ui.css';
 import './components/day-one-carousel.css';
@@ -21,7 +19,7 @@ type DeckItem = { icon: string; title: string; detail: string; tone: string; ima
 type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string };
 type FavoriteRecord = { id: string; title: string; detail: string; icon: string; tone: string; reader?: ReaderContent };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
-type FlowStage = 'entry' | 'install' | 'login' | 'onboarding' | 'app';
+type FlowStage = 'install' | 'login' | 'onboarding' | 'app';
 
 const localPreview = process.env.NODE_ENV === 'development';
 
@@ -292,27 +290,8 @@ function FavoritesPanel({ favorites, onBack, onOpen, onRemove }: { favorites: Fa
   </section>;
 }
 
-function BrainFolder({ open, onOpen, onGo, userName = 'Martín' }: { open: boolean; onOpen: () => void; onGo: (tab: Tab) => void; userName?: string }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [soundOn, setSoundOn] = useState(false);
-  const [videoReady, setVideoReady] = useState(false);
-  const videoStart = 0.22;
-  const items = mainCategories.map(([target, icon, title, detail, tone]) => ({ target, item: { icon, title, detail, tone } as DeckItem }));
-  const toggleSound = async () => {
-    const video = videoRef.current;
-    if (!video) return;
-    const next = !soundOn;
-    video.muted = !next;
-    setSoundOn(next);
-    if (next) await video.play().catch(() => setSoundOn(false));
-  };
-  const prepareVideo = async () => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.currentTime = Math.min(videoStart, Math.max(0, video.duration - 0.1));
-    await video.play().catch(() => undefined);
-  };
-  return <section className={open ? 'brain-folder brain-folder-open category-deck' : 'brain-folder'}><div className="brain-orbit" aria-hidden="true"><i /><i /><i /></div>{!open ? <div className={`brain-launch german-launch german-video-launch${videoReady ? ' is-video-ready' : ''}`}><video ref={videoRef} src="/videos/german-intro.mp4" poster="/images/german-welcome.png" autoPlay loop muted playsInline preload="auto" onLoadedMetadata={prepareVideo} onCanPlay={(event) => { setVideoReady(true); void event.currentTarget.play().catch(() => undefined); }} onPlaying={() => setVideoReady(true)} aria-label="Germán animado saludando" /><button className="german-enter" onClick={onOpen} aria-label="Entrar a Asistente Germán"><span>Entrar a mi espacio</span><ArrowUpRight size={21} /></button><button className="german-sound" onClick={toggleSound} aria-label={soundOn ? 'Silenciar video' : 'Activar sonido del video'} aria-pressed={soundOn}>{soundOn ? <Volume2 size={19} /> : <VolumeX size={19} />}</button></div> : <section className="categories-section"><header className="assistant-welcome"><p>Hola, ¿cómo estás, {userName}?</p><h1>Bienvenido al<strong>Asistente de Germán</strong></h1></header><div className="category-list">{items.map(({ target, item }, index) => <DeckCard key={item.title} item={item} index={index} last={index === items.length - 1} onClick={() => onGo(target)} />)}<div className="deck-end-space" aria-hidden="true" /></div></section>}</section>;
+function VideoIntro({ onFinish }: { onFinish: () => void }) {
+  return <div className="video-intro" onClick={onFinish}><video className="video-intro-video" src="/videos/german-intro.mp4" autoPlay muted playsInline preload="auto" onEnded={onFinish} aria-label="Presentación de Asistente Germán" /></div>;
 }
 
 function GermanBadge() {
@@ -419,7 +398,8 @@ function LocalAccount({ name, onBack, onSave }: { name: string; onBack: () => vo
 }
 
 export default function App() {
-  const [stage, setStage] = useState<FlowStage>(localPreview ? 'app' : 'entry');
+  const [stage, setStage] = useState<FlowStage>(localPreview ? 'app' : 'install');
+  const [introDone, setIntroDone] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [userName, setUserName] = useState('Martín');
   const [mainMenu, setMainMenu] = useState(true);
@@ -482,7 +462,15 @@ export default function App() {
       try { setFavorites(JSON.parse(savedFavorites) as FavoriteRecord[]); } catch { localStorage.removeItem('german-favorites'); }
     }
     if (localPreview) { setStage('app'); return; }
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      // Only the browser's real standalone mode proves the app is still installed;
+      // skip the install prompt straight to login/app in that case.
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || ('standalone' in navigator && Boolean((navigator as Navigator & { standalone?: boolean }).standalone));
+      if (!standalone) return;
+      if (data.session?.user) void authenticated(data.session.user);
+      else setStage('login');
+    });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
     return () => listener.subscription.unsubscribe();
   }, []);
@@ -539,22 +527,13 @@ export default function App() {
     setStage('login');
   };
 
+  if (!introDone) return <VideoIntro onFinish={() => setIntroDone(true)} />;
+
   if (stage === 'install') return <InstallGate onContinue={continueAfterInstall} />;
   if (stage === 'login') return <LoginGate onAuthenticated={authenticated} />;
   if (stage === 'onboarding' && session?.user) return <OnboardingGate user={session.user} onComplete={(name) => { setUserName(name); setStage('app'); }} onLogout={logout} />;
   if (stage === 'onboarding') return <LoginGate onAuthenticated={authenticated} />;
 
-  if (stage === 'entry') return <main className="app-shell brain-intro welcome-modern"><header className="welcome-topbar"><a href="/" className="welcome-wordmark">germán<span>.</span></a><span>Tu espacio personal</span></header><div className="welcome-editorial"><p className="intro-brand"><span /> ASISTENTE GERMÁN</p><h1>Volvé a vos.<br /><em>Todo empieza<br />por adentro.</em></h1><p className="welcome-description">Prácticas, audios y respuestas para acompañarte en tu manifestación consciente.</p><div className="welcome-topics"><span><Headphones size={17} /> Audios</span><span><Sparkles size={17} /> Prácticas</span><span><BookOpen size={17} /> Biblioteca</span></div></div><BrainFolder open={false} onOpen={() => {
-    if (localPreview) return setStage('app');
-    const standalone = window.matchMedia('(display-mode: standalone)').matches || ('standalone' in navigator && Boolean((navigator as Navigator & { standalone?: boolean }).standalone));
-    // Only the browser's real standalone mode proves the app is still installed.
-    // A saved acknowledgement becomes stale as soon as the user removes the PWA.
-    if (standalone) {
-      if (session?.user) return void authenticated(session.user);
-      return setStage('login');
-    }
-    setStage('install');
-  }} onGo={() => undefined} /><footer className="welcome-footer"><span>Un momento para vos. Todos los días.</span><span>ASISTENTE GERMÁN <span aria-hidden="true">↗</span></span></footer></main>;
   if (stage === 'app' && mainMenu) {
     return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome"><p>Hola, ¿cómo estás, {userName}?</p><h1>Bienvenido al<strong>Asistente de Germán</strong></h1></header><DayOneCarousel label="Secciones del Asistente de Germán" items={mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/mi-perfil-mujer-movil-serena.png' : target === 'notificaciones' ? '/images/notificaciones.png' : target === 'biblioteca' ? '/images/biblioteca-lectora.png' : target === 'talleres' ? '/images/practicas-guiadas-hombre.png' : target === 'propia' ? '/images/tu-propia-practica-mujer.png' : target === 'meditaciones' ? '/images/meditaciones-hombre.png' : target === 'consultas' ? '/images/consultas-mujer.png' : undefined, imageSize: ['espacio', 'biblioteca', 'talleres'].includes(target) ? 'compact' as const : undefined }))} onSelect={(item) => { setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section></main>;
   }
