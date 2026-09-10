@@ -1,8 +1,8 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Heart } from 'lucide-react';
+import { Heart, Video } from 'lucide-react';
 
-type Item = { title: string; detail: string; image?: string; imageSize?: 'compact' };
+type Item = { title: string; detail: string; image?: string; imageSize?: 'compact'; placeholder?: boolean };
 export function DayOneCarousel<T extends Item>({ items, onSelect, isFavorite, onFavorite, label = 'Prácticas del Día 1' }: { label?: string; items: T[]; onSelect: (item: T) => void; isFavorite?: (item: T) => boolean | undefined; onFavorite?: (item: T) => void }) {
   const scroller = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLDivElement>(null);
@@ -106,6 +106,7 @@ export function DayOneCarousel<T extends Item>({ items, onSelect, isFavorite, on
         <button className="day-one-open" onClick={() => { interrupt(); onSelect(item); }} tabIndex={active === index ? 0 : -1}>
           <span className="day-one-caption">{item.title}<br />{item.detail}</span>
           {item.image && <span className="day-one-visual"><img className={`day-one-illustration${item.imageSize === 'compact' ? ' day-one-illustration--compact' : ''}`} src={item.image} alt="" draggable={false} /></span>}
+          {!item.image && item.placeholder && <span className="day-one-visual"><span className="day-one-placeholder" aria-hidden="true"><Video size={40} /></span></span>}
         </button>
         {onFavorite && isFavorite?.(item) !== undefined && <button className="day-one-save" aria-label={`${isFavorite?.(item) ? 'Quitar' : 'Guardar'} ${item.title} ${isFavorite?.(item) ? 'de' : 'en'} favoritos`} onClick={() => { interrupt(); onFavorite(item); }} tabIndex={active === index ? 0 : -1}><Heart size={20} fill={isFavorite?.(item) ? 'currentColor' : 'none'} /></button>}
       </article>)}</div>

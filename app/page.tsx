@@ -159,6 +159,16 @@ function FixedHeader({ eyebrow, title, subtitle, onBack }: { eyebrow: string; ti
   return <header className="feature-header"><BackButton onBack={onBack} /><p>{eyebrow}</p><h1>{title}</h1><small>{subtitle}</small></header>;
 }
 
+function WeeklyMeetingPanel({ onBack }: { onBack: () => void }) {
+  return <section className="reader-section">
+    <FixedHeader eyebrow="EN VIVO" title="Reunión semanal" subtitle="Nos vemos en vivo cada semana." onBack={onBack} />
+    <div className="reader-body meeting-panel">
+      <div className="meeting-schedule"><Clock3 size={20} /><span>Todos los jueves a las 20:00 hs (Argentina)</span></div>
+      <a className="meeting-join" href="https://meet.google.com/PLACEHOLDER" target="_blank" rel="noopener noreferrer">Unirme a la reunión</a>
+    </div>
+  </section>;
+}
+
 function NotificationsPanel({ onBack }: { onBack: () => void }) {
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [editingTime, setEditingTime] = useState<'morning' | 'noon' | 'afternoon' | 'night' | null>(null);
@@ -416,6 +426,7 @@ export default function App() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [favoritesOpen, setFavoritesOpen] = useState(false);
+  const [meetingOpen, setMeetingOpen] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteRecord[]>([]);
   const [libraryItems, setLibraryItems] = useState<LibraryEntry[]>([]);
   const current = trail.at(-1);
@@ -428,6 +439,7 @@ export default function App() {
     if (notificationsOpen) return setNotificationsOpen(false);
     if (accountOpen) return setAccountOpen(false);
     if (favoritesOpen) return setFavoritesOpen(false);
+    if (meetingOpen) { setMeetingOpen(false); return setMainMenu(true); }
     if (trail.length) return setTrail((value) => value.slice(0, -1));
     setMainMenu(true);
   };
@@ -542,8 +554,13 @@ export default function App() {
   if (stage === 'onboarding') return <LoginGate onAuthenticated={authenticated} />;
 
   if (stage === 'app' && mainMenu) {
-    return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome"><p>Hola, ¿cómo estás, {userName}?</p><h1>Bienvenido a<strong>Germán Asistente</strong></h1></header><DayOneCarousel label="Secciones de Germán Asistente" items={mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/mi-perfil-mujer-movil-serena.png' : target === 'notificaciones' ? '/images/notificaciones.png' : target === 'biblioteca' ? '/images/biblioteca-lectora.png' : target === 'talleres' ? '/images/practicas-guiadas-hombre.png' : target === 'propia' ? '/images/tu-propia-practica-mujer.png' : target === 'meditaciones' ? '/images/meditaciones-hombre.png' : target === 'consultas' ? '/images/consultas-mujer.png' : undefined, imageSize: ['espacio', 'biblioteca', 'talleres'].includes(target) ? 'compact' as const : undefined }))} onSelect={(item) => { setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section></main>;
+    const meetingCard = { target: 'reunion' as const, title: 'Reunión semanal', detail: 'Encontrémonos en vivo.', placeholder: true as const };
+    const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/mi-perfil-mujer-movil-serena.png' : target === 'notificaciones' ? '/images/notificaciones.png' : target === 'biblioteca' ? '/images/biblioteca-lectora.png' : target === 'talleres' ? '/images/practicas-guiadas-hombre.png' : target === 'propia' ? '/images/tu-propia-practica-mujer.png' : target === 'meditaciones' ? '/images/meditaciones-hombre.png' : target === 'consultas' ? '/images/consultas-mujer.png' : undefined, imageSize: ['espacio', 'biblioteca', 'talleres'].includes(target) ? 'compact' as const : undefined }));
+    const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
+    const items = [...welcomeItems.slice(0, meditIndex + 1), meetingCard, ...welcomeItems.slice(meditIndex + 1)];
+    return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome"><p>Hola, ¿cómo estás, {userName}?</p><h1>Bienvenido a<strong>Germán Asistente</strong></h1></header><DayOneCarousel label="Secciones de Germán Asistente" items={items} onSelect={(item) => { if (item.target === 'reunion') { setMeetingOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section></main>;
   }
+  if (meetingOpen) return <main className="app-shell app-main section-app"><WeeklyMeetingPanel onBack={back} /></main>;
   if (accountOpen && localPreview) return <main className="app-shell app-main section-app"><LocalAccount name={userName} onBack={back} onSave={setUserName} /></main>;
   if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} onBack={back} onNameSaved={setUserName} onLogout={logout} /></main>;
   if (reader) { const favorite = deckFavorite({ icon: '📖', title: reader.title, detail: reader.detail, tone: palette[0], reader }); return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} favorite={favorites.some((item) => item.title === reader.title)} onFavorite={() => { const exact = favorites.find((item) => item.title === reader.title); toggleFavorite(exact || favorite); }} /></main>; }

@@ -358,6 +358,11 @@ button, input { font-family: inherit !important; }
 .reader-favorite.is-favorite { border-color: rgba(217,45,53,.2); background: #fff2f2; }
 .reader-body .audio-player-card + p { margin-top: 24px; }
 
+.meeting-schedule { display: flex; align-items: center; gap: 12px; min-height: 56px; margin: 0 0 24px; padding: 16px 18px; border: 1px solid var(--ui-line); border-radius: 18px; background: #fff; color: var(--ui-ink); font-size: 15px; font-weight: 600; }
+.meeting-schedule svg { flex-shrink: 0; color: var(--ui-accent); }
+.meeting-join { display: flex; align-items: center; justify-content: center; min-height: 58px; padding: 18px 28px; border-radius: 999px; background: var(--ui-accent); color: #fff; font-size: 17px; font-weight: 700; text-align: center; text-decoration: none; }
+.meeting-join:active { opacity: .85; }
+
 /* Favoritos reales: se guardan y se abren desde Mi perfil. */
 .favorites-browser { display: grid; align-content: start; gap: 12px; }
 .favorites-empty { min-height: 230px; padding: 30px 24px; display: grid; place-items: center; align-content: center; gap: 10px; border: 1px dashed rgba(217,45,53,.26); border-radius: 24px; background: var(--ui-soft); color: var(--ui-accent); text-align: center; }
