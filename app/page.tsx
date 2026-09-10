@@ -72,7 +72,7 @@ const momentNodes: DeckItem[] = content.moments.map((moment, index) => ({
 const screens: Record<Tab, Screen> = {
   talleres: { eyebrow: 'PRÁCTICAS GUIADAS', title: 'Elegí una práctica', subtitle: 'Recorridos preparados para acompañarte paso a paso.', items: [
     { icon: '🌱', title: 'Prácticas de 7 días', detail: 'Amor, salud y dinero.', tone: palette[0], children: planNodes },
-    { icon: '🌿', title: 'Prácticas de 15 días', detail: 'Contenido pendiente de producir.', tone: palette[1] },
+    { icon: '🌿', title: 'Prácticas de 15 días', detail: 'Amor, salud y dinero.', tone: palette[1] },
     { icon: '🌳', title: 'Prácticas de 40 días', detail: 'Autoconcepto y control de la imaginación.', tone: palette[2] },
   ] },
   propia: { eyebrow: 'TU PROPIA PRÁCTICA', title: 'Creá tu recorrido', subtitle: 'Elegí qué querés trabajar y cómo querés hacerlo.', items: [
