@@ -5,7 +5,7 @@ import type { Session, User } from '@supabase/supabase-js';
 import { ArrowLeft, Bell, BookOpen, ChevronRight, Heart, LogOut, Pause, Play, Search, Trash2 } from 'lucide-react';
 import content from './content.generated.json';
 import { supabase } from './lib/supabase';
-import { BorderBeam, MagicCard, ShimmerButton } from './components/magic-ui';
+import { MagicCard, ShimmerButton } from './components/magic-ui';
 import './brain.css';
 import './german-entry.css';
 import './magic-ui.css';
@@ -18,7 +18,7 @@ type FavoriteRecord = { id: string; title: string; detail: string; icon: string;
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
 type FlowStage = 'entry' | 'install' | 'login' | 'onboarding' | 'app';
 
-const palette = ['#965266', '#B16C7F', '#CD8798', '#E7A9B5'];
+const palette = ['#D92D35', '#E5484D', '#F2555A', '#FF6B6F'];
 const icons = ['●', '◆', '✦', '○'];
 const cleanParagraphs = (text: string) => text.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
 const leaf = (title: string, index: number, detail = ''): DeckItem => ({ icon: icons[index % icons.length], title, detail, tone: palette[index % palette.length] });
@@ -123,7 +123,7 @@ function DeckCard({ item, index, last, onClick, favorite, onFavorite }: { item: 
 }
 
 function Deck({ items, onSelect, favorites, onToggleFavorite }: { items: DeckItem[]; onSelect: (item: DeckItem) => void; favorites: FavoriteRecord[]; onToggleFavorite: (favorite: FavoriteRecord) => void }) {
-  return <div className="feature-list">{items.map((entry, index) => <DeckCard key={entry.title} item={entry} index={index} last={index === items.length - 1} onClick={() => onSelect(entry)} favorite={favorites.some((favorite) => favorite.id === deckFavorite(entry).id)} onFavorite={() => onToggleFavorite(deckFavorite(entry))} />)}<div className="deck-end-space" aria-hidden="true" /></div>;
+  return <div className="feature-list">{items.map((entry, index) => <DeckCard key={entry.title} item={entry} index={index} last={index === items.length - 1} onClick={() => onSelect(entry)} favorite={entry.reader ? favorites.some((favorite) => favorite.id === deckFavorite(entry).id) : undefined} onFavorite={entry.reader ? () => onToggleFavorite(deckFavorite(entry)) : undefined} />)}<div className="deck-end-space" aria-hidden="true" /></div>;
 }
 
 function FixedHeader({ eyebrow, title, subtitle, onBack }: { eyebrow: string; title: string; subtitle: string; onBack: () => void }) {
@@ -216,7 +216,6 @@ function AudioPlayer({ title, audioUrl, durationLabel }: { title: string; audioU
     }
   }, [title]);
   return <section className="audio-player-card">
-    <BorderBeam duration={8} />
     <audio ref={audioRef} src={audioUrl} preload="metadata" playsInline onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => { setPlaying(false); setProgress(0); }} onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)} onTimeUpdate={(event) => setProgress(event.currentTarget.currentTime)} />
     <button className="audio-play" onClick={toggle} aria-label={playing ? 'Pausar audio' : 'Escuchar audio'}>{playing ? <Pause size={21} fill="currentColor" /> : <Play size={21} fill="currentColor" />}</button>
     <div className="audio-player-copy"><p>ESCUCHÁ AHORA</p><b>{title}</b><span>{durationLabel || 'Audio disponible'}</span></div>
@@ -239,9 +238,11 @@ function LibraryPanel({ entries, onBack, onRead, favorites, onToggleFavorite }: 
   return <section className="reader-section library-section">
     <FixedHeader eyebrow="PARA ESCUCHAR Y LEER" title="Tu biblioteca" subtitle="Buscá por conferencia, tema o etiqueta." onBack={onBack} />
     <div className="reader-body library-browser">
-      <label className="library-search"><Search size={20} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en la biblioteca" /></label>
-      <div className="library-filters">{filters.map((item) => <button key={item} className={filter === item ? 'active' : ''} onClick={() => setFilter(item)}>{item}</button>)}</div>
-      {featuredAudio?.audioUrl && <AudioPlayer title={featuredAudio.title} audioUrl={featuredAudio.audioUrl} durationLabel={featuredAudio.duration} />}
+      <section className="library-controls">
+        <label className="library-search"><Search size={20} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en la biblioteca" /></label>
+        <div className="library-filters">{filters.map((item) => <button key={item} className={filter === item ? 'active' : ''} onClick={() => setFilter(item)}>{item}</button>)}</div>
+      </section>
+      {featuredAudio?.audioUrl && <section className="library-featured-audio"><p>REPRODUCIR AHORA</p><AudioPlayer title={featuredAudio.title} audioUrl={featuredAudio.audioUrl} durationLabel={featuredAudio.duration} /></section>}
       <p className="library-count">{visible.length} {visible.length === 1 ? 'resultado' : 'resultados'}</p>
       <div className="library-content-list">{visible.map((entry, index) => { const saved = favorites.some((favorite) => favorite.id === libraryFavorite(entry).id); return <MagicCard key={entry.id} delay={Math.min(index * .025, .2)} className="library-content-card" onClick={() => onRead(entry)}><span>{entry.audioUrl ? '🎙️' : <BookOpen size={22} />}</span><div><p>{entry.type || 'Contenido'}</p><b>{entry.title}</b><em>{entry.excerpt || 'Abrí para leer o escuchar.'}</em><small>{entry.tags.map((tag) => `#${tag}`).join(' ')}</small></div><span className="library-card-actions"><span role="button" tabIndex={0} className={`favorite-button${saved ? ' is-favorite' : ''}`} onClick={(event) => { event.stopPropagation(); onToggleFavorite(libraryFavorite(entry)); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onToggleFavorite(libraryFavorite(entry)); } }} aria-label={saved ? `Quitar ${entry.title} de favoritos` : `Guardar ${entry.title} en favoritos`}><Heart size={18} fill={saved ? 'currentColor' : 'none'} /></span><i><ChevronRight size={19} /></i></span></MagicCard>; })}</div>
       {!visible.length && <p className="library-empty">No encontramos contenidos con esa búsqueda.</p>}
@@ -259,7 +260,7 @@ function FavoritesPanel({ favorites, onBack, onOpen, onRemove }: { favorites: Fa
   </section>;
 }
 
-function BrainFolder({ open, onOpen, onGo, userName = 'Martín', favorites = [], onToggleFavorite }: { open: boolean; onOpen: () => void; onGo: (tab: Tab) => void; userName?: string; favorites?: FavoriteRecord[]; onToggleFavorite?: (favorite: FavoriteRecord) => void }) {
+function BrainFolder({ open, onOpen, onGo, userName = 'Martín' }: { open: boolean; onOpen: () => void; onGo: (tab: Tab) => void; userName?: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [soundOn, setSoundOn] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
@@ -279,14 +280,7 @@ function BrainFolder({ open, onOpen, onGo, userName = 'Martín', favorites = [],
     video.currentTime = Math.min(videoStart, Math.max(0, video.duration - 0.1));
     await video.play().catch(() => undefined);
   };
-  const replayVideo = async () => {
-    const video = videoRef.current;
-    if (!video) return;
-    setVideoReady(false);
-    video.currentTime = videoStart;
-    await video.play().catch(() => undefined);
-  };
-  return <section className={open ? 'brain-folder brain-folder-open category-deck' : 'brain-folder'}><div className="brain-orbit" aria-hidden="true"><i /><i /><i /></div>{!open ? <div className={`brain-launch german-launch german-video-launch${videoReady ? ' is-video-ready' : ''}`}><video ref={videoRef} src="/german-real-intro.mp4" autoPlay muted playsInline preload="auto" onLoadedMetadata={prepareVideo} onPlaying={() => requestAnimationFrame(() => requestAnimationFrame(() => setVideoReady(true)))} onEnded={replayVideo} aria-label="Germán animado saludando" /><button className="german-enter" onClick={onOpen} aria-label="Entrar a Asistente Germán"><b>Entrar</b><small>Tocá a Germán</small></button><button className="german-sound" onClick={toggleSound} aria-label={soundOn ? 'Silenciar video' : 'Activar sonido del video'} aria-pressed={soundOn}>{soundOn ? '🔊' : '🔇'}</button></div> : <section className="categories-section"><header className="assistant-welcome"><p>Hola, ¿cómo estás, {userName}?</p><h1>Bienvenido al<strong>Asistente de Germán</strong></h1></header><div className="category-list">{items.map(({ target, item }, index) => <DeckCard key={item.title} item={item} index={index} last={index === items.length - 1} onClick={() => onGo(target)} favorite={favorites.some((favorite) => favorite.id === deckFavorite(item).id)} onFavorite={onToggleFavorite ? () => onToggleFavorite(deckFavorite(item)) : undefined} />)}<div className="deck-end-space" aria-hidden="true" /></div></section>}</section>;
+  return <section className={open ? 'brain-folder brain-folder-open category-deck' : 'brain-folder'}><div className="brain-orbit" aria-hidden="true"><i /><i /><i /></div>{!open ? <div className={`brain-launch german-launch german-video-launch${videoReady ? ' is-video-ready' : ''}`}><video ref={videoRef} src="/german-real-intro.mp4?v=3" autoPlay loop muted playsInline preload="auto" onLoadedMetadata={prepareVideo} onCanPlay={(event) => { setVideoReady(true); void event.currentTarget.play().catch(() => undefined); }} onPlaying={() => setVideoReady(true)} aria-label="Germán animado saludando" /><button className="german-enter" onClick={onOpen} aria-label="Entrar a Asistente Germán"><b>Entrar</b><small>Tocá a Germán</small></button><button className="german-sound" onClick={toggleSound} aria-label={soundOn ? 'Silenciar video' : 'Activar sonido del video'} aria-pressed={soundOn}>{soundOn ? '🔊' : '🔇'}</button></div> : <section className="categories-section"><header className="assistant-welcome"><p>Hola, ¿cómo estás, {userName}?</p><h1>Bienvenido al<strong>Asistente de Germán</strong></h1></header><div className="category-list">{items.map(({ target, item }, index) => <DeckCard key={item.title} item={item} index={index} last={index === items.length - 1} onClick={() => onGo(target)} />)}<div className="deck-end-space" aria-hidden="true" /></div></section>}</section>;
 }
 
 function GermanBadge() {
@@ -519,7 +513,7 @@ export default function App() {
     setStage('install');
   }} onGo={() => undefined} /><p className="intro-hint">Prácticas, audios, biblioteca y respuestas para vos.</p></main>;
   if (stage === 'app' && mainMenu) {
-    return <main className="app-shell brain-intro category-open"><BrainFolder open onOpen={() => undefined} userName={userName} favorites={favorites} onToggleFavorite={toggleFavorite} onGo={(target) => { setTab(target); setTrail([]); setReader(null); setMainMenu(false); }} /></main>;
+    return <main className="app-shell brain-intro category-open"><BrainFolder open onOpen={() => undefined} userName={userName} onGo={(target) => { setTab(target); setTrail([]); setReader(null); setMainMenu(false); }} /></main>;
   }
   if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} onBack={back} onNameSaved={setUserName} onLogout={logout} /></main>;
   if (reader) { const favorite = deckFavorite({ icon: '📖', title: reader.title, detail: reader.detail, tone: palette[0], reader }); return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} favorite={favorites.some((item) => item.title === reader.title)} onFavorite={() => { const exact = favorites.find((item) => item.title === reader.title); toggleFavorite(exact || favorite); }} /></main>; }
