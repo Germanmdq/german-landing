@@ -298,50 +298,54 @@ function FavoritesPanel({ favorites, onBack, onOpen, onRemove }: { favorites: Fa
 }
 
 function VideoIntro({ onFinish }: { onFinish: () => void }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
+    const container = containerRef.current;
+    if (!container) return;
 
-    video.muted = true;
-    video.defaultMuted = true;
+    // Crear el elemento de video directamente en el DOM para evitar el bug de 'muted' en React
+    const video = document.createElement('video');
+    video.className = 'video-intro-video';
+    video.src = '/videos/video-german-white.mp4?v=2';
+    video.setAttribute('autoplay', '');
     video.setAttribute('muted', '');
     video.setAttribute('playsinline', '');
     video.setAttribute('webkit-playsinline', 'true');
+    video.setAttribute('preload', 'auto');
+    video.setAttribute('aria-label', 'Presentación de Germán Asistente');
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.autoplay = true;
 
-    const tryPlay = () => {
-      const playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => undefined);
-      }
+    video.onended = () => {
+      onFinish();
     };
 
-    tryPlay();
-    video.addEventListener('canplay', tryPlay, { once: true });
-    video.addEventListener('loadedmetadata', tryPlay, { once: true });
+    container.appendChild(video);
+
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        const playOnTouch = () => {
+          video.play().catch(() => undefined);
+          window.removeEventListener('touchstart', playOnTouch);
+        };
+        window.addEventListener('touchstart', playOnTouch, { once: true, passive: true });
+      });
+    }
 
     return () => {
-      video.removeEventListener('canplay', tryPlay);
-      video.removeEventListener('loadedmetadata', tryPlay);
+      video.onended = null;
+      video.pause();
+      if (video.parentNode === container) {
+        container.removeChild(video);
+      }
     };
-  }, []);
+  }, [onFinish]);
 
-  return (
-    <div className="video-intro" onClick={onFinish}>
-      <video
-        ref={videoRef}
-        className="video-intro-video"
-        src="/videos/video-german-white.mp4"
-        autoPlay
-        muted
-        playsInline
-        preload="auto"
-        onEnded={onFinish}
-        aria-label="Presentación de Germán Asistente"
-      />
-    </div>
-  );
+  return <div ref={containerRef} className="video-intro" onClick={onFinish} />;
 }
 
 function GermanBadge() {
