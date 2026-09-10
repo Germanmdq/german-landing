@@ -19,9 +19,6 @@ type DeckItem = { icon: string; title: string; detail: string; tone: string; ima
 type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string };
 type FavoriteRecord = { id: string; title: string; detail: string; icon: string; tone: string; reader?: ReaderContent };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
-type FlowStage = 'install' | 'login' | 'onboarding' | 'app';
-
-const localPreview = process.env.NODE_ENV === 'development';
 
 const palette = ['#D92D35', '#E5484D', '#F2555A', '#FF6B6F'];
 const icons = ['●', '◆', '✦', '○'];
@@ -205,24 +202,24 @@ function Reader({ content: reader, onBack, favorite, onFavorite }: { content: Re
   return <section className="reader-section"><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} /><article className="reader-body"><button className={`reader-favorite${favorite ? ' is-favorite' : ''}`} onClick={onFavorite}><Heart size={18} fill={favorite ? 'currentColor' : 'none'} />{favorite ? 'Guardado en favoritos' : 'Guardar en favoritos'}</button>{reader.audioUrl && <AudioPlayer title={reader.title} audioUrl={reader.audioUrl} durationLabel={reader.duration} />}{reader.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</article></section>;
 }
 
-function AccountPanel({ user, onBack, onNameSaved, onLogout }: { user: User; onBack: () => void; onNameSaved: (name: string) => void; onLogout: () => void }) {
-  const [name, setName] = useState(user.user_metadata?.full_name || localStorage.getItem('german-user-name') || '');
+function AccountPanel({ user, fullName, onBack, onNameSaved, onLogout }: { user: User; fullName: string | null; onBack: () => void; onNameSaved: (name: string) => void; onLogout: () => void }) {
+  const [name, setName] = useState(fullName || user.user_metadata?.full_name || '');
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const save = async () => {
-    const fullName = name.trim();
-    if (!fullName) return setMessage('Escribí tu nombre para guardarlo.');
+    const cleanName = name.trim();
+    if (!cleanName) return setMessage('Escribí tu nombre para guardarlo.');
     setSaving(true);
     setMessage('');
     const provider = user.app_metadata?.provider || 'email';
     const [authResult, profileResult] = await Promise.all([
-      supabase.auth.updateUser({ data: { full_name: fullName } }),
-      supabase.from('profiles').upsert({ id: user.id, email: user.email, full_name: fullName, auth_provider: provider }),
+      supabase.auth.updateUser({ data: { full_name: cleanName } }),
+      supabase.from('profiles').upsert({ id: user.id, email: user.email, full_name: cleanName, auth_provider: provider }),
     ]);
     setSaving(false);
     const error = authResult.error || profileResult.error;
     if (error) return setMessage(error.message);
-    onNameSaved(fullName.split(/\s+/)[0]);
+    onNameSaved(cleanName);
     setMessage('Cambios guardados.');
   };
   return <section className="reader-section account-section">
@@ -315,110 +312,78 @@ function GermanBadge() {
   return <div className="gate-german"><img src="/images/german-welcome.png" alt="Germán saludando" /></div>;
 }
 
-function InstallGate({ onContinue }: { onContinue: () => void }) {
-  return <main className="app-shell gate-screen install-gate">
-    <GermanBadge />
-    <p className="gate-kicker">GERMÁN ASISTENTE</p>
-    <h1>Estás ante la primera aplicación sobre <em>manifestación consciente</em> en español.</h1>
-    <p className="gate-copy">Agregala a tu pantalla de inicio para que funcione correctamente y puedas recibir tus prácticas en el momento justo.</p>
-    <div className="gate-actions">
-      <ShimmerButton className="gate-primary" onClick={onContinue}>Ya la agregué, continuar</ShimmerButton>
-    </div>
-  </main>;
-}
-
-function LoginGate({ onAuthenticated }: { onAuthenticated: (user: User) => void }) {
-  const [mode, setMode] = useState<'signup' | 'signin'>('signup');
+function LoginGate() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+    const cleanEmail = email.trim();
+    if (!cleanEmail) return;
     setBusy(true);
     setMessage('');
-    const result = mode === 'signup'
-      ? await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: `${window.location.origin}/` },
-        })
-      : await supabase.auth.signInWithPassword({ email, password });
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
+    const { error } = await supabase.auth.signInWithOtp({
+      email: cleanEmail,
+      options: {
+        emailRedirectTo: redirectTo,
+      },
+    });
     setBusy(false);
-    if (result.error) return setMessage(result.error.message);
-    if (result.data.user && result.data.session) return onAuthenticated(result.data.user);
-    setMessage('Revisá tu correo para confirmar la cuenta y después volvé a entrar.');
+    if (error) {
+      setMessage(error.message);
+    } else {
+      setSent(true);
+    }
   };
 
-  const google = async () => {
-    setMessage('');
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
-    if (error) setMessage(error.message);
-  };
-
-  return <main className="app-shell gate-screen login-gate">
-    <GermanBadge />
-    <p className="gate-kicker">TU CUENTA</p>
-    <h1>{mode === 'signup' ? 'Creá tu espacio.' : 'Qué bueno verte de nuevo.'}</h1>
-    <p className="gate-copy">Guardá tus prácticas, tu avance y tus horarios en todos tus dispositivos.</p>
-    <button className="google-button" onClick={google}><b>G</b> Continuar con Google</button>
-    <div className="login-divider"><span>o con tu correo</span></div>
-    <form className="login-form" onSubmit={submit}>
-      <label>Correo<input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="vos@email.com" /></label>
-      <label>Contraseña<input type="password" required minLength={6} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo 6 caracteres" /></label>
-      {message && <p className="form-message">{message}</p>}
-      <ShimmerButton className="gate-primary" disabled={busy}>{busy ? 'Un momento…' : mode === 'signup' ? 'Crear cuenta' : 'Entrar'}</ShimmerButton>
-    </form>
-    <button className="gate-secondary" onClick={() => { setMode(mode === 'signup' ? 'signin' : 'signup'); setMessage(''); }}>{mode === 'signup' ? 'Ya tengo cuenta' : 'Quiero crear una cuenta'}</button>
-  </main>;
-}
-
-function OnboardingGate({ user, onComplete, onLogout }: { user: User; onComplete: (name: string) => void; onLogout: () => void }) {
-  const [step, setStep] = useState(0);
-  const [name, setName] = useState(user.user_metadata?.full_name?.trim().split(/\s+/)[0] || '');
-  const [message, setMessage] = useState('');
-
-  const requestNotifications = async () => {
-    if ('Notification' in window) await Notification.requestPermission();
-    setStep(2);
-  };
-
-  const finish = async () => {
-    const fullName = name.trim() || 'Martín';
-    setMessage('Guardando…');
-    const provider = user.app_metadata?.provider || 'email';
-    const [profileResult, settingsResult] = await Promise.all([
-      supabase.from('profiles').upsert({ id: user.id, email: user.email, full_name: fullName, auth_provider: provider }),
-      supabase.from('user_settings').upsert({ user_id: user.id, installation_acknowledged: true, onboarding_completed: true, updated_at: new Date().toISOString() }),
-    ]);
-    const error = profileResult.error || settingsResult.error;
-    if (error) setMessage(`La cuenta funciona, pero no pudimos guardar esos datos: ${error.message}`);
-    localStorage.setItem('german-user-name', fullName);
-    onComplete(fullName);
-  };
-
-  return <main className="app-shell gate-screen onboarding-gate">
-    <div className="step-dots">{[0, 1, 2].map((item) => <i key={item} className={item <= step ? 'active' : ''} />)}</div>
-    <GermanBadge />
-    {step === 0 && <><p className="gate-kicker">EMPECEMOS</p><h1>¿Cómo querés que te llame?</h1><p className="gate-copy">Este nombre va a acompañarte en toda la experiencia.</p><label className="name-field">Tu nombre<input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder="Martín" /></label><ShimmerButton className="gate-primary" disabled={!name.trim()} onClick={() => setStep(1)}>Continuar <span>→</span></ShimmerButton></>}
-    {step === 1 && <><p className="gate-kicker">EN EL MOMENTO JUSTO</p><h1>Activá tus notificaciones.</h1><p className="gate-copy">Así vas a recibir las prácticas y novedades importantes.</p><div className="notification-illustration"><Bell size={54} /><i>✦</i><i>✦</i></div><ShimmerButton className="gate-primary" onClick={requestNotifications}>Activar notificaciones</ShimmerButton><button className="gate-secondary" onClick={() => setStep(2)}>Ahora no</button></>}
-    {step === 2 && <><p className="gate-kicker">TODO LISTO</p><h1>Este espacio ya es tuyo, <em>{name || 'Martín'}.</em></h1><p className="gate-copy">Tus prácticas, lecturas y consultas te esperan.</p><ShimmerButton className="gate-primary" onClick={finish}>Entrar al asistente <span>→</span></ShimmerButton>{message && <p className="form-message">{message}</p>}</>}
-    <button className="gate-secondary" onClick={onLogout}>Cerrar sesión</button>
-  </main>;
-}
-
-function LocalAccount({ name, onBack, onSave }: { name: string; onBack: () => void; onSave: (name: string) => void }) {
-  const [draft, setDraft] = useState(name);
-  const [message, setMessage] = useState('');
-  return <section className="reader-section"><FixedHeader eyebrow="MI PERFIL" title="Mi cuenta" subtitle="Tu nombre queda guardado en este dispositivo." onBack={onBack} /><form className="reader-body account-settings" onSubmit={(event) => { event.preventDefault(); if (!draft.trim()) return; localStorage.setItem('german-user-name', draft.trim()); onSave(draft.trim()); setMessage('Nombre guardado.'); }}><label>Nombre<input value={draft} onChange={(event) => setDraft(event.target.value)} required autoComplete="given-name" /></label><ShimmerButton className="account-save" type="submit">Guardar cambios</ShimmerButton><p role="status" className="account-message">{message}</p></form></section>;
+  return (
+    <main className="app-shell gate-screen login-gate">
+      <GermanBadge />
+      <h1>Ingresá a tu espacio</h1>
+      {sent ? (
+        <div style={{ marginTop: '24px', textAlign: 'center' }}>
+          <p className="gate-copy" style={{ color: 'var(--ui-ink)', fontWeight: 500 }}>
+            Te enviamos un link a tu email. Revisá tu bandeja.
+          </p>
+          <button
+            type="button"
+            className="gate-secondary"
+            style={{ marginTop: '16px', cursor: 'pointer' }}
+            onClick={() => setSent(false)}
+          >
+            Usar otro correo
+          </button>
+        </div>
+      ) : (
+        <form className="login-form" onSubmit={submit} style={{ marginTop: '24px' }}>
+          <label>
+            Correo electrónico
+            <input
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="vos@email.com"
+            />
+          </label>
+          {message && <p className="form-message">{message}</p>}
+          <ShimmerButton className="gate-primary" disabled={busy}>
+            {busy ? 'Un momento…' : 'Continuar'}
+          </ShimmerButton>
+        </form>
+      )}
+    </main>
+  );
 }
 
 export default function App() {
-  const [stage, setStage] = useState<FlowStage>(localPreview ? 'app' : 'install');
   const [introDone, setIntroDone] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
-  const [userName, setUserName] = useState('Martín');
+  const [fullName, setFullName] = useState<string | null>(null);
   const [mainMenu, setMainMenu] = useState(true);
   const [tab, setTab] = useState<Tab>('biblioteca');
   const [trail, setTrail] = useState<DeckItem[]>([]);
@@ -434,6 +399,7 @@ export default function App() {
     if (current) return { eyebrow: trail.length === 1 ? screens[tab].title.toUpperCase() : trail.at(-2)?.title.toUpperCase() || screens[tab].eyebrow, title: current.title, subtitle: current.detail, items: current.children || [] };
     return screens[tab];
   }, [current, tab, trail]);
+
   const back = () => {
     if (reader) return setReader(null);
     if (notificationsOpen) return setNotificationsOpen(false);
@@ -443,15 +409,21 @@ export default function App() {
     if (trail.length) return setTrail((value) => value.slice(0, -1));
     setMainMenu(true);
   };
+
   const logout = () => {
-    if (localPreview) { setTrail([]); setMainMenu(true); setStage('app'); return; }
     void supabase.auth.signOut().finally(() => {
       setSession(null);
+      setFullName(null);
       setTrail([]);
+      setAccountOpen(false);
+      setNotificationsOpen(false);
+      setFavoritesOpen(false);
+      setMeetingOpen(false);
+      setReader(null);
       setMainMenu(true);
-      setStage('login');
     });
   };
+
   const select = (selected: DeckItem) => {
     if (selected.action === 'logout') {
       logout();
@@ -463,6 +435,7 @@ export default function App() {
     if (selected.title === 'Favoritos') return setFavoritesOpen(true);
     if (selected.children) setTrail((value) => [...value, selected]);
   };
+
   const toggleFavorite = (favorite: FavoriteRecord) => {
     setFavorites((currentFavorites) => {
       const exists = currentFavorites.some((item) => item.id === favorite.id);
@@ -472,30 +445,71 @@ export default function App() {
     });
   };
 
+  const syncProfile = async (user: User) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error al obtener perfil:', error);
+      }
+
+      if (!profile) {
+        const { data: inserted, error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            email: user.email,
+            auth_provider: 'email',
+            full_name: null,
+          })
+          .select('full_name')
+          .maybeSingle();
+
+        if (insertError) {
+          console.error('Error al insertar perfil inicial:', insertError);
+        }
+        setFullName(inserted?.full_name ?? null);
+      } else {
+        setFullName(profile.full_name ?? null);
+      }
+    } catch (err) {
+      console.error('Error en syncProfile:', err);
+    }
+  };
+
   useEffect(() => {
-    if (!localPreview && 'serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => undefined);
-    const savedName = localStorage.getItem('german-user-name');
-    if (savedName) setUserName(savedName);
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => undefined);
     const savedFavorites = localStorage.getItem('german-favorites');
     if (savedFavorites) {
       try { setFavorites(JSON.parse(savedFavorites) as FavoriteRecord[]); } catch { localStorage.removeItem('german-favorites'); }
     }
-    if (localPreview) { setStage('app'); return; }
-    supabase.auth.getSession().then(({ data }) => {
+
+    supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
-      // Only the browser's real standalone mode proves the app is still installed;
-      // skip the install prompt straight to login/app in that case.
-      const standalone = window.matchMedia('(display-mode: standalone)').matches || ('standalone' in navigator && Boolean((navigator as Navigator & { standalone?: boolean }).standalone));
-      if (!standalone) return;
-      if (data.session?.user) void authenticated(data.session.user);
-      else setStage('login');
+      if (data.session?.user) {
+        await syncProfile(data.session.user);
+      }
     });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
-    return () => listener.subscription.unsubscribe();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+      setSession(nextSession);
+      if (nextSession?.user) {
+        await syncProfile(nextSession.user);
+      } else {
+        setFullName(null);
+      }
+    });
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
-    if (localPreview) return;
     supabase
       .from('content_items')
       .select('*,content_assets(asset_type,source_url,storage_path,duration_seconds,sort_order)')
@@ -504,65 +518,43 @@ export default function App() {
       .order('published_at', { ascending: false })
       .limit(250)
       .then(({ data }) => {
-      if (!data) return;
-      setLibraryItems(data.map((value) => {
-        const item = value as Record<string, unknown>;
-        const assets = Array.isArray(item.content_assets) ? item.content_assets as Record<string, unknown>[] : [];
-        const asset = assets.sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))[0];
-        const source = firstText(asset || item, ['source_url', 'audio_url', 'audioUrl', 'media_url', 'mediaUrl', 'file_url', 'fileUrl']);
-        const path = firstText(asset || item, ['audio_path', 'audioPath', 'storage_path', 'storagePath']);
-        const bucket = firstText(item, ['audio_bucket', 'audioBucket', 'bucket']) || 'audios';
-        const audioUrl = source || (path ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/${bucket}/${path}` : undefined);
-        const durationSeconds = typeof asset?.duration_seconds === 'number' ? asset.duration_seconds : undefined;
-        return {
-          id: String(item.id),
-          title: firstText(item, ['title', 'name']) || 'Sin título',
-          excerpt: firstText(item, ['excerpt', 'description', 'summary']) || '',
-          body: firstText(item, ['body', 'content', 'text']) || '',
-          type: firstText(item, ['content_type', 'type', 'category']) || 'Contenido',
-          tags: toTags(item.tags || item.tag_list || item.labels || item.topics),
-          audioUrl,
-          duration: durationSeconds ? `${Math.round(durationSeconds / 60)} min` : firstText(item, ['duration', 'audio_duration']),
-        };
-      }));
-    });
+        if (!data) return;
+        setLibraryItems(data.map((value) => {
+          const item = value as Record<string, unknown>;
+          const assets = Array.isArray(item.content_assets) ? item.content_assets as Record<string, unknown>[] : [];
+          const asset = assets.sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))[0];
+          const source = firstText(asset || item, ['source_url', 'audio_url', 'audioUrl', 'media_url', 'mediaUrl', 'file_url', 'fileUrl']);
+          const path = firstText(asset || item, ['audio_path', 'audioPath', 'storage_path', 'storagePath']);
+          const bucket = firstText(item, ['audio_bucket', 'audioBucket', 'bucket']) || 'audios';
+          const audioUrl = source || (path ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/${bucket}/${path}` : undefined);
+          const durationSeconds = typeof asset?.duration_seconds === 'number' ? asset.duration_seconds : undefined;
+          return {
+            id: String(item.id),
+            title: firstText(item, ['title', 'name']) || 'Sin título',
+            excerpt: firstText(item, ['excerpt', 'description', 'summary']) || '',
+            body: firstText(item, ['body', 'content', 'text']) || '',
+            type: firstText(item, ['content_type', 'type', 'category']) || 'Contenido',
+            tags: toTags(item.tags || item.tag_list || item.labels || item.topics),
+            audioUrl,
+            duration: durationSeconds ? `${Math.round(durationSeconds / 60)} min` : firstText(item, ['duration', 'audio_duration']),
+          };
+        }));
+      });
   }, []);
-
-  const authenticated = async (user: User) => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    setSession(sessionData.session);
-    const firstName = user.user_metadata?.full_name?.trim().split(/\s+/)[0];
-    if (firstName) {
-      setUserName(firstName);
-      localStorage.setItem('german-user-name', firstName);
-    }
-    const { data } = await supabase.from('user_settings').select('onboarding_completed').eq('user_id', user.id).maybeSingle();
-    setMainMenu(true);
-    setStage(data?.onboarding_completed ? 'app' : 'onboarding');
-  };
-  const continueAfterInstall = () => {
-    if (localPreview) return setStage('app');
-    if (session?.user) return void authenticated(session.user);
-    setStage('login');
-  };
 
   if (!introDone) return <VideoIntro onFinish={() => setIntroDone(true)} />;
 
-  if (stage === 'install') return <InstallGate onContinue={continueAfterInstall} />;
-  if (stage === 'login') return <LoginGate onAuthenticated={authenticated} />;
-  if (stage === 'onboarding' && session?.user) return <OnboardingGate user={session.user} onComplete={(name) => { setUserName(name); setStage('app'); }} onLogout={logout} />;
-  if (stage === 'onboarding') return <LoginGate onAuthenticated={authenticated} />;
+  if (!session) return <LoginGate />;
 
-  if (stage === 'app' && mainMenu) {
-    const meetingCard = { target: 'reunion' as const, title: 'Reunión semanal', detail: 'Encontrémonos en vivo.', placeholder: true as const };
+  if (mainMenu) {
+    const meetingCard = { target: 'reunion' as const, title: 'Reunión semanal', detail: 'Encontrémonos en vivo.', image: '/images/reunion-semanal.png' };
     const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/mi-perfil-mujer-movil-serena.png' : target === 'notificaciones' ? '/images/notificaciones.png' : target === 'biblioteca' ? '/images/biblioteca-lectora.png' : target === 'talleres' ? '/images/practicas-guiadas-hombre.png' : target === 'propia' ? '/images/tu-propia-practica-mujer.png' : target === 'meditaciones' ? '/images/meditaciones-hombre.png' : target === 'consultas' ? '/images/consultas-mujer.png' : undefined, imageSize: ['espacio', 'biblioteca', 'talleres'].includes(target) ? 'compact' as const : undefined }));
     const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
     const items = [...welcomeItems.slice(0, meditIndex + 1), meetingCard, ...welcomeItems.slice(meditIndex + 1)];
-    return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome"><p>Hola, ¿cómo estás, {userName}?</p><h1>Bienvenido a<strong>Germán Asistente</strong></h1></header><DayOneCarousel label="Secciones de Germán Asistente" items={items} onSelect={(item) => { if (item.target === 'reunion') { setMeetingOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section></main>;
+    return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>Bienvenido al<strong>Asistente de Germán</strong></h1></header><DayOneCarousel label="Secciones de Germán Asistente" items={items} onSelect={(item) => { if (item.target === 'reunion') { setMeetingOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section></main>;
   }
   if (meetingOpen) return <main className="app-shell app-main section-app"><WeeklyMeetingPanel onBack={back} /></main>;
-  if (accountOpen && localPreview) return <main className="app-shell app-main section-app"><LocalAccount name={userName} onBack={back} onSave={setUserName} /></main>;
-  if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} onBack={back} onNameSaved={setUserName} onLogout={logout} /></main>;
+  if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} onBack={back} onNameSaved={setFullName} onLogout={logout} /></main>;
   if (reader) { const favorite = deckFavorite({ icon: '📖', title: reader.title, detail: reader.detail, tone: palette[0], reader }); return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} favorite={favorites.some((item) => item.title === reader.title)} onFavorite={() => { const exact = favorites.find((item) => item.title === reader.title); toggleFavorite(exact || favorite); }} /></main>; }
   if (favoritesOpen) return <main className="app-shell app-main section-app"><FavoritesPanel favorites={favorites} onBack={back} onOpen={(favorite) => { if (favorite.reader) setReader(favorite.reader); }} onRemove={toggleFavorite} /></main>;
   if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} /></main>;
