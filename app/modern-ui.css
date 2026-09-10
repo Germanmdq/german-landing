@@ -109,11 +109,6 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .assistant-welcome h1 { max-width: 100%; font-size: clamp(29px, 8vw, 36px); line-height: 1.08; }
 .feature-header h1 { overflow: visible; overflow-wrap: anywhere; font-size: 30px; }
 .feature-header > small { display: block; max-width: 100%; overflow: visible; }
-.feature-header { position: relative; padding-right: 118px; }
-.section-mark { position: absolute; top: max(20px, env(safe-area-inset-top)); right: 22px; width: 76px; height: 76px; display: grid; place-items: center; border-radius: 26px; background: linear-gradient(145deg, #2b2c33, #111216); color: #fff; box-shadow: 0 16px 30px #1d1d1f2b; overflow: hidden; }
-.section-mark::after { content: ''; position: absolute; right: 13px; top: 13px; width: 8px; height: 8px; border-radius: 50%; background: #ef4d54; box-shadow: 0 0 0 4px #ef4d5426; }
-.section-mark i { position: absolute; width: 47px; height: 47px; border: 1px solid #ffffff4a; border-radius: 17px; transform: rotate(20deg); }
-.section-mark svg { position: relative; width: 29px; height: 29px; }
 .category-card .category-icon { width: 42px; height: 42px; font-size: 23px; }
 .category-card b { display: block; overflow: visible; overflow-wrap: normal; font-size: 22px; letter-spacing: -.035em; }
 .category-card em { display: block; overflow: visible; font-size: 14px; line-height: 1.45; }

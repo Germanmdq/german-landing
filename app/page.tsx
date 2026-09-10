@@ -17,7 +17,7 @@ import { TimePicker } from './components/time-picker';
 
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'consultas' | 'notificaciones' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string };
-type DeckItem = { icon: string; title: string; detail: string; tone: string; children?: DeckItem[]; reader?: ReaderContent; notificationPanel?: boolean; accountPanel?: boolean; action?: 'logout' };
+type DeckItem = { icon: string; title: string; detail: string; tone: string; image?: string; imageSize?: 'compact'; children?: DeckItem[]; reader?: ReaderContent; notificationPanel?: boolean; accountPanel?: boolean; action?: 'logout' };
 type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string };
 type FavoriteRecord = { id: string; title: string; detail: string; icon: string; tone: string; reader?: ReaderContent };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
@@ -154,8 +154,7 @@ function Deck({ items, onSelect, favorites, onToggleFavorite }: { items: DeckIte
 }
 
 function FixedHeader({ eyebrow, title, subtitle, onBack }: { eyebrow: string; title: string; subtitle: string; onBack: () => void }) {
-  const Icon = eyebrow === 'MI PERFIL' ? UserRound : eyebrow === 'NOTIFICACIONES' ? Bell : eyebrow === 'BIBLIOTECA' ? BookOpen : eyebrow === 'PRÁCTICAS GUIADAS' ? Route : eyebrow === 'MEDITACIONES' ? Flower2 : eyebrow === 'CONSULTAS' ? MessageCircle : Sparkles;
-  return <><header className="feature-header"><span className="section-mark" aria-hidden="true"><i /><Icon size={23} strokeWidth={2.15} /></span><p>{eyebrow}</p><h1>{title}</h1><small>{subtitle}</small></header><nav className="bottom-back" aria-label="Navegación"><button onClick={onBack}><ArrowLeft size={22} /><span>Volver</span></button></nav></>;
+  return <><header className="feature-header"><p>{eyebrow}</p><h1>{title}</h1><small>{subtitle}</small></header><nav className="bottom-back" aria-label="Navegación"><button onClick={onBack}><ArrowLeft size={22} /><span>Volver</span></button></nav></>;
 }
 
 function NotificationsPanel({ onBack }: { onBack: () => void }) {
@@ -562,5 +561,5 @@ export default function App() {
   if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} /></main>;
   if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel onBack={back} /></main>;
   if (current?.title === 'Día 1') return <main className="app-shell app-main section-app day-one-screen"><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} /><DayOneCarousel items={screen.items} onSelect={select} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section></main>;
-  return <main className="app-shell app-main section-app day-one-screen"><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} /><DayOneCarousel key={`${tab}-${trail.map((item) => item.title).join('/')}`} label={screen.title} items={screen.items} onSelect={select} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section></main>;
+  return <main className="app-shell app-main section-app day-one-screen"><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} /><DayOneCarousel key={`${tab}-${trail.map((item) => item.title).join('/')}`} label={screen.title} items={screen.items.map((item) => item.accountPanel ? { ...item, image: '/mi-cuenta-acceso.png' } : item)} onSelect={select} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section></main>;
 }
