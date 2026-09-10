@@ -299,7 +299,6 @@ function FavoritesPanel({ favorites, onBack, onOpen, onRemove }: { favorites: Fa
 
 function VideoIntro({ onFinish }: { onFinish: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -311,48 +310,25 @@ function VideoIntro({ onFinish }: { onFinish: () => void }) {
     video.setAttribute('playsinline', '');
     video.setAttribute('webkit-playsinline', 'true');
 
-    const playVideo = () => {
-      const promise = video.play();
-      if (promise !== undefined) {
-        promise.then(() => setIsPlaying(true)).catch((err) => {
-          console.warn('Autoplay prevented on mobile:', err);
-        });
+    const tryPlay = () => {
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => undefined);
       }
     };
 
-    playVideo();
-    video.addEventListener('canplay', playVideo, { once: true });
-    video.addEventListener('loadeddata', playVideo, { once: true });
-    video.addEventListener('playing', () => setIsPlaying(true));
-
-    const handleFirstTouch = () => {
-      if (video.paused) {
-        playVideo();
-      }
-    };
-
-    window.addEventListener('touchstart', handleFirstTouch, { once: true, passive: true });
-    window.addEventListener('touchend', handleFirstTouch, { once: true, passive: true });
+    tryPlay();
+    video.addEventListener('canplay', tryPlay, { once: true });
+    video.addEventListener('loadedmetadata', tryPlay, { once: true });
 
     return () => {
-      video.removeEventListener('canplay', playVideo);
-      video.removeEventListener('loadeddata', playVideo);
-      window.removeEventListener('touchstart', handleFirstTouch);
-      window.removeEventListener('touchend', handleFirstTouch);
+      video.removeEventListener('canplay', tryPlay);
+      video.removeEventListener('loadedmetadata', tryPlay);
     };
   }, []);
 
-  const handleClick = () => {
-    const video = videoRef.current;
-    if (video && video.paused) {
-      video.play().then(() => setIsPlaying(true)).catch(() => onFinish());
-      return;
-    }
-    onFinish();
-  };
-
   return (
-    <div className="video-intro" onClick={handleClick}>
+    <div className="video-intro" onClick={onFinish}>
       <video
         ref={videoRef}
         className="video-intro-video"
@@ -364,11 +340,6 @@ function VideoIntro({ onFinish }: { onFinish: () => void }) {
         onEnded={onFinish}
         aria-label="Presentación de Germán Asistente"
       />
-      {!isPlaying && (
-        <div style={{ position: 'absolute', bottom: '28px', color: '#666', fontSize: '13px', pointerEvents: 'none', background: 'rgba(255,255,255,0.85)', padding: '6px 14px', borderRadius: '20px' }}>
-          Tocá la pantalla para reproducir
-        </div>
-      )}
     </div>
   );
 }
