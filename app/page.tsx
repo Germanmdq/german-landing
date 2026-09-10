@@ -154,7 +154,8 @@ function Deck({ items, onSelect, favorites, onToggleFavorite }: { items: DeckIte
 }
 
 function FixedHeader({ eyebrow, title, subtitle, onBack }: { eyebrow: string; title: string; subtitle: string; onBack: () => void }) {
-  return <><header className="feature-header"><p>{eyebrow}</p><h1>{title}</h1><small>{subtitle}</small></header><nav className="bottom-back" aria-label="Navegación"><button onClick={onBack}><ArrowLeft size={22} /><span>Volver</span></button></nav></>;
+  const Icon = eyebrow === 'MI PERFIL' ? UserRound : eyebrow === 'NOTIFICACIONES' ? Bell : eyebrow === 'BIBLIOTECA' ? BookOpen : eyebrow === 'PRÁCTICAS GUIADAS' ? Route : eyebrow === 'MEDITACIONES' ? Flower2 : eyebrow === 'CONSULTAS' ? MessageCircle : Sparkles;
+  return <><header className="feature-header"><span className="section-mark" aria-hidden="true"><i /><Icon size={23} strokeWidth={2.15} /></span><p>{eyebrow}</p><h1>{title}</h1><small>{subtitle}</small></header><nav className="bottom-back" aria-label="Navegación"><button onClick={onBack}><ArrowLeft size={22} /><span>Volver</span></button></nav></>;
 }
 
 function NotificationsPanel({ onBack }: { onBack: () => void }) {
