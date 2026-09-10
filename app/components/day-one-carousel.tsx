@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Heart } from 'lucide-react';
 
-type Item = { title: string; detail: string; image?: string };
+type Item = { title: string; detail: string; image?: string; imageSize?: 'compact' };
 export function DayOneCarousel<T extends Item>({ items, onSelect, isFavorite, onFavorite, label = 'Prácticas del Día 1' }: { label?: string; items: T[]; onSelect: (item: T) => void; isFavorite?: (item: T) => boolean | undefined; onFavorite?: (item: T) => void }) {
   const scroller = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLDivElement>(null);
@@ -105,7 +105,7 @@ export function DayOneCarousel<T extends Item>({ items, onSelect, isFavorite, on
       <div className="day-one-track">{items.map((item, index) => <article key={item.title} className="day-one-card" id={`day-one-slide-${index}`} aria-label={`${index + 1} de ${items.length}: ${item.title}`}>
         <button className="day-one-open" onClick={() => { interrupt(); onSelect(item); }} tabIndex={active === index ? 0 : -1}>
           <span className="day-one-caption">{item.title}<br />{item.detail}</span>
-          {item.image && <img className="day-one-illustration" src={item.image} alt="" draggable={false} />}
+          {item.image && <img className={`day-one-illustration${item.imageSize === 'compact' ? ' day-one-illustration--compact' : ''}`} src={item.image} alt="" draggable={false} />}
         </button>
         {onFavorite && isFavorite?.(item) !== undefined && <button className="day-one-save" aria-label={`${isFavorite?.(item) ? 'Quitar' : 'Guardar'} ${item.title} ${isFavorite?.(item) ? 'de' : 'en'} favoritos`} onClick={() => { interrupt(); onFavorite(item); }} tabIndex={active === index ? 0 : -1}><Heart size={20} fill={isFavorite?.(item) ? 'currentColor' : 'none'} /></button>}
       </article>)}</div>

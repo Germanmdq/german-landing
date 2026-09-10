@@ -87,3 +87,4 @@
 .day-one-open:has(.day-one-illustration) { display: flex; flex-direction: column; }
 .day-one-open:has(.day-one-illustration) .day-one-caption { position: relative; top: auto; left: auto; right: auto; margin: 32px var(--day-caption-left) 12px; flex: 0 0 auto; z-index: 1; }
 .day-one-illustration { display: block; width: calc(100% - 24px); min-height: 0; flex: 1 1 0; object-fit: contain; object-position: center bottom; margin: 0 12px; pointer-events: none; }
+.day-one-illustration--compact { width: calc((100% - 24px) * .8); margin-left: auto; margin-right: auto; }
