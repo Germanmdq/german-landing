@@ -234,8 +234,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 }
 
 /* Shared neutral surfaces and quiet controls across the application. */
-:root { --ui-bg: #fff; --paper: #fff; --ui-soft: #f5f5f7; --ui-line: #e8e8ed; }
-.app-shell, .reader-section, .reader-body, .feature-header { background: #fff; }
+:root { --ui-bg: #F5F5F7; --paper: #F5F5F7; --ui-soft: #F5F5F7; --ui-line: #e8e8ed; }
+.app-shell, .reader-section, .reader-body, .feature-header { background: #F5F5F7; }
 .library-content-card, .favorite-content-card, .notification-time-row, .audio-player-card, .subscription-card {
   background: #f5f5f7;
   border: 0;

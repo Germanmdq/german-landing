@@ -1,92 +1,172 @@
 /* Values traced to apple.com/mac-mini/ #media-card-gallery. Scoped to Día 1. */
-.day-one-screen.app-shell { background: #fff !important; overflow-y: auto !important; }
-.day-one-screen .day-one-section { display: block; height: auto; min-height: 100%; padding-bottom: calc(100px + env(safe-area-inset-bottom)); background: white; }
-.day-one-screen .feature-header { background: #fff; padding: 32px 6.25% 40px; }
+.day-one-screen.app-shell { background: #F5F5F7 !important; overflow-y: auto !important; }
+.day-one-screen .day-one-section {
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  min-height: 440px;
+  padding: 0 0 max(12px, env(safe-area-inset-bottom));
+  background: #F5F5F7 !important;
+}
+.day-one-screen .feature-header {
+  flex: 0 0 auto;
+  background: #F5F5F7 !important;
+  padding: max(20px, env(safe-area-inset-top)) 6.25% 16px;
+}
 .day-one-screen .feature-header h1 { color: #1d1d1f; font-size: 32px; font-weight: 600; line-height: 1.125; letter-spacing: .004em; }
 .day-one-screen .feature-header > p { color: #6e6e73; }
-.day-one-carousel { container-type: inline-size; --day-gutter: 6.25cqw; --day-card-width: calc(max(87.5cqw, 280px) - 20px); --day-caption-left: min(32px, calc(8.33333cqw - 6.25cqw / 12)); }
-.day-one-scroll { width: 100%; position: relative; overflow-x: scroll; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-padding-inline-start: var(--day-gutter); scrollbar-width: none; overscroll-behavior-x: contain; }
+.day-one-carousel {
+  container-type: inline-size;
+  --day-gutter: 6.25cqw;
+  --day-card-width: calc(max(87.5cqw, 280px) - 20px);
+  --day-caption-left: min(32px, calc(8.33333cqw - 6.25cqw / 12));
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.day-one-scroll {
+  width: 100%;
+  position: relative;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline-start: var(--day-gutter);
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+}
 .day-one-scroll::-webkit-scrollbar { display: none; }
-.day-one-track { display: grid; grid-auto-flow: column; gap: 20px; width: max-content; padding: 0 var(--day-gutter); }
-.day-one-card { position: relative; width: var(--day-card-width); height: 480px; border-radius: 28px; border: 0; box-shadow: none; overflow: hidden; background: #f5f5f7; scroll-snap-align: start; }
-.day-one-open { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; text-align: left; color: rgba(0,0,0,.88); }
-.day-one-caption { position: absolute; top: 32px; left: var(--day-caption-left); right: var(--day-caption-left); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 17px; font-weight: 600; line-height: 1.23536; letter-spacing: -.022em; }
-.day-one-save { position: absolute; right: 24px; bottom: 24px; width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgba(232,232,237,.7); color: #1d1d1f; display: grid; place-items: center; }
-.day-one-controls { display: flex; justify-content: center; align-items: center; gap: 14px; margin: 60px auto 30px; }
-.day-one-play, .day-one-dots { height: 56px; border: 0; border-radius: 32px; background: rgba(232,232,237,.7); backdrop-filter: blur(7px); box-shadow: inset 0 0 1px rgba(0,0,0,.11); }
+.day-one-track {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 20px;
+  width: max-content;
+  height: 100%;
+  min-height: 0;
+  padding: 4px var(--day-gutter) 10px;
+}
+.day-one-card {
+  position: relative;
+  width: var(--day-card-width);
+  height: 100%;
+  min-height: 0;
+  border-radius: 28px;
+  border: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  background: #FFFFFF;
+  scroll-snap-align: start;
+}
+.day-one-open {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: rgba(0,0,0,.88);
+}
+.day-one-caption {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  margin: 28px var(--day-caption-left) 12px;
+  flex: 0 0 auto;
+  z-index: 1;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.23536;
+  letter-spacing: -.022em;
+}
+.day-one-save {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(232,232,237,.7);
+  color: #1d1d1f;
+  display: grid;
+  place-items: center;
+}
+.day-one-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  flex: 0 0 56px;
+  height: 56px;
+  margin: 12px auto 8px;
+}
+.day-one-play, .day-one-dots {
+  height: 56px;
+  border: 0;
+  border-radius: 32px;
+  background: rgba(232,232,237,.7);
+  backdrop-filter: blur(7px);
+  box-shadow: inset 0 0 1px rgba(0,0,0,.11);
+}
 .day-one-play { width: 56px; padding: 0; color: #1d1d1f; flex-shrink: 0; }
 .day-one-play svg { width: 56px; height: 56px; fill: currentColor; }
 .day-one-play:hover { background: rgba(223,223,227,.698); }
 .day-one-play:active { background: rgba(193,193,198,.654); }
-.day-one-dots { display: flex; align-items: center; padding: 0 16px; }
-.day-one-dot { display: grid; place-items: center; padding: 0 8px; height: 56px; border: 0; background: none; }
+.day-one-dots { display: flex; align-items: center; padding: 0 16px; max-width: calc(100cqw - 106px); overflow-x: auto; scrollbar-width: none; }
+.day-one-dots::-webkit-scrollbar { display: none; }
+.day-one-dot { display: grid; place-items: center; padding: 0 8px; height: 56px; border: 0; background: none; flex-shrink: 0; }
 .day-one-dot > span { display: block; position: relative; width: 8px; height: 8px; overflow: hidden; border-radius: 10px; background: rgba(29,29,31,.6); transition: width .5s cubic-bezier(.455,.03,.515,.955), background-color .25s linear; }
 .day-one-dot.current > span { width: 32px; }
 .day-one-dot i { position: absolute; inset: 0; background: #29292a; transform-origin: left; border-radius: 10px; }
 .day-one-screen button:focus-visible { outline: 3px solid #0071e3; outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .day-one-dot > span { transition: none; } }
 
-.welcome-carousel-screen .assistant-welcome { height: auto; padding: 32px 6.25% 40px; background: #fff; border: 0; }
-.welcome-carousel-screen .assistant-welcome h1 { max-width: 100%; color: #1d1d1f; }
-.welcome-carousel-screen .day-one-section { padding-bottom: max(30px, env(safe-area-inset-bottom)); }
-
-/* Welcome fits header, card and pagination within the mobile viewport. */
-.welcome-carousel-screen .day-one-section {
-  height: 100svh;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  padding: 0 0 env(safe-area-inset-bottom);
-}
 .welcome-carousel-screen .assistant-welcome {
   flex: 0 0 auto;
-  padding: max(20px, env(safe-area-inset-top)) 6.25% 24px;
+  padding: max(20px, env(safe-area-inset-top)) 6.25% 20px;
+  background: #F5F5F7 !important;
+  border: 0;
 }
-.welcome-carousel-screen .day-one-carousel {
-  flex: 1 1 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-.welcome-carousel-screen .day-one-scroll { flex: 1 1 0; min-height: 0; }
-.welcome-carousel-screen .day-one-track { height: 100%; }
-.welcome-carousel-screen .day-one-card { height: 100%; min-height: 0; }
-.welcome-carousel-screen .day-one-controls {
-  flex: 0 0 56px;
-  height: 56px;
-  margin: 24px auto 20px;
-}
+.welcome-carousel-screen .assistant-welcome h1 { max-width: 100%; color: #1d1d1f; }
+
 @media (max-height: 600px) {
-  .welcome-carousel-screen .assistant-welcome { padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: 16px; }
-  .welcome-carousel-screen .day-one-controls { margin-top: 16px; margin-bottom: 12px; }
+  .welcome-carousel-screen .assistant-welcome { padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: 12px; }
+  .day-one-screen .feature-header { padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: 12px; }
+  .day-one-controls { margin-top: 8px; margin-bottom: 6px; }
 }
-/* Allow scrolling only on exceptionally short or enlarged-text viewports. */
-.welcome-carousel-screen .day-one-section { min-height: 420px; }
 
-/* Shared viewport composition for every category and practice carousel. */
-.day-one-screen:not(.welcome-carousel-screen) .day-one-section {
+.day-one-visual {
   display: flex;
-  flex-direction: column;
-  height: 100svh;
-  min-height: 480px;
-  padding: 0 0 calc(82px + env(safe-area-inset-bottom));
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  flex: 1 1 0;
+  padding: 0 16px 20px;
+  overflow: hidden;
 }
-.day-one-screen:not(.welcome-carousel-screen) .feature-header {
-  flex: 0 0 auto;
-  padding: max(20px, env(safe-area-inset-top)) 6.25% 24px;
+.day-one-illustration {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: min(280px, 100%);
+  object-fit: contain;
+  pointer-events: none;
 }
-.day-one-screen:not(.welcome-carousel-screen) .day-one-carousel { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
-.day-one-screen:not(.welcome-carousel-screen) .day-one-scroll { flex: 1 1 0; min-height: 0; }
-.day-one-screen:not(.welcome-carousel-screen) .day-one-track { height: 100%; }
-.day-one-screen:not(.welcome-carousel-screen) .day-one-card { height: 100%; min-height: 0; }
-.day-one-screen:not(.welcome-carousel-screen) .day-one-controls { flex: 0 0 56px; height: 56px; margin: 20px auto 12px; }
-.day-one-dots { max-width: calc(100cqw - 106px); overflow-x: auto; scrollbar-width: none; }
-.day-one-dots::-webkit-scrollbar { display: none; }
-.day-one-dot { flex-shrink: 0; }
-
-.day-one-open:has(.day-one-illustration), .day-one-open:has(.day-one-placeholder) { display: flex; flex-direction: column; }
-.day-one-open:has(.day-one-illustration) .day-one-caption, .day-one-open:has(.day-one-placeholder) .day-one-caption { position: relative; top: auto; left: auto; right: auto; margin: 32px var(--day-caption-left) 12px; flex: 0 0 auto; z-index: 1; }
-.day-one-visual { display: flex; align-items: center; justify-content: center; min-height: 0; flex: 1 1 0; padding: 0 12px 20px; overflow: hidden; }
-.day-one-illustration { display: block; width: 100%; height: auto; max-height: 230px; object-fit: contain; pointer-events: none; }
 .day-one-illustration--compact { transform: none; }
-.day-one-placeholder { width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; border-radius: 24px; background: #e4e5e9; color: #9a9ba6; }
+.day-one-placeholder {
+  width: 160px;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 24px;
+  background: #e4e5e9;
+  color: #9a9ba6;
+}
