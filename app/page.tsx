@@ -24,6 +24,7 @@ type WorkshopDay = { id: string; day: number; title: string; tipo: WorkshopDayTi
 const palette = ['#D92D35', '#E5484D', '#F2555A', '#FF6B6F'];
 const icons = ['●', '◆', '✦', '○'];
 const cleanParagraphs = (text: string) => text.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
+const hasAuthCallbackParams = () => typeof window !== 'undefined' && (window.location.hash.includes('access_token') || new URLSearchParams(window.location.search).has('code'));
 const workshopMomentLabels = ['Mañana', 'Mediodía', 'Tarde', 'Noche'];
 const workshopParagraphs = (body: string) => body.split(/\n\n---\n\n/).flatMap((section) => cleanParagraphs(section));
 const leaf = (title: string, index: number, detail = ''): DeckItem => ({ icon: icons[index % icons.length], title, detail, tone: palette[index % palette.length] });
@@ -528,7 +529,11 @@ function LoginGate() {
 }
 
 export default function App() {
-  const [introDone, setIntroDone] = useState(false);
+  const [introDone, setIntroDone] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    if (hasAuthCallbackParams()) return true;
+    return sessionStorage.getItem('german-intro-seen') === '1';
+  });
   const [sessionChecked, setSessionChecked] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
@@ -698,8 +703,8 @@ export default function App() {
       });
   }, []);
 
-  if (!introDone) return <VideoIntro onFinish={() => setIntroDone(true)} />;
   if (!sessionChecked) return null;
+  if (!session && !introDone) return <VideoIntro onFinish={() => { if (typeof window !== 'undefined') sessionStorage.setItem('german-intro-seen', '1'); setIntroDone(true); }} />;
   if (!session) return <LoginGate />;
 
   if (mainMenu) {
