@@ -71,6 +71,27 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .time-colon { z-index: 1; font-size: 27px; margin: 0 3px; }
 .time-sheet-hint { margin: 16px 0 0; text-align: center; font-size: 14px; color: var(--muted); }
 
+/* Onboarding del taller de 40 días: card estilo iOS, pills, sheet de zona horaria. */
+.ios-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.06); overflow: hidden; margin: 0 0 24px; }
+.ios-row { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 52px; padding: 16px 20px; border: 0; border-top: 1px solid #E5E5EA; background: none; text-align: left; }
+.ios-row:first-child { border-top: 0; }
+.ios-row-label { color: #1C1C1E; font-size: 17px; font-weight: 400; }
+.ios-row-value { display: flex; align-items: center; gap: 6px; color: var(--ui-accent); font-size: 17px; font-variant-numeric: tabular-nums; }
+.ios-row-value--muted { color: #8E8E93; font-size: 15px; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ios-row-value svg { flex-shrink: 0; color: #C7C7CC; }
+.workshop-pills-card { padding: 16px; }
+.workshop-pills { display: flex; flex-wrap: wrap; gap: 10px; }
+.workshop-pill { flex: 1 1 calc(50% - 5px); min-height: 48px; border: 1px solid var(--ui-line); border-radius: 14px; background: #fff; color: var(--ui-ink); font-size: 15px; font-weight: 600; }
+.workshop-pill.active { border-color: var(--ui-accent); background: var(--ui-accent); color: #fff; }
+.workshop-hint { color: #8E8E93; font-size: 14px; line-height: 1.5; margin: 12px 0 24px; }
+.workshop-current-day { margin-bottom: 16px; }
+.timezone-search { width: 100%; min-height: 44px; margin: 4px 0 4px; padding: 0 14px; border: 1px solid var(--ui-line); border-radius: 12px; background: #eceef1; font-size: 16px; color: var(--ui-ink); }
+.timezone-list { max-height: 50vh; overflow-y: auto; margin-top: 8px; }
+.timezone-option { display: block; width: 100%; padding: 13px 4px; border: 0; border-top: 1px solid #E5E5EA; background: none; text-align: left; font-size: 16px; color: var(--ui-ink); }
+.timezone-list .timezone-option:first-child { border-top: 0; }
+.timezone-option.selected { color: var(--ui-accent); font-weight: 600; }
+.timezone-empty { padding: 20px 4px; color: var(--muted); font-size: 14px; text-align: center; }
+
 /* Restore the original deck: two cards, then a sticky overlapping stack. */
 .category-list, .feature-list {
   display: block;

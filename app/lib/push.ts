@@ -2,6 +2,7 @@ import type { User } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 
 export type WorkshopSchedule = { morning: string; noon: string; afternoon: string; night: string };
+export type WorkshopSettings = WorkshopSchedule & { timezone: string; messageIntervalMinutes: number };
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -10,7 +11,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
 }
 
-export async function subscribeToPush(user: User, schedule: WorkshopSchedule, tallerId: string): Promise<{ error?: string }> {
+export async function subscribeToPush(user: User, settings: WorkshopSettings, tallerId: string): Promise<{ error?: string }> {
   if (typeof window === 'undefined' || !('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
     return { error: 'Este navegador no soporta notificaciones push.' };
   }
@@ -40,10 +41,12 @@ export async function subscribeToPush(user: User, schedule: WorkshopSchedule, ta
     endpoint: json.endpoint,
     p256dh,
     auth_key: authKey,
-    morning: schedule.morning,
-    noon: schedule.noon,
-    afternoon: schedule.afternoon,
-    night: schedule.night,
+    morning: settings.morning,
+    noon: settings.noon,
+    afternoon: settings.afternoon,
+    night: settings.night,
+    timezone: settings.timezone,
+    message_interval_minutes: settings.messageIntervalMinutes,
     active_taller_id: tallerId,
     current_day: 1,
     is_active: true,

@@ -12,6 +12,7 @@ import './modern-ui.css';
 import './components/day-one-carousel.css';
 import { DayOneCarousel } from './components/day-one-carousel';
 import { TimePicker } from './components/time-picker';
+import { TimezonePicker } from './components/timezone-picker';
 
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'consultas' | 'notificaciones' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string; audios?: { label: string; url: string }[] };
@@ -378,16 +379,30 @@ function FavoritesPanel({ favorites, onBack, onOpen, onRemove }: { favorites: Fa
 
 const workshopMomentKeys = ['morning', 'noon', 'afternoon', 'night'] as const;
 const workshopMomentPickerLabels: Record<typeof workshopMomentKeys[number], string> = { morning: 'Mañana', noon: 'Mediodía', afternoon: 'Tarde', night: 'Noche' };
-const defaultWorkshopSchedule: WorkshopSchedule = { morning: '07:50', noon: '12:30', afternoon: '17:00', night: '22:45' };
+const defaultWorkshopSchedule: WorkshopSchedule = { morning: '07:00', noon: '12:00', afternoon: '17:00', night: '22:00' };
+const workshopIntervalOptions = [30, 40, 45, 60] as const;
+const workshopIntervalLabel = (minutes: number) => minutes === 60 ? 'Cada 1 hora' : `Cada ${minutes} min`;
+const detectTimezone = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; } };
+const shiftHours = (time: string, hours: number) => {
+  const [h, m] = time.split(':').map(Number);
+  const total = (((h * 60 + m + hours * 60) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+};
 
 type WorkshopStage = 'loading' | 'onboarding' | 'confirmed' | 'days' | 'error';
+type WorkshopOnboardingStep = 'intro' | 'schedule' | 'frequency' | 'summary';
 
 function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => void; onRead: (reader: ReaderContent) => void }) {
   const [days, setDays] = useState<WorkshopDay[]>([]);
   const [collectionId, setCollectionId] = useState<string | null>(null);
   const [stage, setStage] = useState<WorkshopStage>('loading');
+  const [currentDay, setCurrentDay] = useState<number | null>(null);
+  const [step, setStep] = useState<WorkshopOnboardingStep>('intro');
   const [schedule, setSchedule] = useState<WorkshopSchedule>(defaultWorkshopSchedule);
+  const [timezone, setTimezone] = useState(detectTimezone);
+  const [messageInterval, setMessageInterval] = useState<typeof workshopIntervalOptions[number]>(40);
   const [editingMoment, setEditingMoment] = useState<typeof workshopMomentKeys[number] | null>(null);
+  const [editingTimezone, setEditingTimezone] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
 
@@ -409,7 +424,7 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
           .select('sort_order,content_items(id,title,body,metadata,content_assets(asset_type,source_url,sort_order))')
           .eq('collection_id', collection.id)
           .order('sort_order'),
-        supabase.from('user_plan_progress').select('id').eq('user_id', user.id).eq('collection_id', collection.id).maybeSingle(),
+        supabase.from('user_plan_progress').select('current_day').eq('user_id', user.id).eq('collection_id', collection.id).maybeSingle(),
       ]);
       if (cancelled) return;
       if (error || !data) { setStage('error'); return; }
@@ -429,7 +444,7 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
         })
         .filter((value): value is WorkshopDay => value !== null);
       setDays(mapped);
-      setStage(progress ? 'days' : 'onboarding');
+      if (progress) { setCurrentDay(progress.current_day); setStage('days'); } else { setStage('onboarding'); }
     })();
     return () => { cancelled = true; };
   }, [user.id]);
@@ -438,7 +453,7 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
     if (!collectionId) return;
     setSaving(true);
     setSaveError('');
-    const subscribeResult = await subscribeToPush(user, schedule, collectionId);
+    const subscribeResult = await subscribeToPush(user, { ...schedule, timezone, messageIntervalMinutes: messageInterval }, collectionId);
     if (subscribeResult.error) {
       setSaving(false);
       setSaveError(subscribeResult.error);
@@ -447,6 +462,7 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
     const { error: progressError } = await supabase.from('user_plan_progress').insert({ user_id: user.id, collection_id: collectionId, current_day: 1 });
     setSaving(false);
     if (progressError) { setSaveError(progressError.message); return; }
+    setCurrentDay(1);
     setStage('confirmed');
   };
 
@@ -459,11 +475,52 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
 
   if (stage === 'error') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} /><div className="reader-body workshop-browser"><p className="library-empty">No pudimos cargar el taller. Probá de nuevo más tarde.</p></div></section>;
 
-  if (stage === 'onboarding') return <section className="reader-section">
-    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Configurá tu taller" subtitle="Elegí a qué hora querés recibir cada práctica de los 40 días." onBack={onBack} />
-    <div className="reader-body notification-settings">
-      {workshopMomentKeys.map((key) => <button key={key} className="notification-time-row" onClick={() => setEditingMoment(key)} aria-label={`Cambiar horario de ${workshopMomentPickerLabels[key]}: ${schedule[key]}`} aria-haspopup="dialog"><span>{workshopMomentPickerLabels[key]}</span><span className="notification-time-value">{schedule[key]}<ChevronRight size={17} /></span></button>)}
+  if (stage === 'onboarding' && step === 'intro') return <section className="reader-section">
+    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de Autoconcepto" subtitle="40 días para transformar cómo te ves y cómo ves la vida." onBack={onBack} />
+    <div className="reader-body">
+      <p>Este es un recorrido de 40 días diseñado para volver a tu fuente. Cada día vas a recibir 4 meditaciones guiadas — una a la mañana, al mediodía, a la tarde y a la noche — que te van a acompañar a reconstruir tu autoconcepto desde adentro.</p>
+      <p>Además, durante el día vas a recibir mensajes breves con frases e ideas para mantener tu atención enfocada. Vos elegís cada cuánto te llegan.</p>
+      <p>No tenés que hacer nada más que escuchar y estar presente. Todo te llega por notificación, en el momento justo.</p>
+      <ShimmerButton type="button" className="account-save" onClick={() => setStep('schedule')}>Comenzar configuración →</ShimmerButton>
+    </div>
+  </section>;
+
+  if (stage === 'onboarding' && step === 'schedule') return <section className="reader-section">
+    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Elegí tus horarios" subtitle="¿A qué hora querés recibir cada meditación?" onBack={onBack} />
+    <div className="reader-body">
+      <div className="ios-card">
+        <button className="ios-row" onClick={() => setEditingTimezone(true)} aria-haspopup="dialog"><span className="ios-row-label">Zona horaria</span><span className="ios-row-value ios-row-value--muted">{timezone.replace(/_/g, ' ')}<ChevronRight size={17} /></span></button>
+        {workshopMomentKeys.map((key) => <button key={key} className="ios-row" onClick={() => setEditingMoment(key)} aria-label={`Cambiar horario de ${workshopMomentPickerLabels[key]}: ${schedule[key]}`} aria-haspopup="dialog"><span className="ios-row-label">{workshopMomentPickerLabels[key]}</span><span className="ios-row-value">{schedule[key]}<ChevronRight size={17} /></span></button>)}
+      </div>
       {editingMoment && <TimePicker label={workshopMomentPickerLabels[editingMoment]} value={schedule[editingMoment]} onCancel={() => setEditingMoment(null)} onSave={(value) => { setSchedule((current) => ({ ...current, [editingMoment]: value })); setEditingMoment(null); }} />}
+      {editingTimezone && <TimezonePicker value={timezone} onCancel={() => setEditingTimezone(false)} onSave={(zone) => { setTimezone(zone); setEditingTimezone(false); }} />}
+      <ShimmerButton type="button" className="account-save" onClick={() => setStep('frequency')}>Siguiente →</ShimmerButton>
+    </div>
+  </section>;
+
+  if (stage === 'onboarding' && step === 'frequency') return <section className="reader-section">
+    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Mensajes durante el día" subtitle="Cada día hay ~26 mensajes breves para mantener tu atención. ¿Cada cuánto querés recibirlos?" onBack={onBack} />
+    <div className="reader-body">
+      <div className="ios-card workshop-pills-card">
+        <div className="workshop-pills">{workshopIntervalOptions.map((minutes) => <button key={minutes} type="button" className={`workshop-pill${messageInterval === minutes ? ' active' : ''}`} onClick={() => setMessageInterval(minutes)}>{workshopIntervalLabel(minutes)}</button>)}</div>
+      </div>
+      <p className="workshop-hint">Los mensajes llegarían entre las {shiftHours(schedule.morning, 1)} y las {shiftHours(schedule.night, -1)}.</p>
+      <ShimmerButton type="button" className="account-save" onClick={() => setStep('summary')}>Siguiente →</ShimmerButton>
+    </div>
+  </section>;
+
+  if (stage === 'onboarding') return <section className="reader-section">
+    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Tu taller está listo" subtitle="Revisá la configuración antes de empezar." onBack={onBack} />
+    <div className="reader-body">
+      <div className="ios-card">
+        <div className="ios-row"><span className="ios-row-label">Zona horaria</span><span className="ios-row-value ios-row-value--muted">{timezone.replace(/_/g, ' ')}</span></div>
+        <div className="ios-row"><span className="ios-row-label">Meditación de la mañana</span><span className="ios-row-value">{schedule.morning}</span></div>
+        <div className="ios-row"><span className="ios-row-label">Meditación del mediodía</span><span className="ios-row-value">{schedule.noon}</span></div>
+        <div className="ios-row"><span className="ios-row-label">Meditación de la tarde</span><span className="ios-row-value">{schedule.afternoon}</span></div>
+        <div className="ios-row"><span className="ios-row-label">Meditación de la noche</span><span className="ios-row-value">{schedule.night}</span></div>
+        <div className="ios-row"><span className="ios-row-label">Mensajes intermedios</span><span className="ios-row-value ios-row-value--muted">{workshopIntervalLabel(messageInterval)}</span></div>
+        <div className="ios-row"><span className="ios-row-label">Duración</span><span className="ios-row-value ios-row-value--muted">40 días</span></div>
+      </div>
       {saveError && <p className="account-message">{saveError}</p>}
       <ShimmerButton type="button" className="account-save" onClick={startWorkshop} disabled={saving}>{saving ? 'Un momento…' : 'Comenzar taller'}</ShimmerButton>
     </div>
@@ -472,7 +529,7 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
   if (stage === 'confirmed') return <section className="reader-section">
     <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="¡Listo!" subtitle="Ya está todo configurado." onBack={onBack} />
     <div className="reader-body">
-      <p>¡Listo! Vas a recibir tu primera práctica mañana a las {schedule.morning}.</p>
+      <p>¡Listo! Tu primera práctica llega mañana a las {schedule.morning}. Preparate para 40 días que te van a cambiar la mirada.</p>
       <ShimmerButton type="button" className="account-save" onClick={() => setStage('days')}>Ver el taller</ShimmerButton>
     </div>
   </section>;
@@ -480,6 +537,17 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
   return <section className="reader-section workshop-section">
     <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} />
     <div className="reader-body workshop-browser">
+      {currentDay != null && (() => {
+        const today = days.find((day) => day.day === currentDay);
+        return <MagicCard className="library-content-card workshop-current-day" onClick={() => today && openDay(today)}>
+          <div>
+            <p>VAS POR EL DÍA {currentDay} DE 40</p>
+            <b>Continuar con hoy</b>
+            <em>Tocá para abrir la práctica del día.</em>
+          </div>
+          <span className="library-card-actions"><i><ChevronRight size={19} /></i></span>
+        </MagicCard>;
+      })()}
       <div className="library-content-list">{days.map((day) => {
         const tag = day.tipo === 'silencio' ? ' · SOLO LECTURA' : day.tipo === 'incompleto' ? ' · PARCIAL' : '';
         const preview = day.tipo === 'silencio' ? 'Sin audio, solo lectura.' : day.audios.length ? `${day.audios.length} audio${day.audios.length === 1 ? '' : 's'} disponible${day.audios.length === 1 ? '' : 's'}.` : 'Sin audio disponible.';
