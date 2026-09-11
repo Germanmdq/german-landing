@@ -5,6 +5,7 @@ import type { Session, User } from '@supabase/supabase-js';
 import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, Heart, LogOut, Pause, Play, Search, Trash2 } from 'lucide-react';
 import content from './content.generated.json';
 import { supabase } from './lib/supabase';
+import { subscribeToPush, type WorkshopSchedule } from './lib/push';
 import { MagicCard, ShimmerButton } from './components/magic-ui';
 import './magic-ui.css';
 import './modern-ui.css';
@@ -375,9 +376,20 @@ function FavoritesPanel({ favorites, onBack, onOpen, onRemove }: { favorites: Fa
   </section>;
 }
 
-function WorkshopPanel({ onBack, onRead }: { onBack: () => void; onRead: (reader: ReaderContent) => void }) {
+const workshopMomentKeys = ['morning', 'noon', 'afternoon', 'night'] as const;
+const workshopMomentPickerLabels: Record<typeof workshopMomentKeys[number], string> = { morning: 'Mañana', noon: 'Mediodía', afternoon: 'Tarde', night: 'Noche' };
+const defaultWorkshopSchedule: WorkshopSchedule = { morning: '07:50', noon: '12:30', afternoon: '17:00', night: '22:45' };
+
+type WorkshopStage = 'loading' | 'onboarding' | 'confirmed' | 'days' | 'error';
+
+function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => void; onRead: (reader: ReaderContent) => void }) {
   const [days, setDays] = useState<WorkshopDay[]>([]);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [collectionId, setCollectionId] = useState<string | null>(null);
+  const [stage, setStage] = useState<WorkshopStage>('loading');
+  const [schedule, setSchedule] = useState<WorkshopSchedule>(defaultWorkshopSchedule);
+  const [editingMoment, setEditingMoment] = useState<typeof workshopMomentKeys[number] | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -388,14 +400,19 @@ function WorkshopPanel({ onBack, onRead }: { onBack: () => void; onRead: (reader
         .eq('slug', 'taller-40-dias')
         .maybeSingle();
       if (cancelled) return;
-      if (collectionError || !collection) { setStatus('error'); return; }
-      const { data, error } = await supabase
-        .from('collection_items')
-        .select('sort_order,content_items(id,title,body,metadata,content_assets(asset_type,source_url,sort_order))')
-        .eq('collection_id', collection.id)
-        .order('sort_order');
+      if (collectionError || !collection) { setStage('error'); return; }
+      setCollectionId(collection.id);
+
+      const [{ data, error }, { data: progress }] = await Promise.all([
+        supabase
+          .from('collection_items')
+          .select('sort_order,content_items(id,title,body,metadata,content_assets(asset_type,source_url,sort_order))')
+          .eq('collection_id', collection.id)
+          .order('sort_order'),
+        supabase.from('user_plan_progress').select('id').eq('user_id', user.id).eq('collection_id', collection.id).maybeSingle(),
+      ]);
       if (cancelled) return;
-      if (error || !data) { setStatus('error'); return; }
+      if (error || !data) { setStage('error'); return; }
       const mapped = data
         .map((row) => {
           const item = row.content_items as unknown as { id: string; title: string; body: string; metadata: Record<string, unknown> | null; content_assets: { asset_type: string; source_url: string; sort_order: number }[] | null } | null;
@@ -412,22 +429,58 @@ function WorkshopPanel({ onBack, onRead }: { onBack: () => void; onRead: (reader
         })
         .filter((value): value is WorkshopDay => value !== null);
       setDays(mapped);
-      setStatus('ready');
+      setStage(progress ? 'days' : 'onboarding');
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [user.id]);
+
+  const startWorkshop = async () => {
+    if (!collectionId) return;
+    setSaving(true);
+    setSaveError('');
+    const subscribeResult = await subscribeToPush(user, schedule, collectionId);
+    if (subscribeResult.error) {
+      setSaving(false);
+      setSaveError(subscribeResult.error);
+      return;
+    }
+    const { error: progressError } = await supabase.from('user_plan_progress').insert({ user_id: user.id, collection_id: collectionId, current_day: 1 });
+    setSaving(false);
+    if (progressError) { setSaveError(progressError.message); return; }
+    setStage('confirmed');
+  };
 
   const openDay = (day: WorkshopDay) => {
     const detail = day.tipo === 'silencio' ? 'Día de silencio · solo lectura, sin audio.' : day.tipo === 'incompleto' ? 'Contenido parcial de este día.' : 'Taller de 40 días.';
     onRead({ title: day.title, eyebrow: 'TALLER DE 40 DÍAS', detail, paragraphs: day.paragraphs, audios: day.audios });
   };
 
+  if (stage === 'loading') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} /><div className="reader-body workshop-browser"><p className="library-empty">Cargando el taller…</p></div></section>;
+
+  if (stage === 'error') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} /><div className="reader-body workshop-browser"><p className="library-empty">No pudimos cargar el taller. Probá de nuevo más tarde.</p></div></section>;
+
+  if (stage === 'onboarding') return <section className="reader-section">
+    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Configurá tu taller" subtitle="Elegí a qué hora querés recibir cada práctica de los 40 días." onBack={onBack} />
+    <div className="reader-body notification-settings">
+      {workshopMomentKeys.map((key) => <button key={key} className="notification-time-row" onClick={() => setEditingMoment(key)} aria-label={`Cambiar horario de ${workshopMomentPickerLabels[key]}: ${schedule[key]}`} aria-haspopup="dialog"><span>{workshopMomentPickerLabels[key]}</span><span className="notification-time-value">{schedule[key]}<ChevronRight size={17} /></span></button>)}
+      {editingMoment && <TimePicker label={workshopMomentPickerLabels[editingMoment]} value={schedule[editingMoment]} onCancel={() => setEditingMoment(null)} onSave={(value) => { setSchedule((current) => ({ ...current, [editingMoment]: value })); setEditingMoment(null); }} />}
+      {saveError && <p className="account-message">{saveError}</p>}
+      <ShimmerButton type="button" className="account-save" onClick={startWorkshop} disabled={saving}>{saving ? 'Un momento…' : 'Comenzar taller'}</ShimmerButton>
+    </div>
+  </section>;
+
+  if (stage === 'confirmed') return <section className="reader-section">
+    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="¡Listo!" subtitle="Ya está todo configurado." onBack={onBack} />
+    <div className="reader-body">
+      <p>¡Listo! Vas a recibir tu primera práctica mañana a las {schedule.morning}.</p>
+      <ShimmerButton type="button" className="account-save" onClick={() => setStage('days')}>Ver el taller</ShimmerButton>
+    </div>
+  </section>;
+
   return <section className="reader-section workshop-section">
     <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} />
     <div className="reader-body workshop-browser">
-      {status === 'loading' && <p className="library-empty">Cargando el taller…</p>}
-      {status === 'error' && <p className="library-empty">No pudimos cargar el taller. Probá de nuevo más tarde.</p>}
-      {status === 'ready' && <div className="library-content-list">{days.map((day) => {
+      <div className="library-content-list">{days.map((day) => {
         const tag = day.tipo === 'silencio' ? ' · SOLO LECTURA' : day.tipo === 'incompleto' ? ' · PARCIAL' : '';
         const preview = day.tipo === 'silencio' ? 'Sin audio, solo lectura.' : day.audios.length ? `${day.audios.length} audio${day.audios.length === 1 ? '' : 's'} disponible${day.audios.length === 1 ? '' : 's'}.` : 'Sin audio disponible.';
         return <MagicCard key={day.id} className="library-content-card" onClick={() => openDay(day)}>
@@ -438,7 +491,7 @@ function WorkshopPanel({ onBack, onRead }: { onBack: () => void; onRead: (reader
           </div>
           <span className="library-card-actions"><i><ChevronRight size={19} /></i></span>
         </MagicCard>;
-      })}</div>}
+      })}</div>
     </div>
   </section>;
 }
@@ -718,7 +771,7 @@ export default function App() {
   if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} onBack={back} onNameSaved={setFullName} onLogout={logout} /></main>;
   if (reader) { const favorite = deckFavorite({ icon: '📖', title: reader.title, detail: reader.detail, tone: palette[0], reader }); return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} favorite={favorites.some((item) => item.title === reader.title)} onFavorite={() => { const exact = favorites.find((item) => item.title === reader.title); toggleFavorite(exact || favorite); }} /></main>; }
   if (favoritesOpen) return <main className="app-shell app-main section-app"><FavoritesPanel favorites={favorites} onBack={back} onOpen={(favorite) => { if (favorite.reader) setReader(favorite.reader); }} onRemove={toggleFavorite} /></main>;
-  if (workshopOpen) return <main className="app-shell app-main section-app"><WorkshopPanel onBack={back} onRead={setReader} /></main>;
+  if (workshopOpen) return <main className="app-shell app-main section-app"><WorkshopPanel user={session.user} onBack={back} onRead={setReader} /></main>;
   if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} /></main>;
   if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel onBack={back} /></main>;
   if (current?.title === 'Día 1') {
