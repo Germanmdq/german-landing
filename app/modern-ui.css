@@ -172,65 +172,72 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   .category-icon svg { width: 26px; height: 26px; }
 }
 
-.library-search-toolbar { display: flex; align-items: flex-end; flex-direction: column; gap: 12px; margin-bottom: 20px; }
-.search-trigger { max-width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 50px; padding: 0 20px; border: 1px solid #fff; border-radius: 999px; background: #fff; color: var(--ink); font-size: 16px; font-weight: 650; box-shadow: 0 7px 18px #252c4515, 0 3px 0 #d8dbe3; }
-.search-trigger span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.search-trigger svg { flex-shrink: 0; color: var(--rose); }
-.search-reset, .search-clear { border: 0; background: transparent; color: var(--rose); min-height: 44px; font-size: 14px; }
-.search-popup { position: fixed; inset: 12svh 0 auto; width: calc(100% - 32px); max-width: 440px; max-height: 80svh; margin: 0 auto; padding: 0; border: 1px solid #fff; border-radius: 28px; background: #f8f9fb; color: var(--ink); box-shadow: 0 24px 80px #14182440; }
-.search-popup::backdrop { background: #171c2d66; backdrop-filter: blur(6px); }
-.search-popup-content { padding: 24px; }
-.search-popup header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.search-popup h2 { font-size: 22px; line-height: 1.15; letter-spacing: -.7px; }
-.search-close { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; border: 1px solid #e4e6ed; background: #fff; color: var(--muted); }
-.search-popup-content > p { font-size: 14px; color: var(--muted); margin: 12px 0 22px; }
-.search-input-pill { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 18px; border: 1px solid #e2e4ec; border-radius: 999px; background: #fff; box-shadow: 0 5px 14px #252c450a; }
-.search-input-pill:focus-within { border-color: #ce6470; box-shadow: 0 0 0 3px #d92d3512, 0 5px 14px #252c450a; }
-.search-input-pill input { width: 100%; min-width: 0; font-size: 16px; border: 0; outline: none; background: transparent; color: var(--ink); }
-.search-input-pill input:focus-visible { outline: none; }
-.search-input-pill button { display: grid; place-items: center; width: 46px; height: 46px; flex-shrink: 0; border: 1px solid #ec5860; border-radius: 50%; background: linear-gradient(#e94049,#cf2631); color: white; box-shadow: 0 3px 0 #a41c26; }
-.search-clear { display: block; margin: 12px auto 0; }
-
-/* Search opens as the input pill itself, without a surrounding panel. */
-.search-popup { padding: 0; border: 0; border-radius: 999px; background: transparent; box-shadow: none; overflow: visible; }
-.search-popup::backdrop { background: transparent; backdrop-filter: none; }
-.search-popup-content { padding: 0; }
-.search-popup .search-input-pill { border: 1px solid #e2e4ec; box-shadow: 0 10px 32px #252c4526, 0 2px 4px #252c450d; }
-
-/* Full-width search pill opens at the results area, from the right. */
-.search-popup {
-  top: min(46svh, 340px);
-  bottom: auto;
-  width: calc(100% - 40px);
-  max-width: 440px;
-  transform-origin: right center;
-}
-.search-popup[open] { animation: search-pill-open .26s cubic-bezier(.22, 1, .36, 1) both; }
-@keyframes search-pill-open {
-  from { opacity: 0; clip-path: inset(0 0 0 85% round 999px); transform: translateX(8px); }
-  to { opacity: 1; clip-path: inset(-40px -40px -40px -40px round 999px); transform: translateX(0); }
-}
-@media (prefers-reduced-motion: reduce) { .search-popup[open] { animation: none; } }
-
-/* The search launcher is a full-width pill, matching the popup input. */
-.library-search-toolbar { align-items: stretch; }
-.search-trigger {
+.library-search-toolbar {
   width: 100%;
-  min-height: 58px;
-  padding: 6px 7px 6px 20px;
-  font-weight: 400;
-  color: var(--ui-muted);
-  border: 1px solid #e2e4ec;
-  box-shadow: 0 5px 14px #252c4510, 0 2px 0 #dfe1e7;
+  margin-bottom: 20px;
 }
-.search-trigger svg {
-  width: 44px;
-  height: 44px;
-  padding: 11px;
+.search-input-pill {
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 10px 6px 20px;
+  border: 1px solid #e2e4ec;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.search-input-pill:focus-within {
+  border-color: #d92d35;
+  box-shadow: 0 0 0 3px rgba(217, 45, 53, 0.12), 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+.search-input-pill input {
+  flex: 1 1 0;
+  width: 100%;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 450;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #1C1C1E;
+}
+.search-input-pill input::placeholder {
+  color: #8E8E93;
+}
+.search-icon-badge {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
   border-radius: 50%;
   background: linear-gradient(#e94049, #cf2631);
   color: #fff;
-  box-shadow: 0 2px 0 #a41c26;
+}
+.search-icon-badge svg {
+  width: 18px;
+  height: 18px;
+}
+.search-clear-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #E5E5EA;
+  color: #1C1C1E;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+.search-clear-btn:active {
+  transform: scale(0.92);
+  background: #D1D1D6;
 }
 
 /* Shared neutral surfaces and quiet controls across the application. */

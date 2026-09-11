@@ -10,7 +10,6 @@ import './magic-ui.css';
 import './modern-ui.css';
 import './components/day-one-carousel.css';
 import { DayOneCarousel } from './components/day-one-carousel';
-import { SearchPopup } from './components/search-popup';
 import { TimePicker } from './components/time-picker';
 
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'consultas' | 'notificaciones' | 'espacio';
@@ -266,13 +265,16 @@ function AudioPlayer({ title, audioUrl, durationLabel }: { title: string; audioU
 
 function LibraryPanel({ entries, onBack, onRead, favorites, onToggleFavorite }: { entries: LibraryEntry[]; onBack: () => void; onRead: (entry: LibraryEntry) => void; favorites: FavoriteRecord[]; onToggleFavorite: (favorite: FavoriteRecord) => void }) {
   const [query, setQuery] = useState('');
-  const [searchOpen, setSearchOpen] = useState(false);
   const [filter, setFilter] = useState('Todo');
   const tags = Array.from(new Set(entries.flatMap((entry) => entry.tags))).slice(0, 12);
   const filters = ['Todo', 'Conferencias', 'Audios', ...tags];
   const visible = entries.filter((entry) => {
-    const haystack = `${entry.title} ${entry.excerpt} ${entry.type} ${entry.tags.join(' ')}`.toLocaleLowerCase();
-    const matchesQuery = haystack.includes(query.trim().toLocaleLowerCase());
+    const q = query.trim().toLocaleLowerCase();
+    const matchesQuery = !q || (
+      (entry.title && entry.title.toLocaleLowerCase().includes(q)) ||
+      (entry.excerpt && entry.excerpt.toLocaleLowerCase().includes(q)) ||
+      (entry.body && entry.body.toLocaleLowerCase().includes(q))
+    );
     const matchesFilter = filter === 'Todo' || (filter === 'Conferencias' && /conference|conferencia/i.test(entry.type)) || (filter === 'Audios' && Boolean(entry.audioUrl)) || entry.tags.some((tag) => tag.toLocaleLowerCase() === filter.toLocaleLowerCase());
     return matchesQuery && matchesFilter;
   });
@@ -281,13 +283,37 @@ function LibraryPanel({ entries, onBack, onRead, favorites, onToggleFavorite }: 
     <FixedHeader eyebrow="PARA ESCUCHAR Y LEER" title="Tu biblioteca" subtitle="Buscá por conferencia, tema o etiqueta." onBack={onBack} />
     <div className="reader-body library-browser">
       <section className="library-controls">
-        <div className="library-search-toolbar"><button className="search-trigger" onClick={() => setSearchOpen(true)} aria-haspopup="dialog"><span>{query || 'Buscar'}</span><Search size={20} /></button>{query && <button className="search-reset" onClick={() => setQuery('')}>Limpiar búsqueda</button>}</div>{searchOpen && <SearchPopup value={query} onClose={() => setSearchOpen(false)} onApply={(value) => { setQuery(value); setSearchOpen(false); }} />}
+        <div className="library-search-toolbar">
+          <div className="search-input-pill">
+            <input
+              type="text"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Buscar por título, contenido o tema..."
+              aria-label="Buscar en la biblioteca"
+            />
+            {query ? (
+              <button
+                type="button"
+                className="search-clear-btn"
+                onClick={() => setQuery('')}
+                aria-label="Limpiar búsqueda"
+              >
+                <X size={16} strokeWidth={2.4} />
+              </button>
+            ) : (
+              <span className="search-icon-badge" aria-hidden="true">
+                <Search size={18} />
+              </span>
+            )}
+          </div>
+        </div>
         <div className="library-filters">{filters.map((item) => <button key={item} className={filter === item ? 'active' : ''} onClick={() => setFilter(item)}>{item}</button>)}</div>
       </section>
       {featuredAudio?.audioUrl && <section className="library-featured-audio"><p>REPRODUCIR AHORA</p><AudioPlayer title={featuredAudio.title} audioUrl={featuredAudio.audioUrl} durationLabel={featuredAudio.duration} /></section>}
       <p className="library-count">{visible.length} {visible.length === 1 ? 'resultado' : 'resultados'}</p>
       <div className="library-content-list">{visible.map((entry, index) => { const saved = favorites.some((favorite) => favorite.id === libraryFavorite(entry).id); return <MagicCard key={entry.id} delay={Math.min(index * .025, .2)} className="library-content-card" onClick={() => onRead(entry)}><span>{entry.audioUrl ? '🎙️' : <BookOpen size={22} />}</span><div><p>{entry.type || 'Contenido'}</p><b>{entry.title}</b><em>{entry.excerpt || 'Abrí para leer o escuchar.'}</em><small>{entry.tags.map((tag) => `#${tag}`).join(' ')}</small></div><span className="library-card-actions"><span role="button" tabIndex={0} className={`favorite-button${saved ? ' is-favorite' : ''}`} onClick={(event) => { event.stopPropagation(); onToggleFavorite(libraryFavorite(entry)); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onToggleFavorite(libraryFavorite(entry)); } }} aria-label={saved ? `Quitar ${entry.title} de favoritos` : `Guardar ${entry.title} en favoritos`}><Heart size={18} fill={saved ? 'currentColor' : 'none'} /></span><i><ChevronRight size={19} /></i></span></MagicCard>; })}</div>
-      {!visible.length && <p className="library-empty">No encontramos contenidos con esa búsqueda.</p>}
+      {!visible.length && <p className="library-empty">No se encontraron resultados</p>}
     </div>
   </section>;
 }
