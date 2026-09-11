@@ -218,7 +218,7 @@ button, input { font-family: inherit !important; }
 .favorite-button.is-favorite { background: var(--category-tone, var(--ui-accent)); color: #fff; }
 
 /* Secciones internas. */
-.section-app { width: 100%; height: 100svh; min-height: 0; overflow: hidden !important; background: #fff !important; }
+.section-app { width: 100%; height: 100dvh; min-height: 0; overflow: hidden !important; background: #fff !important; }
 .feature-section,
 .reader-section { width: 100%; height: 100svh; min-height: 0; display: grid; grid-template-rows: 198px minmax(0,1fr); overflow: hidden; background: #fff; }
 

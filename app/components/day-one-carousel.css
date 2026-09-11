@@ -3,7 +3,7 @@
 .day-one-screen .day-one-section {
   display: flex;
   flex-direction: column;
-  height: 100svh;
+  height: 100dvh;
   min-height: 440px;
   padding: 0 0 max(12px, env(safe-area-inset-bottom));
   background: #F5F5F7 !important;
