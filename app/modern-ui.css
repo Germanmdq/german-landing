@@ -172,33 +172,32 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   .category-icon svg { width: 26px; height: 26px; }
 }
 
+/* ─── iOS-style search bar ─── */
 .library-search-toolbar {
   width: 100%;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 .search-input-pill {
   width: 100%;
-  min-height: 52px;
-  padding: 6px 10px 6px 20px;
-  border: 1px solid #e2e4ec;
-  border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.04);
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #E5E5EA;
   display: flex;
   align-items: center;
-  gap: 10px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  gap: 8px;
+  box-shadow: none;
 }
 .search-input-pill:focus-within {
-  border-color: #d92d35;
-  box-shadow: 0 0 0 3px rgba(217, 45, 53, 0.12), 0 4px 12px rgba(0, 0, 0, 0.05);
+  background: #DDDDE1;
 }
 .search-input-pill input {
   flex: 1 1 0;
   width: 100%;
   min-width: 0;
   font-size: 16px;
-  font-weight: 450;
+  font-weight: 400;
   border: 0;
   outline: none;
   background: transparent;
@@ -210,57 +209,78 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .search-icon-badge {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
-  border-radius: 50%;
-  background: linear-gradient(#e94049, #cf2631);
-  color: #fff;
+  border-radius: 0;
+  background: none;
+  color: #8E8E93;
+  order: -1;
 }
 .search-icon-badge svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 .search-clear-btn {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   border: 0;
   border-radius: 50%;
-  background: #E5E5EA;
-  color: #1C1C1E;
+  background: #AEAEB2;
+  color: #fff;
   cursor: pointer;
   padding: 0;
   transition: transform 0.15s ease, background-color 0.15s ease;
 }
 .search-clear-btn:active {
   transform: scale(0.92);
-  background: #D1D1D6;
+  background: #8E8E93;
+}
+.search-clear-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ─── iOS-style filter pills ─── */
+.library-filters button {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 14px;
+  border: 0 !important;
+  border-radius: 20px !important;
+  background: #E5E5EA !important;
+  color: #1C1C1E !important;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: none !important;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.library-filters button.active {
+  background: #1C1C1E !important;
+  color: #fff !important;
 }
 
 /* Shared neutral surfaces and quiet controls across the application. */
 :root { --ui-bg: #F5F5F7; --paper: #F5F5F7; --ui-soft: #F5F5F7; --ui-line: #e8e8ed; }
 .app-shell, .reader-section, .reader-body, .feature-header { background: #F5F5F7; }
 .library-content-card, .favorite-content-card, .notification-time-row, .audio-player-card, .subscription-card {
-  background: #f5f5f7;
+  background: #FFFFFF;
   border: 0;
-  border-radius: 28px;
-  box-shadow: none;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
-.google-button, .reader-favorite, .library-filters button, .account-logout {
+.google-button, .reader-favorite, .account-logout {
   background: rgba(232,232,237,.7);
   border: 0;
   border-radius: 32px;
   color: #1d1d1f;
   box-shadow: inset 0 0 1px #0000001c;
 }
-.library-filters button.active { background: #1d1d1f; color: #fff; }
 .gate-primary, .account-save, .notification-permission { background: #1d1d1f; border: 0; border-radius: 32px; box-shadow: none; }
 .gate-primary:active, .account-save:active, .notification-permission:active { transform: none; box-shadow: none; }
 .account-settings input, .login-form input, .name-field input, .library-search { background: #f5f5f7; border-color: #e8e8ed; border-radius: 24px; }
-.search-trigger, .search-popup .search-input-pill { border: 1px solid #e8e8ed; background: #f5f5f7; box-shadow: none; }
-.search-trigger svg, .search-input-pill button { background: #1d1d1f; border: 0; box-shadow: none; }
 .time-sheet { background: #f5f5f7; }
 .time-sheet header .time-save { background: #e8e8ed; color: #1d1d1f; box-shadow: none; }

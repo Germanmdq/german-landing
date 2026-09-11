@@ -263,11 +263,27 @@ function AudioPlayer({ title, audioUrl, durationLabel }: { title: string; audioU
   </section>;
 }
 
+function highlightText(text: string, q: string): React.ReactNode {
+  if (!q || !text) return text;
+  const idx = text.toLocaleLowerCase().indexOf(q.toLocaleLowerCase());
+  if (idx === -1) return text;
+  return <>{text.slice(0, idx)}<mark style={{ background: '#FFF3CD', padding: 0, borderRadius: 2 }}>{text.slice(idx, idx + q.length)}</mark>{text.slice(idx + q.length)}</>;
+}
+
+function snippetAround(text: string, q: string, radius = 60): string {
+  if (!q || !text) return '';
+  const lower = text.toLocaleLowerCase();
+  const idx = lower.indexOf(q.toLocaleLowerCase());
+  if (idx === -1) return '';
+  const start = Math.max(0, idx - radius);
+  const end = Math.min(text.length, idx + q.length + radius);
+  return (start > 0 ? '...' : '') + text.slice(start, end).trim() + (end < text.length ? '...' : '');
+}
+
 function LibraryPanel({ entries, onBack, onRead, favorites, onToggleFavorite }: { entries: LibraryEntry[]; onBack: () => void; onRead: (entry: LibraryEntry) => void; favorites: FavoriteRecord[]; onToggleFavorite: (favorite: FavoriteRecord) => void }) {
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState('Todo');
-  const tags = Array.from(new Set(entries.flatMap((entry) => entry.tags))).slice(0, 12);
-  const filters = ['Todo', 'Conferencias', 'Audios', ...tags];
+  const [filter, setFilter] = useState('Conferencias');
+  const filters = ['Conferencias', 'Audios'];
   const visible = entries.filter((entry) => {
     const q = query.trim().toLocaleLowerCase();
     const matchesQuery = !q || (
@@ -275,10 +291,10 @@ function LibraryPanel({ entries, onBack, onRead, favorites, onToggleFavorite }: 
       (entry.excerpt && entry.excerpt.toLocaleLowerCase().includes(q)) ||
       (entry.body && entry.body.toLocaleLowerCase().includes(q))
     );
-    const matchesFilter = filter === 'Todo' || (filter === 'Conferencias' && /conference|conferencia/i.test(entry.type)) || (filter === 'Audios' && Boolean(entry.audioUrl)) || entry.tags.some((tag) => tag.toLocaleLowerCase() === filter.toLocaleLowerCase());
+    const matchesFilter = (filter === 'Conferencias' && /conference|conferencia/i.test(entry.type)) || (filter === 'Audios' && Boolean(entry.audioUrl));
     return matchesQuery && matchesFilter;
   });
-  const featuredAudio = visible.find((entry) => entry.audioUrl) || entries.find((entry) => entry.audioUrl);
+  const q = query.trim();
   return <section className="reader-section library-section">
     <FixedHeader eyebrow="PARA ESCUCHAR Y LEER" title="Tu biblioteca" subtitle="Buscá por conferencia, tema o etiqueta." onBack={onBack} />
     <div className="reader-body library-browser">
@@ -289,7 +305,7 @@ function LibraryPanel({ entries, onBack, onRead, favorites, onToggleFavorite }: 
               type="text"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar por título, contenido o tema..."
+              placeholder="Buscar"
               aria-label="Buscar en la biblioteca"
             />
             {query ? (
@@ -310,9 +326,35 @@ function LibraryPanel({ entries, onBack, onRead, favorites, onToggleFavorite }: 
         </div>
         <div className="library-filters">{filters.map((item) => <button key={item} className={filter === item ? 'active' : ''} onClick={() => setFilter(item)}>{item}</button>)}</div>
       </section>
-      {featuredAudio?.audioUrl && <section className="library-featured-audio"><p>REPRODUCIR AHORA</p><AudioPlayer title={featuredAudio.title} audioUrl={featuredAudio.audioUrl} durationLabel={featuredAudio.duration} /></section>}
       <p className="library-count">{visible.length} {visible.length === 1 ? 'resultado' : 'resultados'}</p>
-      <div className="library-content-list">{visible.map((entry, index) => { const saved = favorites.some((favorite) => favorite.id === libraryFavorite(entry).id); return <MagicCard key={entry.id} delay={Math.min(index * .025, .2)} className="library-content-card" onClick={() => onRead(entry)}><span>{entry.audioUrl ? '🎙️' : <BookOpen size={22} />}</span><div><p>{entry.type || 'Contenido'}</p><b>{entry.title}</b><em>{entry.excerpt || 'Abrí para leer o escuchar.'}</em><small>{entry.tags.map((tag) => `#${tag}`).join(' ')}</small></div><span className="library-card-actions"><span role="button" tabIndex={0} className={`favorite-button${saved ? ' is-favorite' : ''}`} onClick={(event) => { event.stopPropagation(); onToggleFavorite(libraryFavorite(entry)); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onToggleFavorite(libraryFavorite(entry)); } }} aria-label={saved ? `Quitar ${entry.title} de favoritos` : `Guardar ${entry.title} en favoritos`}><Heart size={18} fill={saved ? 'currentColor' : 'none'} /></span><i><ChevronRight size={19} /></i></span></MagicCard>; })}</div>
+      <div className="library-content-list">{visible.map((entry, index) => {
+        const saved = favorites.some((favorite) => favorite.id === libraryFavorite(entry).id);
+        let preview: React.ReactNode = entry.excerpt || 'Abrí para leer o escuchar.';
+        if (q) {
+          const titleHasMatch = entry.title?.toLocaleLowerCase().includes(q.toLocaleLowerCase());
+          const excerptSnippet = snippetAround(entry.excerpt || '', q);
+          const bodySnippet = snippetAround(entry.body || '', q);
+          const contextText = excerptSnippet || bodySnippet;
+          if (contextText) {
+            preview = highlightText(contextText, q);
+          } else if (!titleHasMatch) {
+            preview = entry.excerpt || 'Abrí para leer o escuchar.';
+          }
+        }
+        return <MagicCard key={entry.id} delay={Math.min(index * .025, .2)} className="library-content-card" onClick={() => onRead(entry)}>
+          <div>
+            <p>{entry.type || 'Contenido'}</p>
+            <b>{q ? highlightText(entry.title, q) : entry.title}</b>
+            <em>{preview}</em>
+          </div>
+          <span className="library-card-actions">
+            <span role="button" tabIndex={0} className={`favorite-button${saved ? ' is-favorite' : ''}`} onClick={(event) => { event.stopPropagation(); onToggleFavorite(libraryFavorite(entry)); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onToggleFavorite(libraryFavorite(entry)); } }} aria-label={saved ? `Quitar ${entry.title} de favoritos` : `Guardar ${entry.title} en favoritos`}>
+              <Heart size={18} fill={saved ? 'currentColor' : 'none'} />
+            </span>
+            <i><ChevronRight size={19} /></i>
+          </span>
+        </MagicCard>;
+      })}</div>
       {!visible.length && <p className="library-empty">No se encontraron resultados</p>}
     </div>
   </section>;
