@@ -22,12 +22,43 @@ type FavoriteRecord = { id: string; title: string; detail: string; icon: string;
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
 type TallerDeliveryType = 'meditation_morning' | 'meditation_noon' | 'meditation_afternoon' | 'meditation_night' | 'intermediate_message';
 type TallerDelivery = { id: string; dayNumber: number; deliveryType: TallerDeliveryType; deliveredAt: string; seenAt: string | null; title: string; paragraphs: string[]; audioUrl?: string };
+const deliveryMomentPatterns: Partial<Record<TallerDeliveryType, RegExp>> = {
+  meditation_morning: /ma(ñ|n)ana/i,
+  meditation_noon: /mediod(í|i)a/i,
+  meditation_afternoon: /tarde/i,
+  meditation_night: /noche/i,
+};
+const extractMeditationSection = (body: string, deliveryType: TallerDeliveryType): string[] | null => {
+  const momentPattern = deliveryMomentPatterns[deliveryType];
+  if (!momentPattern) return null;
+  const lines = body.split('\n');
+  let capturing = false;
+  const captured: string[] = [];
+  for (const line of lines) {
+    const isHeader = /^#{1,6}\s+/.test(line);
+    if (isHeader) {
+      if (capturing) break;
+      if (/medita/i.test(line) && momentPattern.test(line)) capturing = true;
+      continue;
+    }
+    if (capturing) captured.push(line);
+  }
+  const text = captured.join('\n').trim();
+  return text ? cleanParagraphs(text) : null;
+};
+const findNumberedMessage = (body: string, index: number): string[] | null => {
+  const blocks = body.split(/\n\s*\n/).map((block) => block.trim()).filter(Boolean);
+  const pattern = new RegExp(`^0*${index}\\.\\s*`);
+  const block = blocks.find((candidate) => pattern.test(candidate));
+  if (!block) return null;
+  const text = block.replace(pattern, '').trim();
+  return text ? [text] : null;
+};
 
 const palette = ['#D92D35', '#E5484D', '#F2555A', '#FF6B6F'];
 const icons = ['●', '◆', '✦', '○'];
 const cleanParagraphs = (text: string) => text.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
 const hasAuthCallbackParams = () => typeof window !== 'undefined' && (window.location.hash.includes('access_token') || new URLSearchParams(window.location.search).has('code'));
-const workshopParagraphs = (body: string) => body.split(/\n\n---\n\n/).flatMap((section) => cleanParagraphs(section));
 const deliveryTypeLabels: Record<TallerDeliveryType, string> = { meditation_morning: 'Meditación de la mañana', meditation_noon: 'Meditación del mediodía', meditation_afternoon: 'Meditación de la tarde', meditation_night: 'Meditación de la noche', intermediate_message: 'Mensaje' };
 const formatDeliveredAt = (iso: string) => new Date(iso).toLocaleString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const leaf = (title: string, index: number, detail = ''): DeckItem => ({ icon: icons[index % icons.length], title, detail, tone: palette[index % palette.length] });
@@ -426,7 +457,7 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
 
       const { data: deliveryRows, error: deliveryError } = await supabase
         .from('taller_deliveries')
-        .select('id,day_number,delivery_type,delivered_at,seen_at,content_items(title,body),content_assets(source_url)')
+        .select('id,day_number,delivery_type,delivered_at,seen_at,message_index,content_items(title,body),content_assets(source_url)')
         .eq('user_id', user.id)
         .order('delivered_at', { ascending: false });
       if (cancelled) return;
@@ -434,14 +465,19 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
       const mapped = (deliveryRows || []).map((row) => {
         const item = row.content_items as unknown as { title: string; body: string } | null;
         const asset = row.content_assets as unknown as { source_url: string } | null;
+        const deliveryType = row.delivery_type as TallerDeliveryType;
+        const body = item?.body || '';
+        const paragraphs = deliveryType === 'intermediate_message'
+          ? (row.message_index != null ? findNumberedMessage(body, row.message_index) : null)
+          : extractMeditationSection(body, deliveryType);
         return {
           id: row.id,
           dayNumber: row.day_number,
-          deliveryType: row.delivery_type as TallerDeliveryType,
+          deliveryType,
           deliveredAt: row.delivered_at,
           seenAt: row.seen_at,
           title: item?.title || `Día ${row.day_number}`,
-          paragraphs: workshopParagraphs(item?.body || ''),
+          paragraphs: paragraphs || [],
           audioUrl: asset?.source_url,
         } as TallerDelivery;
       });
