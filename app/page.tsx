@@ -498,29 +498,20 @@ function GermanBadge() {
 }
 
 function LoginGate() {
-  const [email, setEmail] = useState('');
-  const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
 
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const cleanEmail = email.trim();
-    if (!cleanEmail) return;
+  const submit = async () => {
     setBusy(true);
     setMessage('');
     const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
-    const { error } = await supabase.auth.signInWithOtp({
-      email: cleanEmail,
-      options: {
-        emailRedirectTo: redirectTo,
-      },
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo },
     });
-    setBusy(false);
     if (error) {
+      setBusy(false);
       setMessage(error.message);
-    } else {
-      setSent(true);
     }
   };
 
@@ -528,45 +519,17 @@ function LoginGate() {
     <main className="app-shell gate-screen login-gate">
       <GermanBadge />
       <h1>Ingresá a tu espacio</h1>
-      {sent ? (
-        <div style={{ marginTop: '24px', textAlign: 'center' }}>
-          <p className="gate-copy" style={{ color: 'var(--ui-ink)', fontWeight: 500 }}>
-            Te enviamos un link a tu email. Revisá tu bandeja.
-          </p>
-          <button
-            type="button"
-            className="gate-secondary"
-            style={{ marginTop: '16px', cursor: 'pointer' }}
-            onClick={() => setSent(false)}
-          >
-            Usar otro correo
-          </button>
-        </div>
-      ) : (
-        <form className="login-form" onSubmit={submit} style={{ marginTop: '24px' }}>
-          <label>
-            Correo electrónico
-            <input
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="vos@email.com"
-            />
-          </label>
-          {message && <p className="form-message">{message}</p>}
-          <ShimmerButton className="gate-primary" disabled={busy}>
-            {busy ? 'Un momento…' : 'Continuar'}
-          </ShimmerButton>
-        </form>
-      )}
+      {message && <p className="form-message">{message}</p>}
+      <ShimmerButton type="button" className="gate-primary" style={{ marginTop: '24px' }} onClick={submit} disabled={busy}>
+        {busy ? 'Un momento…' : 'Continuar con Google'}
+      </ShimmerButton>
     </main>
   );
 }
 
 export default function App() {
   const [introDone, setIntroDone] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
   const [mainMenu, setMainMenu] = useState(true);
@@ -654,8 +617,8 @@ export default function App() {
           .insert({
             id: user.id,
             email: user.email,
-            auth_provider: 'email',
-            full_name: null,
+            auth_provider: user.app_metadata?.provider || 'email',
+            full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
           })
           .select('full_name')
           .maybeSingle();
@@ -684,6 +647,7 @@ export default function App() {
       if (data.session?.user) {
         await syncProfile(data.session.user);
       }
+      setSessionChecked(true);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
@@ -735,9 +699,8 @@ export default function App() {
   }, []);
 
   if (!introDone) return <VideoIntro onFinish={() => setIntroDone(true)} />;
-
-  // Temporalmente omitido para verificar cambios directamente en el panel principal:
-  // if (!session) return <LoginGate />;
+  if (!sessionChecked) return null;
+  if (!session) return <LoginGate />;
 
   if (mainMenu) {
     const meetingCard = { target: 'reunion' as const, title: 'Reunión semanal', detail: 'Encontrémonos en vivo.', image: '/images/reunion-semanal.png' };
