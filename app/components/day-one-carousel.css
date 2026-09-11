@@ -71,6 +71,41 @@
   text-align: left;
   color: rgba(0,0,0,.88);
 }
+.feature-header {
+  position: relative;
+  padding-right: 56px !important;
+}
+
+.header-close {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #E5E5EA;
+  color: #1C1C1E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  z-index: 20;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
+}
+.header-close:active {
+  transform: scale(0.92);
+  background: #D1D1D6;
+  opacity: 0.8;
+}
+.header-close svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
 .day-one-caption {
   position: relative;
   top: auto;
@@ -80,10 +115,26 @@
   flex: 0 0 auto;
   z-index: 1;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+.day-one-title {
   font-size: 17px;
   font-weight: 600;
-  line-height: 1.23536;
+  color: #1C1C1E;
+  line-height: 1.25;
   letter-spacing: -.022em;
+  display: block;
+}
+.day-one-subtitle {
+  font-size: 15px;
+  font-weight: 400;
+  color: #86868B;
+  line-height: 1.35;
+  letter-spacing: -.015em;
+  display: block;
 }
 .day-one-save {
   position: absolute;

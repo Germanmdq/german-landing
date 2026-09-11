@@ -3,13 +3,29 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Heart, Video } from 'lucide-react';
 
 type Item = { title: string; detail: string; image?: string; imageSize?: 'compact'; placeholder?: boolean };
-export function DayOneCarousel<T extends Item>({ items, onSelect, isFavorite, onFavorite, label = 'Prácticas del Día 1' }: { label?: string; items: T[]; onSelect: (item: T) => void; isFavorite?: (item: T) => boolean | undefined; onFavorite?: (item: T) => void }) {
+export function DayOneCarousel<T extends Item>({
+  items,
+  onSelect,
+  isFavorite,
+  onFavorite,
+  label = 'Prácticas del Día 1',
+  initialIndex = 0,
+  onIndexChange,
+}: {
+  label?: string;
+  items: T[];
+  onSelect: (item: T, index: number) => void;
+  isFavorite?: (item: T) => boolean | undefined;
+  onFavorite?: (item: T) => void;
+  initialIndex?: number;
+  onIndexChange?: (index: number) => void;
+}) {
   const scroller = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLDivElement>(null);
   const frame = useRef(0);
   const transitioning = useRef(false);
   const elapsed = useRef(0);
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState(initialIndex);
   const [playing, setPlaying] = useState(false);
   const [ended, setEnded] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -43,12 +59,21 @@ export function DayOneCarousel<T extends Item>({ items, onSelect, isFavorite, on
           caption.style.opacity = String(Math.max(0, 1 - Math.abs(offset) * 3.2));
         });
       }
-      if (t >= .5) setActive(index);
+      if (t >= .5) {
+        setActive(index);
+        onIndexChange?.(index);
+      }
       if (t < 1) frame.current = requestAnimationFrame(tick);
-      else { transitioning.current = false; el.style.scrollSnapType = ''; setActive(index); el.querySelectorAll<HTMLElement>('.day-one-caption').forEach(caption => { caption.style.transform = ''; caption.style.opacity = ''; }); }
+      else {
+        transitioning.current = false;
+        el.style.scrollSnapType = '';
+        setActive(index);
+        onIndexChange?.(index);
+        el.querySelectorAll<HTMLElement>('.day-one-caption').forEach(caption => { caption.style.transform = ''; caption.style.opacity = ''; });
+      }
     };
     frame.current = requestAnimationFrame(tick);
-  }, []);
+  }, [onIndexChange]);
   useEffect(() => {
     reduced.current = matchMedia('(prefers-reduced-motion: reduce)').matches;
     setPlaying(!reduced.current);
@@ -60,6 +85,12 @@ export function DayOneCarousel<T extends Item>({ items, onSelect, isFavorite, on
       el.style.setProperty('--day-gutter', `${frameWidth * .0625}px`);
       el.style.setProperty('--day-card-width', `${Math.max(frameWidth * .875 - scrollbar, 280) - 20}px`);
       el.style.setProperty('--day-caption-left', `${Math.min(32, frameWidth * (1 / 12 - .0625 / 12))}px`);
+      if (scroller.current && initialIndex > 0) {
+        const cards = scroller.current.querySelectorAll<HTMLElement>('.day-one-card');
+        if (cards.length > initialIndex && cards[0]) {
+          scroller.current.scrollLeft = cards[initialIndex].offsetLeft - cards[0].offsetLeft;
+        }
+      }
     };
     measure();
     const resize = new ResizeObserver(measure);
@@ -67,7 +98,27 @@ export function DayOneCarousel<T extends Item>({ items, onSelect, isFavorite, on
     const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: .5 });
     if (root.current) observer.observe(root.current);
     return () => { resize.disconnect(); observer.disconnect(); cancelAnimationFrame(frame.current); };
-  }, []);
+  }, [initialIndex]);
+  useEffect(() => {
+    setActive(initialIndex);
+    const el = scroller.current;
+    if (!el) return;
+    const scrollToInitial = () => {
+      const cards = el.querySelectorAll<HTMLElement>('.day-one-card');
+      if (cards.length > initialIndex && cards[0]) {
+        el.scrollLeft = cards[initialIndex].offsetLeft - cards[0].offsetLeft;
+      }
+    };
+    scrollToInitial();
+    const frameId = requestAnimationFrame(scrollToInitial);
+    const t1 = setTimeout(scrollToInitial, 30);
+    const t2 = setTimeout(scrollToInitial, 100);
+    return () => {
+      cancelAnimationFrame(frameId);
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [initialIndex]);
   useEffect(() => {
     if (!playing || !inView) return;
     let animation = 0;
@@ -100,11 +151,20 @@ export function DayOneCarousel<T extends Item>({ items, onSelect, isFavorite, on
       const cards = el.querySelectorAll<HTMLElement>('.day-one-card');
       if (cards.length < 2) return;
       const next = Math.max(0, Math.min(items.length - 1, Math.round(el.scrollLeft / (cards[1].offsetLeft - cards[0].offsetLeft))));
-      if (next !== active) { setActive(next); elapsed.current = 0; setProgress(0); setEnded(false); }
+      if (next !== active) {
+        setActive(next);
+        elapsed.current = 0;
+        setProgress(0);
+        setEnded(false);
+        onIndexChange?.(next);
+      }
     }}>
       <div className="day-one-track">{items.map((item, index) => <article key={item.title} className="day-one-card" id={`day-one-slide-${index}`} aria-label={`${index + 1} de ${items.length}: ${item.title}`}>
-        <button className="day-one-open" onClick={() => { interrupt(); onSelect(item); }} tabIndex={active === index ? 0 : -1}>
-          <span className="day-one-caption">{item.title}<br />{item.detail}</span>
+        <button className="day-one-open" onClick={() => { interrupt(); onSelect(item, index); }} tabIndex={active === index ? 0 : -1}>
+          <span className="day-one-caption">
+            <strong className="day-one-title">{item.title}</strong>
+            {item.detail && <span className="day-one-subtitle">{item.detail}</span>}
+          </span>
           {item.image && <span className="day-one-visual"><img className={`day-one-illustration${item.imageSize === 'compact' ? ' day-one-illustration--compact' : ''}`} src={item.image} alt="" draggable={false} /></span>}
           {!item.image && item.placeholder && <span className="day-one-visual"><span className="day-one-placeholder" aria-hidden="true"><Video size={40} /></span></span>}
         </button>
