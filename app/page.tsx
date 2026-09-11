@@ -629,6 +629,7 @@ export default function App() {
       .from('content_items')
       .select('*,content_assets(asset_type,source_url,storage_path,duration_seconds,sort_order)')
       .eq('is_published', true)
+      .eq('content_type', 'conference')
       .eq('content_assets.asset_type', 'audio')
       .order('published_at', { ascending: false })
       .limit(250)
