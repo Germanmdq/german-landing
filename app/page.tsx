@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, Heart, LogOut, Pause, Play, Search, Trash2 } from 'lucide-react';
+import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, Heart, LogOut, Pause, Play, Search, Trash2, Check } from 'lucide-react';
 import content from './content.generated.json';
 import { supabase } from './lib/supabase';
 import { subscribeToPush, type WorkshopSchedule } from './lib/push';
@@ -20,15 +20,16 @@ type DeckItem = { icon: string; title: string; detail: string; tone: string; ima
 type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string };
 type FavoriteRecord = { id: string; title: string; detail: string; icon: string; tone: string; reader?: ReaderContent };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
-type WorkshopDayTipo = 'normal' | 'silencio' | 'incompleto';
-type WorkshopDay = { id: string; day: number; title: string; tipo: WorkshopDayTipo; paragraphs: string[]; audios: { label: string; url: string }[] };
+type TallerDeliveryType = 'meditation_morning' | 'meditation_noon' | 'meditation_afternoon' | 'meditation_night' | 'intermediate_message';
+type TallerDelivery = { id: string; dayNumber: number; deliveryType: TallerDeliveryType; deliveredAt: string; seenAt: string | null; title: string; paragraphs: string[]; audioUrl?: string };
 
 const palette = ['#D92D35', '#E5484D', '#F2555A', '#FF6B6F'];
 const icons = ['●', '◆', '✦', '○'];
 const cleanParagraphs = (text: string) => text.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
 const hasAuthCallbackParams = () => typeof window !== 'undefined' && (window.location.hash.includes('access_token') || new URLSearchParams(window.location.search).has('code'));
-const workshopMomentLabels = ['Mañana', 'Mediodía', 'Tarde', 'Noche'];
 const workshopParagraphs = (body: string) => body.split(/\n\n---\n\n/).flatMap((section) => cleanParagraphs(section));
+const deliveryTypeLabels: Record<TallerDeliveryType, string> = { meditation_morning: 'Meditación de la mañana', meditation_noon: 'Meditación del mediodía', meditation_afternoon: 'Meditación de la tarde', meditation_night: 'Meditación de la noche', intermediate_message: 'Mensaje' };
+const formatDeliveredAt = (iso: string) => new Date(iso).toLocaleString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const leaf = (title: string, index: number, detail = ''): DeckItem => ({ icon: icons[index % icons.length], title, detail, tone: palette[index % palette.length] });
 const toTags = (value: unknown): string[] => Array.isArray(value) ? value.filter((tag): tag is string => typeof tag === 'string') : typeof value === 'string' ? value.split(',').map((tag) => tag.trim()).filter(Boolean) : [];
 const firstText = (record: Record<string, unknown>, keys: string[]) => keys.map((key) => record[key]).find((value): value is string => typeof value === 'string' && value.length > 0);
@@ -393,7 +394,7 @@ type WorkshopStage = 'loading' | 'onboarding' | 'confirmed' | 'days' | 'error';
 type WorkshopOnboardingStep = 'intro' | 'schedule' | 'frequency' | 'summary';
 
 function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => void; onRead: (reader: ReaderContent) => void }) {
-  const [days, setDays] = useState<WorkshopDay[]>([]);
+  const [deliveries, setDeliveries] = useState<TallerDelivery[]>([]);
   const [collectionId, setCollectionId] = useState<string | null>(null);
   const [stage, setStage] = useState<WorkshopStage>('loading');
   const [currentDay, setCurrentDay] = useState<number | null>(null);
@@ -418,33 +419,34 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
       if (collectionError || !collection) { setStage('error'); return; }
       setCollectionId(collection.id);
 
-      const [{ data, error }, { data: progress }] = await Promise.all([
-        supabase
-          .from('collection_items')
-          .select('sort_order,content_items(id,title,body,metadata,content_assets(asset_type,source_url,sort_order))')
-          .eq('collection_id', collection.id)
-          .order('sort_order'),
-        supabase.from('user_plan_progress').select('current_day').eq('user_id', user.id).eq('collection_id', collection.id).maybeSingle(),
-      ]);
+      const { data: progress } = await supabase.from('user_plan_progress').select('current_day').eq('user_id', user.id).eq('collection_id', collection.id).maybeSingle();
       if (cancelled) return;
-      if (error || !data) { setStage('error'); return; }
-      const mapped = data
-        .map((row) => {
-          const item = row.content_items as unknown as { id: string; title: string; body: string; metadata: Record<string, unknown> | null; content_assets: { asset_type: string; source_url: string; sort_order: number }[] | null } | null;
-          if (!item) return null;
-          const meta = item.metadata || {};
-          const tipo = (meta.tipo as WorkshopDayTipo) || 'normal';
-          const day = Number(meta.dia) || row.sort_order;
-          const audios = (item.content_assets || [])
-            .filter((asset) => asset.asset_type === 'audio')
-            .sort((a, b) => a.sort_order - b.sort_order)
-            .map((asset) => ({ label: workshopMomentLabels[asset.sort_order - 1] || `Audio ${asset.sort_order}`, url: asset.source_url }));
-          const paragraphs = workshopParagraphs(item.body || '');
-          return { id: item.id, day, title: item.title, tipo, paragraphs: paragraphs.length ? paragraphs : tipo === 'incompleto' ? ['Este día todavía no tiene contenido escrito completo.'] : paragraphs, audios } as WorkshopDay;
-        })
-        .filter((value): value is WorkshopDay => value !== null);
-      setDays(mapped);
-      if (progress) { setCurrentDay(progress.current_day); setStage('days'); } else { setStage('onboarding'); }
+      if (!progress) { setStage('onboarding'); return; }
+      setCurrentDay(progress.current_day);
+
+      const { data: deliveryRows, error: deliveryError } = await supabase
+        .from('taller_deliveries')
+        .select('id,day_number,delivery_type,delivered_at,seen_at,content_items(title,body),content_assets(source_url)')
+        .eq('user_id', user.id)
+        .order('delivered_at', { ascending: false });
+      if (cancelled) return;
+      if (deliveryError) { setStage('error'); return; }
+      const mapped = (deliveryRows || []).map((row) => {
+        const item = row.content_items as unknown as { title: string; body: string } | null;
+        const asset = row.content_assets as unknown as { source_url: string } | null;
+        return {
+          id: row.id,
+          dayNumber: row.day_number,
+          deliveryType: row.delivery_type as TallerDeliveryType,
+          deliveredAt: row.delivered_at,
+          seenAt: row.seen_at,
+          title: item?.title || `Día ${row.day_number}`,
+          paragraphs: workshopParagraphs(item?.body || ''),
+          audioUrl: asset?.source_url,
+        } as TallerDelivery;
+      });
+      setDeliveries(mapped);
+      setStage('days');
     })();
     return () => { cancelled = true; };
   }, [user.id]);
@@ -466,9 +468,13 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
     setStage('confirmed');
   };
 
-  const openDay = (day: WorkshopDay) => {
-    const detail = day.tipo === 'silencio' ? 'Día de silencio · solo lectura, sin audio.' : day.tipo === 'incompleto' ? 'Contenido parcial de este día.' : 'Taller de 40 días.';
-    onRead({ title: day.title, eyebrow: 'TALLER DE 40 DÍAS', detail, paragraphs: day.paragraphs, audios: day.audios });
+  const openDelivery = (delivery: TallerDelivery) => {
+    onRead({ title: `Día ${delivery.dayNumber} · ${deliveryTypeLabels[delivery.deliveryType]}`, eyebrow: 'TALLER DE 40 DÍAS', detail: `Recibido ${formatDeliveredAt(delivery.deliveredAt)}.`, paragraphs: delivery.paragraphs, audioUrl: delivery.audioUrl });
+    if (!delivery.seenAt) {
+      const seenAt = new Date().toISOString();
+      setDeliveries((current) => current.map((item) => item.id === delivery.id ? { ...item, seenAt } : item));
+      void supabase.from('taller_deliveries').update({ seen_at: seenAt }).eq('id', delivery.id);
+    }
   };
 
   if (stage === 'loading') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} /><div className="reader-body workshop-browser"><p className="library-empty">Cargando el taller…</p></div></section>;
@@ -535,31 +541,17 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
   </section>;
 
   return <section className="reader-section workshop-section">
-    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} />
+    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle={currentDay != null ? `Vas por el día ${currentDay} de 40.` : 'Autoconcepto y control de la imaginación.'} onBack={onBack} />
     <div className="reader-body workshop-browser">
-      {currentDay != null && (() => {
-        const today = days.find((day) => day.day === currentDay);
-        return <MagicCard className="library-content-card workshop-current-day" onClick={() => today && openDay(today)}>
-          <div>
-            <p>VAS POR EL DÍA {currentDay} DE 40</p>
-            <b>Continuar con hoy</b>
-            <em>Tocá para abrir la práctica del día.</em>
-          </div>
-          <span className="library-card-actions"><i><ChevronRight size={19} /></i></span>
-        </MagicCard>;
-      })()}
-      <div className="library-content-list">{days.map((day) => {
-        const tag = day.tipo === 'silencio' ? ' · SOLO LECTURA' : day.tipo === 'incompleto' ? ' · PARCIAL' : '';
-        const preview = day.tipo === 'silencio' ? 'Sin audio, solo lectura.' : day.audios.length ? `${day.audios.length} audio${day.audios.length === 1 ? '' : 's'} disponible${day.audios.length === 1 ? '' : 's'}.` : 'Sin audio disponible.';
-        return <MagicCard key={day.id} className="library-content-card" onClick={() => openDay(day)}>
-          <div>
-            <p>DÍA {day.day}{tag}</p>
-            <b>{day.title}</b>
-            <em>{preview}</em>
-          </div>
-          <span className="library-card-actions"><i><ChevronRight size={19} /></i></span>
-        </MagicCard>;
-      })}</div>
+      {!deliveries.length && <p className="library-empty">Tu taller comienza pronto. Vas a recibir tu primera práctica en tu próximo horario configurado.</p>}
+      {!!deliveries.length && <div className="library-content-list">{deliveries.map((delivery) => <MagicCard key={delivery.id} className="library-content-card" onClick={() => openDelivery(delivery)}>
+        <div>
+          <p>DÍA {delivery.dayNumber} · {deliveryTypeLabels[delivery.deliveryType].toUpperCase()}</p>
+          <b>{deliveryTypeLabels[delivery.deliveryType]}</b>
+          <em>Recibido {formatDeliveredAt(delivery.deliveredAt)}</em>
+        </div>
+        <span className="library-card-actions">{delivery.seenAt ? <i className="delivery-seen" aria-label="Ya visto"><Check size={16} /></i> : <i className="delivery-unseen" aria-label="Sin ver" />}<i><ChevronRight size={19} /></i></span>
+      </MagicCard>)}</div>}
     </div>
   </section>;
 }
