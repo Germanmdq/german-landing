@@ -28,9 +28,11 @@
 .day-one-scroll {
   width: 100%;
   position: relative;
-  overflow-x: scroll;
+  overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
   scroll-padding-inline-start: var(--day-gutter);
   scrollbar-width: none;
   overscroll-behavior-x: contain;
@@ -59,6 +61,7 @@
   overflow: hidden;
   background: #FFFFFF;
   scroll-snap-align: start;
+  scroll-snap-stop: normal;
 }
 .day-one-open {
   display: flex;

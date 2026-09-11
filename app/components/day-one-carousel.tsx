@@ -22,61 +22,57 @@ export function DayOneCarousel<T extends Item>({
 }) {
   const scroller = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLDivElement>(null);
-  const frame = useRef(0);
-  const transitioning = useRef(false);
   const elapsed = useRef(0);
   const [active, setActive] = useState(initialIndex);
+  const activeRef = useRef(initialIndex);
   const [playing, setPlaying] = useState(false);
   const [ended, setEnded] = useState(false);
   const [progress, setProgress] = useState(0);
   const [inView, setInView] = useState(true);
   const reduced = useRef(false);
+
   const move = useCallback((index: number, manual = true) => {
     const el = scroller.current;
     if (!el) return;
-    cancelAnimationFrame(frame.current);
     if (manual) setPlaying(false);
     setEnded(false);
     elapsed.current = 0;
     setProgress(0);
     const cards = el.querySelectorAll<HTMLElement>('.day-one-card');
+    if (!cards[index] || !cards[0]) return;
     const target = cards[index].offsetLeft - cards[0].offsetLeft;
-    const start = el.scrollLeft;
-    const startTime = performance.now();
-    transitioning.current = true;
-    el.style.scrollSnapType = 'none';
-    const tick = (now: number) => {
-      const t = reduced.current ? 1 : Math.min(1, (now - startTime) / 500);
-      const eased = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-      el.scrollLeft = start + (target - start) * eased;
-      if (!reduced.current && cards.length > 1) {
-        const position = el.scrollLeft / (cards[1].offsetLeft - cards[0].offsetLeft);
-        cards.forEach((card, cardIndex) => {
-          const caption = card.querySelector<HTMLElement>('.day-one-caption');
-          if (!caption) return;
-          const offset = cardIndex - position;
-          caption.style.transform = `translateX(${offset * 312}px)`;
-          caption.style.opacity = String(Math.max(0, 1 - Math.abs(offset) * 3.2));
+    el.scrollTo({ left: target, behavior: 'smooth' });
+    activeRef.current = index;
+    setActive(index);
+    onIndexChange?.(index);
+  }, [onIndexChange]);
+
+  // Solo al montar: restaurar posición si initialIndex > 0
+  useEffect(() => {
+    if (initialIndex <= 0) return;
+    const el = scroller.current;
+    if (!el) return;
+    const scrollToInitial = () => {
+      const cards = el.querySelectorAll<HTMLElement>('.day-one-card');
+      if (cards.length > initialIndex && cards[0]) {
+        const target = cards[initialIndex].offsetLeft - cards[0].offsetLeft;
+        const prev = el.style.scrollBehavior;
+        el.style.scrollBehavior = 'auto';
+        el.scrollLeft = target;
+        requestAnimationFrame(() => {
+          if (el) el.style.scrollBehavior = prev;
         });
       }
-      if (t >= .5) {
-        setActive(index);
-        onIndexChange?.(index);
-      }
-      if (t < 1) frame.current = requestAnimationFrame(tick);
-      else {
-        transitioning.current = false;
-        el.style.scrollSnapType = '';
-        setActive(index);
-        onIndexChange?.(index);
-        el.querySelectorAll<HTMLElement>('.day-one-caption').forEach(caption => { caption.style.transform = ''; caption.style.opacity = ''; });
-      }
     };
-    frame.current = requestAnimationFrame(tick);
-  }, [onIndexChange]);
+    scrollToInitial();
+    const frameId = requestAnimationFrame(scrollToInitial);
+    return () => cancelAnimationFrame(frameId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     reduced.current = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    setPlaying(!reduced.current);
+    setPlaying(!reduced.current && initialIndex === 0);
     const measure = () => {
       const el = root.current;
       if (!el) return;
@@ -85,80 +81,77 @@ export function DayOneCarousel<T extends Item>({
       el.style.setProperty('--day-gutter', `${frameWidth * .0625}px`);
       el.style.setProperty('--day-card-width', `${Math.max(frameWidth * .875 - scrollbar, 280) - 20}px`);
       el.style.setProperty('--day-caption-left', `${Math.min(32, frameWidth * (1 / 12 - .0625 / 12))}px`);
-      if (scroller.current && initialIndex > 0) {
-        const cards = scroller.current.querySelectorAll<HTMLElement>('.day-one-card');
-        if (cards.length > initialIndex && cards[0]) {
-          scroller.current.scrollLeft = cards[initialIndex].offsetLeft - cards[0].offsetLeft;
-        }
-      }
     };
     measure();
     const resize = new ResizeObserver(measure);
     if (root.current) resize.observe(root.current);
     const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: .5 });
     if (root.current) observer.observe(root.current);
-    return () => { resize.disconnect(); observer.disconnect(); cancelAnimationFrame(frame.current); };
+    return () => { resize.disconnect(); observer.disconnect(); };
   }, [initialIndex]);
-  useEffect(() => {
-    setActive(initialIndex);
-    const el = scroller.current;
-    if (!el) return;
-    const scrollToInitial = () => {
-      const cards = el.querySelectorAll<HTMLElement>('.day-one-card');
-      if (cards.length > initialIndex && cards[0]) {
-        el.scrollLeft = cards[initialIndex].offsetLeft - cards[0].offsetLeft;
-      }
-    };
-    scrollToInitial();
-    const frameId = requestAnimationFrame(scrollToInitial);
-    const t1 = setTimeout(scrollToInitial, 30);
-    const t2 = setTimeout(scrollToInitial, 100);
-    return () => {
-      cancelAnimationFrame(frameId);
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [initialIndex]);
+
   useEffect(() => {
     if (!playing || !inView) return;
     let animation = 0;
     let last = performance.now();
     const tick = (now: number) => {
-      if (!transitioning.current && !document.hidden) elapsed.current += now - last;
+      if (!document.hidden) elapsed.current += now - last;
       last = now;
       setProgress(Math.min(1, elapsed.current / 3000));
       if (elapsed.current >= 3000) {
-        if (active === items.length - 1) { setPlaying(false); setEnded(true); return; }
-        move(active + 1, false);
+        if (activeRef.current === items.length - 1) {
+          setPlaying(false);
+          setEnded(true);
+          return;
+        }
+        move(activeRef.current + 1, false);
       }
       animation = requestAnimationFrame(tick);
     };
     animation = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animation);
-  }, [playing, active, inView, items.length, move]);
+  }, [playing, inView, items.length, move]);
+
   const interrupt = () => {
     setPlaying(false);
-    cancelAnimationFrame(frame.current);
-    transitioning.current = false;
-    if (scroller.current) { scroller.current.style.scrollSnapType = ''; scroller.current.querySelectorAll<HTMLElement>('.day-one-caption').forEach(caption => { caption.style.transform = ''; caption.style.opacity = ''; }); }
   };
+
+  const handleScroll = () => {
+    const el = scroller.current;
+    if (!el) return;
+    const cards = el.querySelectorAll<HTMLElement>('.day-one-card');
+    if (cards.length < 2) return;
+    const stride = cards[1].offsetLeft - cards[0].offsetLeft;
+    if (stride <= 0) return;
+    const next = Math.max(0, Math.min(items.length - 1, Math.round(el.scrollLeft / stride)));
+    if (next !== activeRef.current) {
+      activeRef.current = next;
+      setActive(next);
+      elapsed.current = 0;
+      setProgress(0);
+      setEnded(false);
+      onIndexChange?.(next);
+    }
+  };
+
   return <div className="day-one-carousel" ref={root}>
-    <div className="day-one-scroll" ref={scroller} role="region" aria-label={label} tabIndex={0} onPointerDown={interrupt} onWheel={interrupt} onKeyDown={(event) => {
-      if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { event.preventDefault(); move(Math.max(0, Math.min(items.length - 1, active + (event.key === 'ArrowRight' ? 1 : -1)))); }
-    }} onScroll={() => {
-      if (transitioning.current || !scroller.current) return;
-      const el = scroller.current;
-      const cards = el.querySelectorAll<HTMLElement>('.day-one-card');
-      if (cards.length < 2) return;
-      const next = Math.max(0, Math.min(items.length - 1, Math.round(el.scrollLeft / (cards[1].offsetLeft - cards[0].offsetLeft))));
-      if (next !== active) {
-        setActive(next);
-        elapsed.current = 0;
-        setProgress(0);
-        setEnded(false);
-        onIndexChange?.(next);
-      }
-    }}>
+    <div
+      className="day-one-scroll"
+      ref={scroller}
+      role="region"
+      aria-label={label}
+      tabIndex={0}
+      onPointerDown={interrupt}
+      onTouchStart={interrupt}
+      onWheel={interrupt}
+      onKeyDown={(event) => {
+        if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+          event.preventDefault();
+          move(Math.max(0, Math.min(items.length - 1, activeRef.current + (event.key === 'ArrowRight' ? 1 : -1))));
+        }
+      }}
+      onScroll={handleScroll}
+    >
       <div className="day-one-track">{items.map((item, index) => <article key={item.title} className="day-one-card" id={`day-one-slide-${index}`} aria-label={`${index + 1} de ${items.length}: ${item.title}`}>
         <button className="day-one-open" onClick={() => { interrupt(); onSelect(item, index); }} tabIndex={active === index ? 0 : -1}>
           <span className="day-one-caption">
