@@ -211,12 +211,24 @@ function useNotificationsToggle(user: User) {
   }, [user.id]);
 
   const toggle = async () => {
+    console.log('[notifications] toggle tocado, estado actual activo =', active);
     setBusy(true);
     setError('');
-    const result = active ? await disablePushSubscription(user.id) : await ensurePushSubscription(user);
-    setBusy(false);
-    if (result.error) { setError(result.error); return; }
-    setActive((current) => !current);
+    try {
+      const result = active ? await disablePushSubscription(user.id) : await ensurePushSubscription(user);
+      if (result.error) {
+        console.error('[notifications] toggle falló:', result.error);
+        setError(result.error);
+        return;
+      }
+      console.log('[notifications] toggle OK, nuevo estado activo =', !active);
+      setActive((current) => !current);
+    } catch (err) {
+      console.error('[notifications] excepción inesperada en el toggle:', err);
+      setError(err instanceof Error ? err.message : 'No se pudo actualizar las notificaciones.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return { active, busy, error, toggle };
@@ -442,13 +454,34 @@ function LibraryPanel({ entries, onBack, onRead, favorites, onToggleFavorite }: 
   </section>;
 }
 
+function ConfirmDialog({ title = '¿Eliminar?', description, confirmLabel = 'Eliminar', cancelLabel = 'Cancelar', onConfirm, onCancel }: { title?: string; description: string; confirmLabel?: string; cancelLabel?: string; onConfirm: () => void; onCancel: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const element = dialog.current;
+    element?.showModal();
+    return () => { element?.close(); previous?.focus(); };
+  }, []);
+  return <dialog ref={dialog} className="confirm-sheet" aria-labelledby="confirm-sheet-title" onCancel={(event) => { event.preventDefault(); onCancel(); }} onClick={(event) => { if (event.target === event.currentTarget) onCancel(); }}>
+    <div className="confirm-sheet-content">
+      <div className="time-sheet-handle" aria-hidden="true" />
+      <h2 id="confirm-sheet-title">{title}</h2>
+      <p>{description}</p>
+      <button type="button" className="confirm-sheet-danger" onClick={onConfirm}>{confirmLabel}</button>
+      <button type="button" className="confirm-sheet-cancel" onClick={onCancel}>{cancelLabel}</button>
+    </div>
+  </dialog>;
+}
+
 function FavoritesPanel({ favorites, onBack, onOpen, onRemove }: { favorites: FavoriteRecord[]; onBack: () => void; onOpen: (favorite: FavoriteRecord) => void; onRemove: (favorite: FavoriteRecord) => void }) {
+  const [pendingRemoval, setPendingRemoval] = useState<FavoriteRecord | null>(null);
   return <section className="reader-section favorites-section">
     <FixedHeader eyebrow="MI PERFIL" title="Favoritos" subtitle="Todo lo que guardaste, reunido en un solo lugar." onBack={onBack} />
     <div className="reader-body favorites-browser">
       {!favorites.length && <div className="favorites-empty"><Heart size={30} /><b>Todavía no guardaste nada</b><p>Tocá el corazón de cualquier tarjeta para encontrarla después acá.</p></div>}
-      {favorites.map((favorite, index) => <MagicCard key={favorite.id} delay={index * .04} className="favorite-content-card" onClick={() => onOpen(favorite)} style={{ '--category-tone': favorite.tone } as React.CSSProperties}><span>{favorite.icon}</span><div><small>FAVORITO</small><b>{favorite.title}</b><em>{favorite.detail}</em></div><span role="button" tabIndex={0} className="remove-favorite" onClick={(event) => { event.stopPropagation(); onRemove(favorite); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onRemove(favorite); } }} aria-label={`Quitar ${favorite.title} de favoritos`}><Trash2 size={18} /></span></MagicCard>)}
+      {favorites.map((favorite, index) => <MagicCard key={favorite.id} delay={index * .04} className="favorite-content-card" onClick={() => onOpen(favorite)} style={{ '--category-tone': favorite.tone } as React.CSSProperties}><span>{favorite.icon}</span><div><small>FAVORITO</small><b>{favorite.title}</b><em>{favorite.detail}</em></div><span role="button" tabIndex={0} className="remove-favorite" onClick={(event) => { event.stopPropagation(); setPendingRemoval(favorite); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); setPendingRemoval(favorite); } }} aria-label={`Quitar ${favorite.title} de favoritos`}><Trash2 size={18} /></span></MagicCard>)}
     </div>
+    {pendingRemoval && <ConfirmDialog description={`Se va a quitar "${pendingRemoval.title}" de tus favoritos.`} onCancel={() => setPendingRemoval(null)} onConfirm={() => { onRemove(pendingRemoval); setPendingRemoval(null); }} />}
   </section>;
 }
 
@@ -480,53 +513,73 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
   const [editingTimezone, setEditingTimezone] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [loadError, setLoadError] = useState('');
   const notifications = useNotificationsToggle(user);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data: collection, error: collectionError } = await supabase
-        .from('collections')
-        .select('id')
-        .eq('slug', 'taller-40-dias')
-        .maybeSingle();
-      if (cancelled) return;
-      if (collectionError || !collection) { setStage('error'); return; }
-      setCollectionId(collection.id);
+      try {
+        console.log('[workshop] buscando collection taller-40-dias…');
+        const { data: collection, error: collectionError } = await supabase
+          .from('collections')
+          .select('id')
+          .eq('slug', 'taller-40-dias')
+          .maybeSingle();
+        if (cancelled) return;
+        if (collectionError) { console.error('[workshop] error buscando collection:', collectionError); setLoadError(collectionError.message); setStage('error'); return; }
+        if (!collection) { console.error('[workshop] no existe la collection taller-40-dias'); setLoadError('No encontramos el taller.'); setStage('error'); return; }
+        setCollectionId(collection.id);
 
-      const { data: progress } = await supabase.from('user_plan_progress').select('current_day').eq('user_id', user.id).eq('collection_id', collection.id).maybeSingle();
-      if (cancelled) return;
-      if (!progress) { setStage('onboarding'); return; }
-      setCurrentDay(progress.current_day);
+        console.log('[workshop] buscando user_plan_progress para', user.id);
+        const { data: progress, error: progressError } = await supabase
+          .from('user_plan_progress')
+          .select('current_day')
+          .eq('user_id', user.id)
+          .eq('collection_id', collection.id)
+          .maybeSingle();
+        if (cancelled) return;
+        if (progressError) { console.error('[workshop] error buscando user_plan_progress:', progressError); setLoadError(progressError.message); setStage('error'); return; }
+        if (!progress) { console.log('[workshop] sin progreso todavía -> onboarding'); setStage('onboarding'); return; }
+        setCurrentDay(progress.current_day);
 
-      const { data: deliveryRows, error: deliveryError } = await supabase
-        .from('taller_deliveries')
-        .select('id,day_number,delivery_type,delivered_at,seen_at,message_index,content_items(title,body),content_assets(source_url)')
-        .eq('user_id', user.id)
-        .order('delivered_at', { ascending: false });
-      if (cancelled) return;
-      if (deliveryError) { setStage('error'); return; }
-      const mapped = (deliveryRows || []).map((row) => {
-        const item = row.content_items as unknown as { title: string; body: string } | null;
-        const asset = row.content_assets as unknown as { source_url: string } | null;
-        const deliveryType = row.delivery_type as TallerDeliveryType;
-        const body = item?.body || '';
-        const paragraphs = deliveryType === 'intermediate_message'
-          ? (row.message_index != null ? findNumberedMessage(body, row.message_index) : null)
-          : extractMeditationSection(body, deliveryType);
-        return {
-          id: row.id,
-          dayNumber: row.day_number,
-          deliveryType,
-          deliveredAt: row.delivered_at,
-          seenAt: row.seen_at,
-          title: item?.title || `Día ${row.day_number}`,
-          paragraphs: paragraphs || [],
-          audioUrl: asset?.source_url,
-        } as TallerDelivery;
-      });
-      setDeliveries(mapped);
-      setStage('days');
+        console.log('[workshop] buscando taller_deliveries…');
+        const { data: deliveryRows, error: deliveryError } = await supabase
+          .from('taller_deliveries')
+          .select('id,day_number,delivery_type,delivered_at,seen_at,message_index,content_items(title,body),content_assets(source_url)')
+          .eq('user_id', user.id)
+          .order('delivered_at', { ascending: false });
+        if (cancelled) return;
+        if (deliveryError) { console.error('[workshop] error buscando taller_deliveries:', deliveryError); setLoadError(deliveryError.message); setStage('error'); return; }
+        console.log('[workshop] entregas encontradas:', deliveryRows?.length ?? 0);
+
+        const mapped = (deliveryRows || []).map((row) => {
+          const item = row.content_items as unknown as { title: string; body: string } | null;
+          const asset = row.content_assets as unknown as { source_url: string } | null;
+          const deliveryType = row.delivery_type as TallerDeliveryType;
+          const body = item?.body || '';
+          const paragraphs = deliveryType === 'intermediate_message'
+            ? (row.message_index != null ? findNumberedMessage(body, row.message_index) : null)
+            : extractMeditationSection(body, deliveryType);
+          return {
+            id: row.id,
+            dayNumber: row.day_number,
+            deliveryType,
+            deliveredAt: row.delivered_at,
+            seenAt: row.seen_at,
+            title: item?.title || `Día ${row.day_number}`,
+            paragraphs: paragraphs || [],
+            audioUrl: asset?.source_url,
+          } as TallerDelivery;
+        });
+        setDeliveries(mapped);
+        setStage('days');
+      } catch (err) {
+        if (cancelled) return;
+        console.error('[workshop] excepción cargando el taller:', err);
+        setLoadError(err instanceof Error ? err.message : 'Ocurrió un error inesperado.');
+        setStage('error');
+      }
     })();
     return () => { cancelled = true; };
   }, [user.id]);
@@ -559,7 +612,7 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
 
   if (stage === 'loading') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} /><div className="reader-body workshop-browser"><p className="library-empty">Cargando el taller…</p></div></section>;
 
-  if (stage === 'error') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} /><div className="reader-body workshop-browser"><p className="library-empty">No pudimos cargar el taller. Probá de nuevo más tarde.</p></div></section>;
+  if (stage === 'error') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} /><div className="reader-body workshop-browser"><p className="library-empty">No pudimos cargar el taller. Probá de nuevo más tarde.{loadError ? ` (${loadError})` : ''}</p></div></section>;
 
   if (stage === 'onboarding' && step === 'intro') return <section className="reader-section">
     <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de Autoconcepto" subtitle="40 días para transformar cómo te ves y cómo ves la vida." onBack={onBack} />
@@ -850,6 +903,9 @@ export default function App() {
         await syncProfile(data.session.user);
       }
       setSessionChecked(true);
+    }).catch((err) => {
+      console.error('[auth] error obteniendo la sesión:', err);
+      setSessionChecked(true);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
@@ -875,7 +931,8 @@ export default function App() {
       .eq('content_assets.asset_type', 'audio')
       .order('published_at', { ascending: false })
       .limit(250)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) { console.error('[library] error cargando content_items:', error); return; }
         if (!data) return;
         setLibraryItems(data.map((value) => {
           const item = value as Record<string, unknown>;
@@ -897,7 +954,7 @@ export default function App() {
             duration: durationSeconds ? `${Math.round(durationSeconds / 60)} min` : firstText(item, ['duration', 'audio_duration']),
           };
         }));
-      });
+      }, (err: unknown) => console.error('[library] excepción cargando content_items:', err));
   }, []);
 
   if (!sessionChecked) return null;

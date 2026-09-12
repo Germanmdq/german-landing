@@ -361,7 +361,7 @@ button, input { font-family: inherit !important; }
 
 /* Favoritos reales: se guardan y se abren desde Mi perfil. */
 .favorites-browser { display: grid; align-content: start; gap: 12px; }
-.favorites-empty { min-height: 230px; padding: 30px 24px; display: grid; place-items: center; align-content: center; gap: 10px; border: 1px dashed rgba(217,45,53,.26); border-radius: 24px; background: var(--ui-soft); color: var(--ui-accent); text-align: center; }
+.favorites-empty { min-height: 230px; padding: 30px 24px; display: grid; place-items: center; align-content: center; gap: 10px; border: 1px solid var(--ui-line); border-radius: 24px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); color: var(--ui-accent); text-align: center; }
 .favorites-empty b { color: var(--ui-ink); font-size: 18px; }
 .favorites-empty p { max-width: 280px; margin: 0; color: var(--ui-muted); font-size: 14px; line-height: 1.45; }
 .favorite-content-card { width: 100%; min-height: 112px; padding: 16px; display: grid; grid-template-columns: 48px minmax(0,1fr) 40px; gap: 12px; align-items: start; border-radius: 20px; text-align: left; }
