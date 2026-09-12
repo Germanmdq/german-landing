@@ -283,7 +283,13 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,.5) 0%, rgba(0,0,0,0) 50%);
+  /* Dos capas sobre la foto: un tinte rojo muy sutil pegado abajo del
+     todo (30% inferior) y, debajo de ese, el degradé oscuro que ya
+     existía para que el texto se lea. */
+  background:
+    linear-gradient(to top, rgba(220,38,38,.15) 0%, rgba(220,38,38,.05) 15%, transparent 30%),
+    linear-gradient(to top, rgba(0,0,0,.5) 0%, rgba(0,0,0,0) 50%);
+  border-radius: 0 0 20px 20px;
   pointer-events: none;
 }
 .welcome-carousel-screen .day-one-illustration {
