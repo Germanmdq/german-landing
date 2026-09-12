@@ -133,7 +133,7 @@ export function DayOneCarousel<T extends Item>({
     cards.forEach((card) => cardObserver.observe(card));
     return () => cardObserver.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [items.length]);
 
   const interrupt = () => {
     setPlaying(false);

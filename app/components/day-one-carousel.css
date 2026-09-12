@@ -88,6 +88,7 @@
 .header-top-row {
   display: flex;
   align-items: center;
+  align-self: stretch;
   min-height: 32px;
   margin: 0 0 6px;
 }
@@ -182,7 +183,6 @@
   font-weight: 600;
   letter-spacing: .012em;
   line-height: 1.21;
-  color: #1d1d1f;
 }
 .day-one-save {
   position: absolute;
@@ -267,25 +267,45 @@
 }
 .day-one-illustration--compact { transform: none; }
 
-/* Solo el carrusel principal de bienvenida: la imagen va pegada al
-   borde inferior de lado a lado (cover), no flotando centrada como en
-   los carruseles internos, con un degradé sutil detrás. */
+/* Solo el carrusel principal de bienvenida: la imagen ocupa toda la
+   card de esquina a esquina (fondo), con el texto superpuesto abajo
+   a la izquierda sobre un degradé oscuro, estilo App Store/Apple News. */
 .welcome-carousel-screen .day-one-card {
-  background: linear-gradient(to bottom, #ffffff 0%, #F0F0F0 100%);
-}
-.welcome-carousel-screen .day-one-caption {
-  margin: 24px 24px 12px;
+  border-radius: 20px;
 }
 .welcome-carousel-screen .day-one-visual {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   padding: 0;
 }
+.welcome-carousel-screen .day-one-visual::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.5) 0%, rgba(0,0,0,0) 50%);
+  pointer-events: none;
+}
 .welcome-carousel-screen .day-one-illustration {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   max-height: none;
-  object-fit: contain;
-  border-radius: 0 0 28px 28px;
+  object-fit: cover;
+  border-radius: 0;
 }
+.welcome-carousel-screen .day-one-caption {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  right: 24px;
+  z-index: 2;
+  margin: 0;
+}
+.welcome-carousel-screen .day-one-title { color: #fff; }
+.welcome-carousel-screen .day-one-subtitle { color: #fff; opacity: .8; }
 
 .day-one-placeholder {
   width: 160px;
