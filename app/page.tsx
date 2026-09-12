@@ -5,7 +5,7 @@ import type { Session, User } from '@supabase/supabase-js';
 import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, Heart, LogOut, Pause, Play, Search, Trash2, Check } from 'lucide-react';
 import content from './content.generated.json';
 import { supabase } from './lib/supabase';
-import { subscribeToPush, type WorkshopSchedule } from './lib/push';
+import { subscribeToPush, ensurePushSubscription, disablePushSubscription, getPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
 import { MagicCard, ShimmerButton } from './components/magic-ui';
 import './magic-ui.css';
 import './modern-ui.css';
@@ -14,7 +14,7 @@ import { DayOneCarousel } from './components/day-one-carousel';
 import { TimePicker } from './components/time-picker';
 import { TimezonePicker } from './components/timezone-picker';
 
-type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'consultas' | 'notificaciones' | 'espacio';
+type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'consultas' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string; audios?: { label: string; url: string }[] };
 type DeckItem = { icon: string; title: string; detail: string; tone: string; image?: string; imageSize?: 'compact'; children?: DeckItem[]; reader?: ReaderContent; notificationPanel?: boolean; accountPanel?: boolean; workshopPanel?: boolean; action?: 'logout' };
 type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string };
@@ -127,11 +127,6 @@ const screens: Record<Tab, Screen> = {
     { icon: '🔊', title: 'Escuchar', detail: 'Escuchá las respuestas disponibles.', tone: palette[1] },
     { icon: '🔖', title: 'Guardadas', detail: 'Volvé a las consultas que elegiste guardar.', tone: palette[2] },
   ] },
-  notificaciones: { eyebrow: 'NOTIFICACIONES', title: 'Tus avisos', subtitle: 'Elegí qué querés recibir y cuándo.', items: [
-    { icon: '🔔', title: 'Activar notificaciones', detail: 'Permití que la aplicación te envíe avisos.', tone: palette[0], notificationPanel: true },
-    { icon: '⏰', title: 'Horarios de práctica', detail: 'Configurá mañana, mediodía, tarde y noche.', tone: palette[1], notificationPanel: true },
-    { icon: '⚙️', title: 'Preferencias', detail: 'Elegí los tipos de avisos que querés recibir.', tone: palette[2], notificationPanel: true },
-  ] },
   espacio: { eyebrow: 'MI PERFIL', title: 'Tu espacio', subtitle: 'Tu cuenta y tus elecciones.', items: [
     { icon: '👤', title: 'Mi cuenta', detail: 'Nombre, mail, suscripción y acceso.', tone: palette[0], accountPanel: true },
     { icon: '⭐', title: 'Favoritos', detail: 'Prácticas, audios y lecturas guardadas.', tone: palette[1] },
@@ -142,7 +137,6 @@ const screens: Record<Tab, Screen> = {
 
 const mainCategories: Array<[Tab, string, string, string, string]> = [
   ['espacio', '👋', 'Mi perfil', 'Tu cuenta, favoritos y configuración.', palette[0]],
-  ['notificaciones', '🔔', 'Notificaciones', 'Recordatorios y novedades importantes.', palette[3]],
   ['biblioteca', '📚', 'Biblioteca', 'Audios, lecturas y conferencias.', palette[1]],
   ['talleres', '✨', 'Prácticas guiadas', 'Recorridos de 7, 15 y 40 días.', palette[2]],
   ['propia', '🧩', 'Tu propia práctica', 'Armá un camino para lo que hoy necesitás.', palette[3]],
@@ -199,6 +193,35 @@ function FixedHeader({ eyebrow, title, subtitle, onBack }: { eyebrow: string; ti
   return <header className="feature-header"><CloseButton onClose={onBack} /><p>{eyebrow}</p><h1>{title}</h1><small>{subtitle}</small></header>;
 }
 
+function ToggleSwitch({ checked, onChange, disabled, label }: { checked: boolean; onChange: () => void; disabled?: boolean; label: string }) {
+  return <button type="button" role="switch" aria-checked={checked} aria-label={label} className={`ios-toggle${checked ? ' is-on' : ''}`} onClick={onChange} disabled={disabled}>
+    <span className="ios-toggle-thumb" />
+  </button>;
+}
+
+function useNotificationsToggle(user: User) {
+  const [active, setActive] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    getPushSubscriptionActive(user.id).then((value) => { if (!cancelled) setActive(value); });
+    return () => { cancelled = true; };
+  }, [user.id]);
+
+  const toggle = async () => {
+    setBusy(true);
+    setError('');
+    const result = active ? await disablePushSubscription(user.id) : await ensurePushSubscription(user);
+    setBusy(false);
+    if (result.error) { setError(result.error); return; }
+    setActive((current) => !current);
+  };
+
+  return { active, busy, error, toggle };
+}
+
 function WeeklyMeetingPanel({ onBack }: { onBack: () => void }) {
   return <section className="reader-section">
     <FixedHeader eyebrow="EN VIVO" title="Reunión semanal" subtitle="Nos vemos en vivo cada semana." onBack={onBack} />
@@ -237,6 +260,26 @@ function NotificationsPanel({ onBack }: { onBack: () => void }) {
       {permission !== 'unsupported' && <ShimmerButton className="notification-permission" onClick={requestPermission}><Bell size={18} />{permission === 'granted' ? 'Notificaciones activadas' : permission === 'denied' ? 'Permiso bloqueado en el navegador' : 'Activar notificaciones'}</ShimmerButton>}
       {(Object.keys(timeLabels) as (keyof typeof times)[]).map((key) => <button key={key} className="notification-time-row" onClick={() => setEditingTime(key)} aria-label={`Cambiar horario de ${timeLabels[key]}: ${times[key]}`} aria-haspopup="dialog"><span>{timeLabels[key]}</span><span className="notification-time-value">{times[key]}<ChevronRight size={17} /></span></button>)}
       {editingTime && <TimePicker label={timeLabels[editingTime]} value={times[editingTime]} onCancel={() => setEditingTime(null)} onSave={(value) => { updateTime(editingTime, value); setEditingTime(null); }} />}
+    </div>
+  </section>;
+}
+
+function ProfileScreen({ user, items, onSelect, onBack }: { user: User; items: DeckItem[]; onSelect: (item: DeckItem) => void; onBack: () => void }) {
+  const notifications = useNotificationsToggle(user);
+  return <section className="reader-section">
+    <FixedHeader eyebrow="MI PERFIL" title="Tu espacio" subtitle="Tu cuenta y tus elecciones." onBack={onBack} />
+    <div className="reader-body">
+      <div className="ios-card">
+        {items.map((item) => <button key={item.title} className="ios-row" onClick={() => onSelect(item)}>
+          <span className="ios-row-label">{item.title}</span>
+          <span className="ios-row-value ios-row-value--muted"><ChevronRight size={17} /></span>
+        </button>)}
+        <div className="ios-row">
+          <span className="ios-row-label">Notificaciones</span>
+          <ToggleSwitch checked={notifications.active} onChange={notifications.toggle} disabled={notifications.busy} label="Notificaciones" />
+        </div>
+      </div>
+      {notifications.error && <p className="account-message">{notifications.error}</p>}
     </div>
   </section>;
 }
@@ -437,6 +480,7 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
   const [editingTimezone, setEditingTimezone] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const notifications = useNotificationsToggle(user);
 
   useEffect(() => {
     let cancelled = false;
@@ -579,6 +623,10 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
   return <section className="reader-section workshop-section">
     <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle={currentDay != null ? `Vas por el día ${currentDay} de 40.` : 'Autoconcepto y control de la imaginación.'} onBack={onBack} />
     <div className="reader-body workshop-browser">
+      <div className="ios-card">
+        <div className="ios-row"><span className="ios-row-label">Notificaciones</span><ToggleSwitch checked={notifications.active} onChange={notifications.toggle} disabled={notifications.busy} label="Notificaciones" /></div>
+      </div>
+      {!notifications.active && <p className="workshop-notifications-warning">Sin notificaciones no vas a recibir las prácticas.</p>}
       {!deliveries.length && <p className="library-empty">Tu taller comienza pronto. Vas a recibir tu primera práctica en tu próximo horario configurado.</p>}
       {!!deliveries.length && <div className="library-content-list">{deliveries.map((delivery) => <MagicCard key={delivery.id} className="library-content-card" onClick={() => openDelivery(delivery)}>
         <div>
@@ -858,7 +906,7 @@ export default function App() {
 
   if (mainMenu) {
     const meetingCard = { target: 'reunion' as const, title: 'Reunión semanal', detail: 'Encontrémonos en vivo.', image: '/images/reunion-semanal.png' };
-    const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/mi-perfil-mujer-movil-serena.png' : target === 'notificaciones' ? '/images/notificaciones.png' : target === 'biblioteca' ? '/images/biblioteca-lectora.png' : target === 'talleres' ? '/images/practicas-guiadas-hombre.png' : target === 'propia' ? '/images/tu-propia-practica-mujer.png' : target === 'meditaciones' ? '/images/meditaciones-hombre.png' : target === 'consultas' ? '/images/hablemos.png' : undefined }));
+    const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/mi-perfil-mujer-movil-serena.png' : target === 'biblioteca' ? '/images/biblioteca-lectora.png' : target === 'talleres' ? '/images/practicas-guiadas-hombre.png' : target === 'propia' ? '/images/tu-propia-practica-mujer.png' : target === 'meditaciones' ? '/images/meditaciones-hombre.png' : target === 'consultas' ? '/images/hablemos.png' : undefined }));
     const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
     const items = [...welcomeItems.slice(0, meditIndex + 1), meetingCard, ...welcomeItems.slice(meditIndex + 1)];
     return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>Bienvenido a<strong>Germán Asistente</strong></h1></header><DayOneCarousel label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'reunion') { setMeetingOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section></main>;
@@ -869,6 +917,7 @@ export default function App() {
   if (favoritesOpen) return <main className="app-shell app-main section-app"><FavoritesPanel favorites={favorites} onBack={back} onOpen={(favorite) => { if (favorite.reader) setReader(favorite.reader); }} onRemove={toggleFavorite} /></main>;
   if (workshopOpen) return <main className="app-shell app-main section-app"><WorkshopPanel user={session.user} onBack={back} onRead={setReader} /></main>;
   if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} /></main>;
+  if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} onSelect={select} onBack={back} /></main>;
   if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel onBack={back} /></main>;
   if (current?.title === 'Día 1') {
     const carouselKey = `${tab}-${trail.map((item) => item.title).join('/')}-dia1`;

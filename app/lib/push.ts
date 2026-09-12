@@ -11,7 +11,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
 }
 
-export async function subscribeToPush(user: User, settings: WorkshopSettings, tallerId: string): Promise<{ error?: string }> {
+async function getOrCreateBrowserSubscription(): Promise<{ endpoint: string; p256dh: string; authKey: string } | { error: string }> {
   if (typeof window === 'undefined' || !('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
     return { error: 'Este navegador no soporta notificaciones push.' };
   }
@@ -35,12 +35,18 @@ export async function subscribeToPush(user: User, settings: WorkshopSettings, ta
   const p256dh = json.keys?.p256dh;
   const authKey = json.keys?.auth;
   if (!json.endpoint || !p256dh || !authKey) return { error: 'No se pudo leer la suscripción de notificaciones.' };
+  return { endpoint: json.endpoint, p256dh, authKey };
+}
+
+export async function subscribeToPush(user: User, settings: WorkshopSettings, tallerId: string): Promise<{ error?: string }> {
+  const subscription = await getOrCreateBrowserSubscription();
+  if ('error' in subscription) return { error: subscription.error };
 
   const { error } = await supabase.from('push_subscriptions').upsert({
     user_id: user.id,
-    endpoint: json.endpoint,
-    p256dh,
-    auth_key: authKey,
+    endpoint: subscription.endpoint,
+    p256dh: subscription.p256dh,
+    auth_key: subscription.authKey,
     morning: settings.morning,
     noon: settings.noon,
     afternoon: settings.afternoon,
@@ -54,4 +60,35 @@ export async function subscribeToPush(user: User, settings: WorkshopSettings, ta
 
   if (error) return { error: error.message };
   return {};
+}
+
+// Activa notificaciones en general (sin depender de un taller puntual): pide
+// permiso, se suscribe si hace falta, y prende is_active — sin tocar horarios
+// ni active_taller_id si ya existían de una inscripción previa a un taller.
+export async function ensurePushSubscription(user: User): Promise<{ error?: string }> {
+  const subscription = await getOrCreateBrowserSubscription();
+  if ('error' in subscription) return { error: subscription.error };
+
+  const { error } = await supabase.from('push_subscriptions').upsert({
+    user_id: user.id,
+    endpoint: subscription.endpoint,
+    p256dh: subscription.p256dh,
+    auth_key: subscription.authKey,
+    is_active: true,
+  }, { onConflict: 'user_id,endpoint' });
+
+  if (error) return { error: error.message };
+  return {};
+}
+
+// Apaga todas las suscripciones del usuario (no las borra, solo is_active: false).
+export async function disablePushSubscription(userId: string): Promise<{ error?: string }> {
+  const { error } = await supabase.from('push_subscriptions').update({ is_active: false }).eq('user_id', userId);
+  if (error) return { error: error.message };
+  return {};
+}
+
+export async function getPushSubscriptionActive(userId: string): Promise<boolean> {
+  const { data } = await supabase.from('push_subscriptions').select('id').eq('user_id', userId).eq('is_active', true).limit(1).maybeSingle();
+  return Boolean(data);
 }

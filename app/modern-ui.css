@@ -84,6 +84,12 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .workshop-pill { flex: 1 1 calc(50% - 5px); min-height: 48px; border: 1px solid var(--ui-line); border-radius: 14px; background: #fff; color: var(--ui-ink); font-size: 15px; font-weight: 600; }
 .workshop-pill.active { border-color: var(--ui-accent); background: var(--ui-accent); color: #fff; }
 .workshop-hint { color: #8E8E93; font-size: 14px; line-height: 1.5; margin: 12px 0 24px; }
+.ios-toggle { width: 51px; height: 31px; flex-shrink: 0; padding: 2px; border: 0; border-radius: 16px; background: #E5E5EA; transition: background-color .3s ease; }
+.ios-toggle.is-on { background: #34C759; }
+.ios-toggle:disabled { opacity: .6; }
+.ios-toggle-thumb { display: block; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.15), 0 1px 1px rgba(0,0,0,.16); transition: transform .3s ease; transform: translateX(0); }
+.ios-toggle.is-on .ios-toggle-thumb { transform: translateX(20px); }
+.workshop-notifications-warning { color: #8E8E93; font-size: 13px; line-height: 1.5; margin: 4px 0 20px; }
 .delivery-unseen { width: 8px; height: 8px; border-radius: 50%; background: var(--ui-accent); }
 .delivery-seen { color: #8E8E93 !important; }
 .timezone-search { width: 100%; min-height: 44px; margin: 4px 0 4px; padding: 0 14px; border: 1px solid var(--ui-line); border-radius: 12px; background: #eceef1; font-size: 16px; color: var(--ui-ink); }
