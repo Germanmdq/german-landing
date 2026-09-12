@@ -30,6 +30,7 @@ export function DayOneCarousel<T extends Item>({
   const [progress, setProgress] = useState(0);
   const [inView, setInView] = useState(true);
   const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set());
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
   const reduced = useRef(false);
 
   const move = useCallback((index: number, manual = true) => {
@@ -181,7 +182,17 @@ export function DayOneCarousel<T extends Item>({
             <strong className="day-one-title">{item.title}</strong>
             {item.detail && <span className="day-one-subtitle">{item.detail}</span>}
           </span>
-          {item.image && <span className="day-one-visual"><img className={`day-one-illustration${item.imageSize === 'compact' ? ' day-one-illustration--compact' : ''}`} src={item.image} alt="" draggable={false} /></span>}
+          {item.image && <span className="day-one-visual">
+            {!loadedImages.has(index) && <span className="day-one-image-placeholder" aria-hidden="true" />}
+            <img
+              className={`day-one-illustration${item.imageSize === 'compact' ? ' day-one-illustration--compact' : ''}${loadedImages.has(index) ? ' is-loaded' : ''}`}
+              src={item.image}
+              alt=""
+              draggable={false}
+              loading={index < 3 ? 'eager' : 'lazy'}
+              onLoad={() => setLoadedImages((prev) => (prev.has(index) ? prev : new Set(prev).add(index)))}
+            />
+          </span>}
           {!item.image && item.placeholder && <span className="day-one-visual"><span className="day-one-placeholder" aria-hidden="true"><Video size={40} /></span></span>}
         </button>
         {onFavorite && isFavorite?.(item) !== undefined && <button className="day-one-save" aria-label={`${isFavorite?.(item) ? 'Quitar' : 'Guardar'} ${item.title} ${isFavorite?.(item) ? 'de' : 'en'} favoritos`} onClick={() => { interrupt(); onFavorite(item); }} tabIndex={active === index ? 0 : -1}><Heart size={20} fill={isFavorite?.(item) ? 'currentColor' : 'none'} /></button>}

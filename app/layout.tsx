@@ -13,15 +13,16 @@ export default function Layout({ children }: Readonly<{ children: React.ReactNod
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        {/* Preload de las imágenes del carrusel principal (primera pantalla
-            tras el login) — las demás imágenes de public/images/ se cargan
-            bajo demanda, precargarlas todas sería contraproducente. */}
-        <link rel="preload" as="image" href="/images/german-perfil.png" />
-        <link rel="preload" as="image" href="/images/german-biblioteca.png" />
-        <link rel="preload" as="image" href="/images/practicas-guiadas-hombre.png" />
-        <link rel="preload" as="image" href="/images/tu-propia-practica-mujer.png" />
-        <link rel="preload" as="image" href="/images/meditaciones-hombre.png" />
-        <link rel="preload" as="image" href="/images/hablemos.png" />
+        {/* Preload de las primeras 3 cards del carrusel principal (las que
+            se ven sin scrollear, en orden: Mi perfil / Biblioteca /
+            Prácticas guiadas) — las demás imágenes de public/images/ se
+            cargan bajo demanda (lazy), precargarlas todas sería
+            contraproducente. Nota: se habían quedado apuntando a nombres de
+            archivo viejos que ya no se usan en ningún lado — corregido acá
+            de paso a los nombres y extensión .webp actuales. */}
+        <link rel="preload" as="image" href="/images/german-perfil.webp" />
+        <link rel="preload" as="image" href="/images/german-biblioteca.webp" />
+        <link rel="preload" as="image" href="/images/german-practicas.webp" />
       </head>
       <body suppressHydrationWarning>{children}</body>
     </html>

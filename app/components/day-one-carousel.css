@@ -243,6 +243,7 @@
 }
 
 .day-one-visual {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -258,6 +259,22 @@
 @media (prefers-reduced-motion: reduce) {
   .day-one-visual { opacity: 1; transform: none; transition: none; }
 }
+/* Mientras la imagen carga: shimmer gris; al cargar (onLoad en el <img>),
+   fade-in suave y el shimmer desaparece (deja de montarse). */
+.day-one-image-placeholder {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #F0F0F0 25%, #E0E0E0 50%, #F0F0F0 75%);
+  background-size: 200% 100%;
+  animation: day-one-shimmer 1.5s infinite;
+}
+@keyframes day-one-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .day-one-image-placeholder { animation: none; }
+}
 .day-one-illustration {
   display: block;
   width: 100%;
@@ -265,6 +282,12 @@
   max-height: min(200px, 100%);
   object-fit: contain;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+.day-one-illustration.is-loaded { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .day-one-illustration { transition: none; }
 }
 .day-one-illustration--compact { transform: none; }
 
