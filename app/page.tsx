@@ -767,6 +767,10 @@ function VideoIntro({ onFinish }: { onFinish: () => void }) {
       buttonTimer = setTimeout(() => setShowEnter(true), 2000);
     };
     video.addEventListener('playing', scheduleEnterButton, { once: true });
+    // Red de seguridad: si el autoplay queda bloqueado y 'playing' nunca
+    // dispara, igual mostramos el botón para no dejar al usuario varado
+    // sin ninguna forma de avanzar.
+    const safetyTimer = setTimeout(scheduleEnterButton, 2500);
 
     container.appendChild(video);
 
@@ -784,6 +788,7 @@ function VideoIntro({ onFinish }: { onFinish: () => void }) {
     return () => {
       video.onended = null;
       video.removeEventListener('playing', scheduleEnterButton);
+      clearTimeout(safetyTimer);
       if (buttonTimer) clearTimeout(buttonTimer);
       video.pause();
       if (video.parentNode === container) {
