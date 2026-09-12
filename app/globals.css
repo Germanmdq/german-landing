@@ -13,3 +13,45 @@ body, button, input {
 html, body {
   background: #F5F5F7 !important;
 }
+
+/* === TEXTO CENTRADO GLOBAL === */
+.section-header,
+.section-title,
+.section-subtitle,
+.screen-title,
+.category-label,
+h1, h2 {
+  text-align: center !important;
+}
+
+/* === ANIMACIÓN DE ENTRADA DE CARDS === */
+.magic-card .card-title-wrap,
+.magic-card .card-text-content,
+.magic-card h3,
+.magic-card p {
+  opacity: 0;
+  transform: translateX(-15px);
+  transition: opacity 0.4s ease-out 0.2s, transform 0.4s ease-out 0.2s;
+}
+.magic-card.card-visible .card-title-wrap,
+.magic-card.card-visible .card-text-content,
+.magic-card.card-visible h3,
+.magic-card.card-visible p {
+  opacity: 1;
+  transform: translateX(0);
+}
+.magic-card img {
+  opacity: 0;
+  transform: translateX(15px);
+  transition: opacity 0.5s ease-out 0.35s, transform 0.5s ease-out 0.35s;
+}
+.magic-card.card-visible img {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* === IMÁGENES PRELOAD + OPTIMIZACIÓN === */
+.magic-card img {
+  object-fit: contain !important;
+  object-position: bottom center !important;
+}

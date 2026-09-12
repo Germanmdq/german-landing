@@ -861,11 +861,11 @@ export default function App() {
   // El splash se muestra al abrir la app SOLO cuando no hay sesión y no
   // venimos de un redirect de OAuth (Google) — si hay callback en la URL o
   // ya hay sesión guardada, se salta directo (ver efecto de auth más abajo,
-  // que también fuerza introDone=true apenas aparece una sesión).
-  const [introDone, setIntroDone] = useState(() => {
-    const skip = hasOAuthCallbackParams();
-    if (skip) console.log('[auth] callback de OAuth detectado en la URL al montar, saltando el video');
-    return skip;
+  // que también fuerza showVideo=false apenas aparece una sesión).
+  const isOAuthCallback = hasOAuthCallbackParams();
+  const [showVideo, setShowVideo] = useState(() => {
+    if (isOAuthCallback) console.log('[auth] callback de OAuth detectado en la URL al montar, saltando el video');
+    return !isOAuthCallback;
   });
   const [sessionChecked, setSessionChecked] = useState(false);
   const [pendingDeliveryId, setPendingDeliveryId] = useState(() => (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('delivery') : null));
@@ -1009,7 +1009,7 @@ export default function App() {
       console.log('[auth] getSession() resolvió:', data.session ? `sesión de ${data.session.user.email}` : 'sin sesión');
       setSession(data.session);
       if (data.session) {
-        setIntroDone(true);
+        setShowVideo(false);
       }
       if (data.session?.user) {
         await syncProfile(data.session.user);
@@ -1028,7 +1028,7 @@ export default function App() {
         // Si el video seguía en pantalla (o a punto de mostrarse) y recién
         // ahora aparece una sesión (ej: vuelta del redirect de Google),
         // lo cortamos y vamos directo al carrusel.
-        setIntroDone(true);
+        setShowVideo(false);
       }
       if (nextSession?.user) {
         await syncProfile(nextSession.user);
@@ -1041,6 +1041,27 @@ export default function App() {
       clearTimeout(sessionCheckTimeout);
       listener.subscription.unsubscribe();
     };
+  }, []);
+
+  // Nota: la animación de entrada de las MagicCard ya se maneja adentro del
+  // propio componente (app/components/magic-ui.tsx, un IntersectionObserver
+  // por card, así funciona sin importar en qué pantalla/momento se monten).
+  // Este efecto adicional barre el DOM completo por si queda alguna
+  // .magic-card fuera de ese mecanismo — es un refuerzo, no la fuente real.
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('card-visible');
+            console.log('ANIMACIÓN APLICADA a card:', entry.target.querySelector('h3')?.textContent);
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+    document.querySelectorAll('.magic-card').forEach((card) => observer.observe(card));
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -1126,7 +1147,7 @@ export default function App() {
   // para que un usuario ya logueado (o volviendo de un callback de OAuth)
   // nunca vea ni un frame del splash.
   if (!sessionChecked) return null;
-  if (!introDone) return <VideoIntro onFinish={() => setIntroDone(true)} />;
+  if (showVideo) return <VideoIntro onFinish={() => setShowVideo(false)} />;
   if (!session) return <LoginGate />;
 
   if (mainMenu) {

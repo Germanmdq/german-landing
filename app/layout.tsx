@@ -12,6 +12,17 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, them
 export default function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" suppressHydrationWarning>
+      <head>
+        {/* Preload de las imágenes del carrusel principal (primera pantalla
+            tras el login) — las demás imágenes de public/images/ se cargan
+            bajo demanda, precargarlas todas sería contraproducente. */}
+        <link rel="preload" as="image" href="/images/german-perfil.png" />
+        <link rel="preload" as="image" href="/images/german-biblioteca.png" />
+        <link rel="preload" as="image" href="/images/practicas-guiadas-hombre.png" />
+        <link rel="preload" as="image" href="/images/tu-propia-practica-mujer.png" />
+        <link rel="preload" as="image" href="/images/meditaciones-hombre.png" />
+        <link rel="preload" as="image" href="/images/hablemos.png" />
+      </head>
       <body suppressHydrationWarning>{children}</body>
     </html>
   );
