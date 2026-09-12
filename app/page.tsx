@@ -811,7 +811,7 @@ function VideoIntro({ onFinish }: { onFinish: () => void }) {
   }, []);
 
   return <div ref={containerRef} className="video-intro">
-    {showEnter && <button type="button" className="video-intro-enter" onClick={() => onFinishRef.current()}>Ingresar<ArrowRight size={16} strokeWidth={2.4} /></button>}
+    {showEnter && <button type="button" className="video-intro-enter" onClick={() => onFinishRef.current()}><span>Ingresar</span><ArrowRight size={18} strokeWidth={2.4} /></button>}
   </div>;
 }
 
@@ -837,7 +837,7 @@ function LoginGate() {
 
   return (
     <main className="app-shell login-screen">
-      <div className="login-content">
+      <div className="login-card">
         <h1 className="login-title">Germán <span>Asistente</span></h1>
         <p className="login-subtitle">Iniciá sesión para continuar</p>
         <button type="button" className="login-google-button" onClick={submit} disabled={busy}>
@@ -848,6 +848,7 @@ function LoginGate() {
             <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" />
           </svg>
           <span>{busy ? 'Un momento…' : 'Continuar con Google'}</span>
+          <ArrowRight size={18} strokeWidth={2.4} />
         </button>
         {message && <p className="login-error">{message}</p>}
       </div>
