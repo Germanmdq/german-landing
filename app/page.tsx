@@ -166,8 +166,8 @@ function CategoryIcon({ item }: { item: DeckItem }) {
 function DeckCard({ item, index, last, onClick, favorite, onFavorite }: { item: DeckItem; index: number; last: boolean; onClick?: () => void; favorite?: boolean; onFavorite?: () => void }) {
   return <div className={`category-row${last ? ' is-last' : ''}`}>
     <MagicCard className="category-card" delay={Math.min(index * .045, .24)} style={{ '--category-index': index, '--category-tone': item.tone } as React.CSSProperties} onClick={onClick}>
-      <span className="category-icon"><CategoryIcon item={item} /></span>
-      <p><small>{item.children || item.reader || item.notificationPanel || item.accountPanel || item.workshopPanel || item.action ? 'ABRIR' : 'OPCIÓN'}</small><b>{item.title}</b>{item.detail && <em>{item.detail}</em>}</p>
+      <span className="category-icon card-image"><CategoryIcon item={item} /></span>
+      <p><small className="card-subtitle">{item.children || item.reader || item.notificationPanel || item.accountPanel || item.workshopPanel || item.action ? 'ABRIR' : 'OPCIÓN'}</small><b className="card-title">{item.title}</b>{item.detail && <em className="card-subtitle">{item.detail}</em>}</p>
       <span className="category-actions">
         {onFavorite && <span role="button" tabIndex={0} className={`favorite-button${favorite ? ' is-favorite' : ''}`} onClick={(event) => { event.stopPropagation(); onFavorite(); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onFavorite(); } }} aria-label={favorite ? `Quitar ${item.title} de favoritos` : `Guardar ${item.title} en favoritos`}><Heart size={19} fill={favorite ? 'currentColor' : 'none'} /></span>}
         <i className="category-arrow"><ChevronRight size={21} strokeWidth={2.2} /></i>
@@ -473,8 +473,8 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
         return <MagicCard key={entry.id} delay={Math.min(index * .025, .2)} className="library-content-card" onClick={() => onRead(entry)}>
           <div>
             <p>{entry.type || 'Contenido'}</p>
-            <b>{q ? highlightText(entry.title, q) : entry.title}</b>
-            <em>{preview}</em>
+            <b className="card-title">{q ? highlightText(entry.title, q) : entry.title}</b>
+            <em className="card-subtitle">{preview}</em>
           </div>
           <span className="library-card-actions">
             <span role="button" tabIndex={0} className={`favorite-button${saved ? ' is-favorite' : ''}`} onClick={(event) => { event.stopPropagation(); onToggleFavorite(libraryFavorite(entry)); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onToggleFavorite(libraryFavorite(entry)); } }} aria-label={saved ? `Quitar ${entry.title} de favoritos` : `Guardar ${entry.title} en favoritos`}>
@@ -514,7 +514,7 @@ function FavoritesPanel({ favorites, onBack, onNavigate, onOpen, onRemove }: { f
     <FixedHeader eyebrow="MI PERFIL" title="Favoritos" subtitle="Todo lo que guardaste, reunido en un solo lugar." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body favorites-browser">
       {!favorites.length && <div className="favorites-empty"><Heart size={30} /><b>Todavía no guardaste nada</b><p>Tocá el corazón de cualquier tarjeta para encontrarla después acá.</p></div>}
-      {favorites.map((favorite, index) => <MagicCard key={favorite.id} delay={index * .04} className="favorite-content-card" onClick={() => onOpen(favorite)} style={{ '--category-tone': favorite.tone } as React.CSSProperties}><span>{favorite.icon}</span><div><small>FAVORITO</small><b>{favorite.title}</b><em>{favorite.detail}</em></div><span role="button" tabIndex={0} className="remove-favorite" onClick={(event) => { event.stopPropagation(); setPendingRemoval(favorite); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); setPendingRemoval(favorite); } }} aria-label={`Quitar ${favorite.title} de favoritos`}><Trash2 size={18} /></span></MagicCard>)}
+      {favorites.map((favorite, index) => <MagicCard key={favorite.id} delay={index * .04} className="favorite-content-card" onClick={() => onOpen(favorite)} style={{ '--category-tone': favorite.tone } as React.CSSProperties}><span className="card-image">{favorite.icon}</span><div><small className="card-subtitle">FAVORITO</small><b className="card-title">{favorite.title}</b><em className="card-subtitle">{favorite.detail}</em></div><span role="button" tabIndex={0} className="remove-favorite" onClick={(event) => { event.stopPropagation(); setPendingRemoval(favorite); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); setPendingRemoval(favorite); } }} aria-label={`Quitar ${favorite.title} de favoritos`}><Trash2 size={18} /></span></MagicCard>)}
     </div>
     {pendingRemoval && <ConfirmDialog description={`Se va a quitar "${pendingRemoval.title}" de tus favoritos.`} onCancel={() => setPendingRemoval(null)} onConfirm={() => { onRemove(pendingRemoval); setPendingRemoval(null); }} />}
   </section>;
@@ -719,8 +719,8 @@ function WorkshopPanel({ user, onBack, onNavigate, onRead }: { user: User; onBac
       {!!deliveries.length && <div className="library-content-list">{deliveries.map((delivery) => <MagicCard key={delivery.id} className="library-content-card" onClick={() => openDelivery(delivery)}>
         <div>
           <p>DÍA {delivery.dayNumber} · {deliveryTypeLabels[delivery.deliveryType].toUpperCase()}</p>
-          <b>{deliveryTypeLabels[delivery.deliveryType]}</b>
-          <em>Recibido {formatDeliveredAt(delivery.deliveredAt)}</em>
+          <b className="card-title">{deliveryTypeLabels[delivery.deliveryType]}</b>
+          <em className="card-subtitle">Recibido {formatDeliveredAt(delivery.deliveredAt)}</em>
         </div>
         <span className="library-card-actions">{delivery.seenAt ? <i className="delivery-seen" aria-label="Ya visto"><Check size={16} /></i> : <i className="delivery-unseen" aria-label="Sin ver" />}<i><ChevronRight size={19} /></i></span>
       </MagicCard>)}</div>}

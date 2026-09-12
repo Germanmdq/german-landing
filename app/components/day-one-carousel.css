@@ -13,8 +13,8 @@
   background: #F5F5F7 !important;
   padding: max(20px, env(safe-area-inset-top)) 6.25% 16px;
 }
-.day-one-screen .feature-header h1 { color: #1d1d1f; font-size: 32px; font-weight: 700; line-height: 1.06; letter-spacing: -.022em; }
-.day-one-screen .feature-header > p { color: var(--ui-accent); }
+.day-one-screen .feature-header h1 { color: #1d1d1f; font-size: 32px; font-weight: 700; line-height: 1.06; letter-spacing: -.022em; text-align: center !important; }
+.day-one-screen .feature-header > p { color: var(--ui-accent); text-align: center !important; }
 .day-one-carousel {
   container-type: inline-size;
   --day-gutter: 6.25cqw;
@@ -233,7 +233,7 @@
   background: #F5F5F7 !important;
   border: 0;
 }
-.welcome-carousel-screen .assistant-welcome h1 { max-width: 100%; color: #1d1d1f; }
+.welcome-carousel-screen .assistant-welcome h1 { max-width: 100%; color: #1d1d1f; text-align: center !important; }
 
 @media (max-height: 600px) {
   .welcome-carousel-screen .assistant-welcome { padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: 12px; }

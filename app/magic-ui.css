@@ -52,6 +52,41 @@ button, input { font-family: inherit !important; }
   background: linear-gradient(120deg, rgba(255,255,255,.62), transparent 42%);
 }
 
+/* Animación de entrada por IntersectionObserver (ver MagicCard en
+   magic-ui.tsx): título/subtítulo entran desde la izquierda, la imagen
+   desde la derecha, apenas después. */
+.magic-card .card-title,
+.magic-card .card-subtitle {
+  opacity: 0;
+  transform: translateX(-15px);
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+  transition-delay: 0.2s;
+}
+.magic-card.card-visible .card-title,
+.magic-card.card-visible .card-subtitle {
+  opacity: 1;
+  transform: translateX(0);
+}
+.magic-card .card-image {
+  opacity: 0;
+  transform: translateX(15px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  transition-delay: 0.35s;
+}
+.magic-card.card-visible .card-image {
+  opacity: 1;
+  transform: translateX(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .magic-card .card-title,
+  .magic-card .card-subtitle,
+  .magic-card .card-image {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
 .shimmer-button {
   position: relative;
   isolation: isolate;
@@ -104,11 +139,11 @@ button, input { font-family: inherit !important; }
   border-bottom: 1px solid rgba(24,23,28,.055);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  text-align: center;
+  text-align: center !important;
 }
 
-.assistant-welcome p { margin: 0 0 9px; color: var(--ui-muted); font-size: 18px; font-weight: 540; letter-spacing: -.025em; }
-.assistant-welcome h1 { margin: 0; color: var(--ui-ink); font-size: 32px; line-height: 1.06; letter-spacing: -.022em; font-weight: 700; }
+.assistant-welcome p { margin: 0 0 9px; color: var(--ui-muted); font-size: 18px; font-weight: 540; letter-spacing: -.025em; text-align: center !important; }
+.assistant-welcome h1 { margin: 0; color: var(--ui-ink); font-size: 32px; line-height: 1.06; letter-spacing: -.022em; font-weight: 700; text-align: center !important; }
 .assistant-welcome h1 strong { display: block; margin-top: 4px; color: var(--ui-accent); font-weight: 790; }
 
 .category-list,
@@ -231,14 +266,14 @@ button, input { font-family: inherit !important; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
+  text-align: center !important;
   background: rgba(255,255,255,.96);
   border-bottom: 1px solid rgba(24,23,28,.055);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
 }
 
-.feature-header > p { margin: 0 0 5px; color: var(--ui-accent); font-size: 12px; line-height: 1; letter-spacing: .08em; font-weight: 600; text-transform: uppercase; }
+.feature-header > p { margin: 0 0 5px; color: var(--ui-accent); font-size: 12px; line-height: 1; letter-spacing: .08em; font-weight: 600; text-transform: uppercase; text-align: center !important; }
 .feature-header h1 {
   width: 100%;
   max-width: 100%;
@@ -250,8 +285,9 @@ button, input { font-family: inherit !important; }
   line-height: 1.06;
   letter-spacing: -.022em;
   font-weight: 700;
+  text-align: center !important;
 }
-.feature-header > small { display: -webkit-box; max-width: 370px; margin-top: 5px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: var(--ui-muted); font-size: 13px; line-height: 1.28; }
+.feature-header > small { display: -webkit-box; max-width: 370px; margin-top: 5px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: var(--ui-muted); font-size: 13px; line-height: 1.28; text-align: center !important; }
 
 .reader-body {
   min-height: 0;
