@@ -264,7 +264,7 @@ function NotificationsPanel({ onBack }: { onBack: () => void }) {
     if (!('Notification' in window)) return;
     const result = await Notification.requestPermission();
     setPermission(result);
-    if (result === 'granted' && 'serviceWorker' in navigator) await navigator.serviceWorker.register('/sw.js');
+    if (result === 'granted' && 'serviceWorker' in navigator) await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
   };
   return <section className="reader-section">
     <FixedHeader eyebrow="NOTIFICACIONES" title="Tus horarios" subtitle="Los horarios quedan guardados en este dispositivo." onBack={onBack} />
@@ -891,7 +891,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => undefined);
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((registration) => registration.update().catch(() => undefined)).catch(() => undefined);
     const savedFavorites = localStorage.getItem('german-favorites');
     if (savedFavorites) {
       try { setFavorites(JSON.parse(savedFavorites) as FavoriteRecord[]); } catch { localStorage.removeItem('german-favorites'); }

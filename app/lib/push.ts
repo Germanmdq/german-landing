@@ -29,7 +29,7 @@ async function getOrCreateBrowserSubscription(): Promise<{ endpoint: string; p25
     if (permission !== 'granted') return { error: 'No diste permiso para recibir notificaciones.' };
 
     console.log('[push] registrando service worker…');
-    const registration = await navigator.serviceWorker.register('/sw.js');
+    const registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
     await navigator.serviceWorker.ready;
 
     let subscription = await registration.pushManager.getSubscription();
