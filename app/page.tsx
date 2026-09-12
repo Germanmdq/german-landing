@@ -58,7 +58,6 @@ const findNumberedMessage = (body: string, index: number): string[] | null => {
 const palette = ['#D92D35', '#E5484D', '#F2555A', '#FF6B6F'];
 const icons = ['●', '◆', '✦', '○'];
 const cleanParagraphs = (text: string) => text.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
-const hasAuthCallbackParams = () => typeof window !== 'undefined' && (window.location.hash.includes('access_token') || new URLSearchParams(window.location.search).has('code'));
 const deliveryTypeLabels: Record<TallerDeliveryType, string> = { meditation_morning: 'Meditación de la mañana', meditation_noon: 'Meditación del mediodía', meditation_afternoon: 'Meditación de la tarde', meditation_night: 'Meditación de la noche', intermediate_message: 'Mensaje' };
 const formatDeliveredAt = (iso: string) => new Date(iso).toLocaleString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const leaf = (title: string, index: number, detail = ''): DeckItem => ({ icon: icons[index % icons.length], title, detail, tone: palette[index % palette.length] });
@@ -201,12 +200,18 @@ function ToggleSwitch({ checked, onChange, disabled, label }: { checked: boolean
 
 function useNotificationsToggle(user: User) {
   const [active, setActive] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
-    getPushSubscriptionActive(user.id).then((value) => { if (!cancelled) setActive(value); });
+    setLoading(true);
+    getPushSubscriptionActive(user.id).then((value) => {
+      if (cancelled) return;
+      setActive(value);
+      setLoading(false);
+    });
     return () => { cancelled = true; };
   }, [user.id]);
 
@@ -231,7 +236,7 @@ function useNotificationsToggle(user: User) {
     }
   };
 
-  return { active, busy, error, toggle };
+  return { active, loading, busy, error, toggle };
 }
 
 function WeeklyMeetingPanel({ onBack }: { onBack: () => void }) {
@@ -288,7 +293,7 @@ function ProfileScreen({ user, items, onSelect, onBack }: { user: User; items: D
         </button>)}
         <div className="ios-row">
           <span className="ios-row-label">Notificaciones</span>
-          <ToggleSwitch checked={notifications.active} onChange={notifications.toggle} disabled={notifications.busy} label="Notificaciones" />
+          {notifications.loading ? <span className="ios-toggle-placeholder" aria-hidden="true" /> : <ToggleSwitch checked={notifications.active} onChange={notifications.toggle} disabled={notifications.busy} label="Notificaciones" />}
         </div>
       </div>
       {notifications.error && <p className="account-message">{notifications.error}</p>}
@@ -677,9 +682,9 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
     <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle={currentDay != null ? `Vas por el día ${currentDay} de 40.` : 'Autoconcepto y control de la imaginación.'} onBack={onBack} />
     <div className="reader-body workshop-browser">
       <div className="ios-card">
-        <div className="ios-row"><span className="ios-row-label">Notificaciones</span><ToggleSwitch checked={notifications.active} onChange={notifications.toggle} disabled={notifications.busy} label="Notificaciones" /></div>
+        <div className="ios-row"><span className="ios-row-label">Notificaciones</span>{notifications.loading ? <span className="ios-toggle-placeholder" aria-hidden="true" /> : <ToggleSwitch checked={notifications.active} onChange={notifications.toggle} disabled={notifications.busy} label="Notificaciones" />}</div>
       </div>
-      {!notifications.active && <p className="workshop-notifications-warning">Sin notificaciones no vas a recibir las prácticas.</p>}
+      {!notifications.loading && !notifications.active && <p className="workshop-notifications-warning">Sin notificaciones no vas a recibir las prácticas.</p>}
       {!deliveries.length && <p className="library-empty">Tu taller comienza pronto. Vas a recibir tu primera práctica en tu próximo horario configurado.</p>}
       {!!deliveries.length && <div className="library-content-list">{deliveries.map((delivery) => <MagicCard key={delivery.id} className="library-content-card" onClick={() => openDelivery(delivery)}>
         <div>
@@ -695,6 +700,12 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
 
 function VideoIntro({ onFinish }: { onFinish: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // Ref con la última versión de onFinish: el efecto de abajo monta el video
+  // una sola vez ([] de dependencias) y no debe re-ejecutarse si App
+  // re-renderiza y pasa una nueva función inline — eso era lo que hacía que
+  // el video se reiniciara a mitad de reproducción (se veía como "doble video").
+  const onFinishRef = useRef(onFinish);
+  useEffect(() => { onFinishRef.current = onFinish; }, [onFinish]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -716,7 +727,7 @@ function VideoIntro({ onFinish }: { onFinish: () => void }) {
     video.autoplay = true;
 
     video.onended = () => {
-      onFinish();
+      onFinishRef.current();
     };
 
     container.appendChild(video);
@@ -739,9 +750,9 @@ function VideoIntro({ onFinish }: { onFinish: () => void }) {
         container.removeChild(video);
       }
     };
-  }, [onFinish]);
+  }, []);
 
-  return <div ref={containerRef} className="video-intro" onClick={onFinish} />;
+  return <div ref={containerRef} className="video-intro" onClick={() => onFinishRef.current()} />;
 }
 
 function GermanBadge() {
@@ -779,12 +790,12 @@ function LoginGate() {
 }
 
 export default function App() {
-  const [introDone, setIntroDone] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    if (hasAuthCallbackParams()) return true;
-    return sessionStorage.getItem('german-intro-seen') === '1';
-  });
+  // El splash SIEMPRE se muestra al abrir la app (una vez por carga real de
+  // página, como el splash nativo de una app de iPhone) — sin sessionStorage
+  // ni flags que lo salteen, ni siquiera al volver de un redirect de OAuth.
+  const [introDone, setIntroDone] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [pendingDeliveryId, setPendingDeliveryId] = useState(() => (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('delivery') : null));
   const [session, setSession] = useState<Session | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
   const [mainMenu, setMainMenu] = useState(true);
@@ -957,8 +968,52 @@ export default function App() {
       }, (err: unknown) => console.error('[library] excepción cargando content_items:', err));
   }, []);
 
+  // Deep link desde una notificación push (sw.js abre /?delivery=<id>): en
+  // cuanto haya sesión, buscamos esa entrega puntual y vamos directo al
+  // Reader, saltando el carrusel de bienvenida.
+  useEffect(() => {
+    if (!session?.user || !pendingDeliveryId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        console.log('[deep-link] abriendo entrega', pendingDeliveryId);
+        const { data: row, error } = await supabase
+          .from('taller_deliveries')
+          .select('id,day_number,delivery_type,delivered_at,seen_at,message_index,content_items(title,body),content_assets(source_url)')
+          .eq('id', pendingDeliveryId)
+          .maybeSingle();
+        if (cancelled) return;
+        if (error || !row) { console.error('[deep-link] no se pudo cargar la entrega:', error); return; }
+        const item = row.content_items as unknown as { title: string; body: string } | null;
+        const asset = row.content_assets as unknown as { source_url: string } | null;
+        const deliveryType = row.delivery_type as TallerDeliveryType;
+        const body = item?.body || '';
+        const paragraphs = deliveryType === 'intermediate_message'
+          ? (row.message_index != null ? findNumberedMessage(body, row.message_index) : null)
+          : extractMeditationSection(body, deliveryType);
+        setMainMenu(false);
+        setReader({
+          title: `Día ${row.day_number} · ${deliveryTypeLabels[deliveryType]}`,
+          eyebrow: 'TALLER DE 40 DÍAS',
+          detail: `Recibido ${formatDeliveredAt(row.delivered_at)}.`,
+          paragraphs: paragraphs || [],
+          audioUrl: asset?.source_url,
+        });
+        if (!row.seen_at) void supabase.from('taller_deliveries').update({ seen_at: new Date().toISOString() }).eq('id', row.id);
+      } catch (err) {
+        console.error('[deep-link] excepción abriendo la entrega:', err);
+      } finally {
+        if (!cancelled) {
+          setPendingDeliveryId(null);
+          if (typeof window !== 'undefined') window.history.replaceState({}, '', window.location.pathname);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [session?.user, pendingDeliveryId]);
+
+  if (!introDone) return <VideoIntro onFinish={() => setIntroDone(true)} />;
   if (!sessionChecked) return null;
-  if (!session && !introDone) return <VideoIntro onFinish={() => { if (typeof window !== 'undefined') sessionStorage.setItem('german-intro-seen', '1'); setIntroDone(true); }} />;
   if (!session) return <LoginGate />;
 
   if (mainMenu) {

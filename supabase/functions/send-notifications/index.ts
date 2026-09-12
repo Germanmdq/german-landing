@@ -173,18 +173,19 @@ async function processMeditation(sub: PushSubscriptionRow, moment: MeditationMom
   if (!dayContent) return;
   const assetId = await getMomentAsset(dayContent.id, moment);
 
-  const { error: insertError } = await supabase.from('taller_deliveries').insert({
+  const { data: inserted, error: insertError } = await supabase.from('taller_deliveries').insert({
     user_id: sub.user_id,
     content_id: dayContent.id,
     asset_id: assetId,
     day_number: sub.current_day,
     delivery_type: deliveryType,
-  });
-  if (insertError) { console.error('insert taller_deliveries (meditation) failed:', insertError); return; }
+  }).select('id').single();
+  if (insertError || !inserted) { console.error('insert taller_deliveries (meditation) failed:', insertError); return; }
 
   await sendPush(sub, {
     title: meditationTitles[moment],
     body: `Tu práctica del Día ${sub.current_day} está lista.`,
+    url: `/?delivery=${inserted.id}`,
     data: { type: deliveryType, day: sub.current_day },
   });
 
@@ -207,19 +208,20 @@ async function processIntermediateMessage(sub: PushSubscriptionRow, messageIndex
   const messageText = findNumberedMessageText(dayContent.body || '', messageIndex);
   if (!messageText) return; // no hay un mensaje #N para este día, no hay nada que mandar
 
-  const { error: insertError } = await supabase.from('taller_deliveries').insert({
+  const { data: inserted, error: insertError } = await supabase.from('taller_deliveries').insert({
     user_id: sub.user_id,
     content_id: dayContent.id,
     asset_id: null,
     day_number: sub.current_day,
     delivery_type: 'intermediate_message',
     message_index: messageIndex,
-  });
-  if (insertError) { console.error('insert taller_deliveries (message) failed:', insertError); return; }
+  }).select('id').single();
+  if (insertError || !inserted) { console.error('insert taller_deliveries (message) failed:', insertError); return; }
 
   await sendPush(sub, {
     title: 'Un momento para vos',
     body: messageText.split('\n')[0],
+    url: `/?delivery=${inserted.id}`,
     data: { type: 'intermediate_message', day: sub.current_day, index: messageIndex },
   });
 }
