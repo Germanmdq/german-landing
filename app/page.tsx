@@ -987,10 +987,9 @@ function LoginGate() {
 }
 
 export default function App() {
-  // El splash se muestra al abrir la app SOLO cuando no hay sesión y no
-  // venimos de un redirect de OAuth (Google) — si hay callback en la URL o
-  // ya hay sesión guardada, se salta directo (ver efecto de auth más abajo,
-  // que también fuerza showVideo=false apenas aparece una sesión).
+  // El splash SIEMPRE se muestra al abrir la app. La ÚNICA excepción es
+  // venir de un callback de OAuth (Google) en la URL — ninguna otra
+  // condición (sesión activa, lo que sea) lo salta.
   const isOAuthCallback = hasOAuthCallbackParams();
   const [showVideo, setShowVideo] = useState(() => {
     if (isOAuthCallback) console.log('[auth] callback de OAuth detectado en la URL al montar, saltando el video');
@@ -1137,9 +1136,6 @@ export default function App() {
       clearTimeout(sessionCheckTimeout);
       console.log('[auth] getSession() resolvió:', data.session ? `sesión de ${data.session.user.email}` : 'sin sesión');
       setSession(data.session);
-      if (data.session) {
-        setShowVideo(false);
-      }
       if (data.session?.user) {
         await syncProfile(data.session.user);
       }
@@ -1153,12 +1149,6 @@ export default function App() {
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
       console.log('[auth] onAuthStateChange:', event, nextSession ? `sesión de ${nextSession.user.email}` : 'sin sesión');
       setSession(nextSession);
-      if (nextSession) {
-        // Si el video seguía en pantalla (o a punto de mostrarse) y recién
-        // ahora aparece una sesión (ej: vuelta del redirect de Google),
-        // lo cortamos y vamos directo al carrusel.
-        setShowVideo(false);
-      }
       if (nextSession?.user) {
         await syncProfile(nextSession.user);
       } else {
@@ -1272,9 +1262,10 @@ export default function App() {
     return () => { cancelled = true; };
   }, [session?.user, pendingDeliveryId]);
 
-  // Esperamos a saber si hay sesión ANTES de decidir si mostramos el video,
-  // para que un usuario ya logueado (o volviendo de un callback de OAuth)
-  // nunca vea ni un frame del splash.
+  // Esperamos a saber si hay sesión antes de decidir la siguiente pantalla
+  // (para no mostrar LoginGate de arranque si en realidad hay sesión) —
+  // pero esto no afecta si se muestra el video: eso se decide únicamente
+  // por la URL (callback de OAuth sí/no), más arriba.
   if (!sessionChecked) return null;
   if (showVideo) return <VideoIntro onFinish={() => setShowVideo(false)} />;
   if (!session) return <LoginGate />;
