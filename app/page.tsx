@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check } from 'lucide-react';
+import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight } from 'lucide-react';
 import content from './content.generated.json';
 import { supabase } from './lib/supabase';
 import { subscribeToPush, ensurePushSubscription, disablePushSubscription, getPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
@@ -730,6 +730,7 @@ function WorkshopPanel({ user, onBack, onNavigate, onRead }: { user: User; onBac
 
 function VideoIntro({ onFinish }: { onFinish: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [showEnter, setShowEnter] = useState(false);
   // Ref con la última versión de onFinish: el efecto de abajo monta el video
   // una sola vez ([] de dependencias) y no debe re-ejecutarse si App
   // re-renderiza y pasa una nueva función inline — eso era lo que hacía que
@@ -744,7 +745,7 @@ function VideoIntro({ onFinish }: { onFinish: () => void }) {
     // Crear el elemento de video directamente en el DOM para evitar el bug de 'muted' en React
     const video = document.createElement('video');
     video.className = 'video-intro-video';
-    video.src = '/videos/video-german-white.mp4?v=2';
+    video.src = '/videos/video-german-white.mp4?v=3';
     video.setAttribute('autoplay', '');
     video.setAttribute('muted', '');
     video.setAttribute('playsinline', '');
@@ -759,6 +760,13 @@ function VideoIntro({ onFinish }: { onFinish: () => void }) {
     video.onended = () => {
       onFinishRef.current();
     };
+
+    let buttonTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleEnterButton = () => {
+      if (buttonTimer) return;
+      buttonTimer = setTimeout(() => setShowEnter(true), 2000);
+    };
+    video.addEventListener('playing', scheduleEnterButton, { once: true });
 
     container.appendChild(video);
 
@@ -775,6 +783,8 @@ function VideoIntro({ onFinish }: { onFinish: () => void }) {
 
     return () => {
       video.onended = null;
+      video.removeEventListener('playing', scheduleEnterButton);
+      if (buttonTimer) clearTimeout(buttonTimer);
       video.pause();
       if (video.parentNode === container) {
         container.removeChild(video);
@@ -782,7 +792,9 @@ function VideoIntro({ onFinish }: { onFinish: () => void }) {
     };
   }, []);
 
-  return <div ref={containerRef} className="video-intro" onClick={() => onFinishRef.current()} />;
+  return <div ref={containerRef} className="video-intro">
+    {showEnter && <button type="button" className="video-intro-enter" onClick={() => onFinishRef.current()}>Ingresar<ArrowRight size={16} strokeWidth={2.4} /></button>}
+  </div>;
 }
 
 function GermanBadge() {
