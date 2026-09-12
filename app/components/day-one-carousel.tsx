@@ -185,7 +185,7 @@ export function DayOneCarousel<T extends Item>({
           {item.image && <span className="day-one-visual">
             {!loadedImages.has(index) && <span className="day-one-image-placeholder" aria-hidden="true" />}
             <img
-              className={`day-one-illustration${item.imageSize === 'compact' ? ' day-one-illustration--compact' : ''}${loadedImages.has(index) ? ' is-loaded' : ''}`}
+              className={`day-one-illustration${item.imageSize === 'compact' ? ' day-one-illustration--compact' : ''}`}
               src={item.image}
               alt=""
               draggable={false}

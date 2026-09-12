@@ -131,3 +131,37 @@ h1, h2 {
 @media (prefers-reduced-motion: reduce) {
   .magic-card .card-image-placeholder { animation: none; }
 }
+
+/* === IMAGEN SIEMPRE VISIBLE, SIN ANIMACIÓN (MagicCard) ===
+   El fix real para lo que se ve en pantalla está en day-one-carousel.css
+   (.day-one-visual / .day-one-illustration ya no tienen opacity/transform/
+   transition). Esto es el equivalente para .magic-card, en standby. */
+.magic-card img,
+.day-one-illustration img {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Solo el texto anima: entra desde la izquierda 200ms después de visible. */
+.magic-card .card-text-content,
+.magic-card h3,
+.magic-card b,
+.magic-card em,
+.magic-card p,
+.day-one-illustration + div,
+.day-one-text {
+  opacity: 0;
+  transform: translateX(-15px);
+  transition: opacity 0.4s ease-out 0.2s, transform 0.4s ease-out 0.2s;
+}
+
+.magic-card.card-visible .card-text-content,
+.magic-card.card-visible h3,
+.magic-card.card-visible b,
+.magic-card.card-visible em,
+.magic-card.card-visible p,
+.card-visible .day-one-text {
+  opacity: 1;
+  transform: translateX(0);
+}

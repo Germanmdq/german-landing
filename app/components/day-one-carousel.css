@@ -242,6 +242,9 @@
   .day-one-controls { margin-top: 8px; margin-bottom: 6px; }
 }
 
+/* La imagen NUNCA anima: sin opacity 0, sin transform, sin transition.
+   Está siempre visible, fija — solo el texto (.day-one-caption) tiene
+   animación de entrada. */
 .day-one-visual {
   position: relative;
   display: flex;
@@ -251,16 +254,10 @@
   flex: 1 1 0;
   padding: 0 16px 20px;
   overflow: hidden;
-  opacity: 0;
-  transform: translateX(15px);
-  transition: opacity .5s ease-out .5s, transform .5s ease-out .5s;
-}
-.day-one-card.is-visible .day-one-visual { opacity: 1; transform: translateX(0); }
-@media (prefers-reduced-motion: reduce) {
-  .day-one-visual { opacity: 1; transform: none; transition: none; }
 }
 /* Mientras la imagen carga: shimmer gris; al cargar (onLoad en el <img>),
-   fade-in suave y el shimmer desaparece (deja de montarse). */
+   el shimmer se retira (deja de montarse) y la imagen ya está ahí,
+   sin fade, sin transición. */
 .day-one-image-placeholder {
   position: absolute;
   inset: 0;
@@ -282,12 +279,9 @@
   max-height: min(200px, 100%);
   object-fit: contain;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity .3s ease;
-}
-.day-one-illustration.is-loaded { opacity: 1; }
-@media (prefers-reduced-motion: reduce) {
-  .day-one-illustration { transition: none; }
+  opacity: 1;
+  transform: none;
+  transition: none;
 }
 .day-one-illustration--compact { transform: none; }
 
