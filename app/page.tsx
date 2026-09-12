@@ -728,6 +728,19 @@ function WorkshopPanel({ user, onBack, onNavigate, onRead }: { user: User; onBac
   </section>;
 }
 
+// Detecta si la URL actual es un callback de OAuth (implicit flow con
+// #access_token en el hash, o PKCE con ?code= en query, o un ?error=).
+// Se usa para no mostrar el video splash al volver de loguearse con Google.
+function hasOAuthCallbackParams() {
+  if (typeof window === 'undefined') return false;
+  const hash = window.location.hash || '';
+  const search = window.location.search || '';
+  return /(^|[#&])access_token=/.test(hash)
+    || /(^|[#&])refresh_token=/.test(hash)
+    || /(^|[?&])code=/.test(search)
+    || /(^|[#&?])error(_description)?=/.test(hash + search);
+}
+
 function VideoIntro({ onFinish }: { onFinish: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [showEnter, setShowEnter] = useState(false);
@@ -802,10 +815,6 @@ function VideoIntro({ onFinish }: { onFinish: () => void }) {
   </div>;
 }
 
-function GermanBadge() {
-  return <div className="gate-german"><img src="/images/german-welcome.png" alt="Germán saludando" /></div>;
-}
-
 function LoginGate() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -814,33 +823,49 @@ function LoginGate() {
     setBusy(true);
     setMessage('');
     const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
+    console.log('[auth] iniciando signInWithOAuth (Google), redirectTo=', redirectTo);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo },
     });
     if (error) {
+      console.error('[auth] error en signInWithOAuth:', error);
       setBusy(false);
       setMessage(error.message);
     }
   };
 
   return (
-    <main className="app-shell gate-screen login-gate">
-      <GermanBadge />
-      <h1>Ingresá a tu espacio</h1>
-      {message && <p className="form-message">{message}</p>}
-      <ShimmerButton type="button" className="gate-primary" style={{ marginTop: '24px' }} onClick={submit} disabled={busy}>
-        {busy ? 'Un momento…' : 'Continuar con Google'}
-      </ShimmerButton>
+    <main className="app-shell login-screen">
+      <div className="login-content">
+        <h1 className="login-title">Germán <span>Asistente</span></h1>
+        <p className="login-subtitle">Iniciá sesión para continuar</p>
+        <button type="button" className="login-google-button" onClick={submit} disabled={busy}>
+          <svg width="20" height="20" viewBox="0 0 18 18" aria-hidden="true">
+            <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" />
+            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" />
+            <path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z" />
+            <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" />
+          </svg>
+          <span>{busy ? 'Un momento…' : 'Continuar con Google'}</span>
+        </button>
+        {message && <p className="login-error">{message}</p>}
+      </div>
+      <p className="login-terms">Al continuar, aceptás los términos de uso.</p>
     </main>
   );
 }
 
 export default function App() {
-  // El splash SIEMPRE se muestra al abrir la app (una vez por carga real de
-  // página, como el splash nativo de una app de iPhone) — sin sessionStorage
-  // ni flags que lo salteen, ni siquiera al volver de un redirect de OAuth.
-  const [introDone, setIntroDone] = useState(false);
+  // El splash se muestra al abrir la app SOLO cuando no hay sesión y no
+  // venimos de un redirect de OAuth (Google) — si hay callback en la URL o
+  // ya hay sesión guardada, se salta directo (ver efecto de auth más abajo,
+  // que también fuerza introDone=true apenas aparece una sesión).
+  const [introDone, setIntroDone] = useState(() => {
+    const skip = hasOAuthCallbackParams();
+    if (skip) console.log('[auth] callback de OAuth detectado en la URL al montar, saltando el video');
+    return skip;
+  });
   const [sessionChecked, setSessionChecked] = useState(false);
   const [pendingDeliveryId, setPendingDeliveryId] = useState(() => (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('delivery') : null));
   const [session, setSession] = useState<Session | null>(null);
@@ -970,19 +995,40 @@ export default function App() {
       try { setFavorites(JSON.parse(savedFavorites) as FavoriteRecord[]); } catch { localStorage.removeItem('german-favorites'); }
     }
 
+    console.log('[auth] pidiendo getSession()...');
+    // Red de seguridad: si getSession() nunca resuelve (colgado por red u
+    // otro motivo), no dejamos la app trabada en blanco para siempre.
+    const sessionCheckTimeout = setTimeout(() => {
+      console.warn('[auth] getSession() no resolvió a tiempo (6s), forzando sessionChecked igual');
+      setSessionChecked(true);
+    }, 6000);
+
     supabase.auth.getSession().then(async ({ data }) => {
+      clearTimeout(sessionCheckTimeout);
+      console.log('[auth] getSession() resolvió:', data.session ? `sesión de ${data.session.user.email}` : 'sin sesión');
       setSession(data.session);
+      if (data.session) {
+        setIntroDone(true);
+      }
       if (data.session?.user) {
         await syncProfile(data.session.user);
       }
       setSessionChecked(true);
     }).catch((err) => {
+      clearTimeout(sessionCheckTimeout);
       console.error('[auth] error obteniendo la sesión:', err);
       setSessionChecked(true);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
+      console.log('[auth] onAuthStateChange:', event, nextSession ? `sesión de ${nextSession.user.email}` : 'sin sesión');
       setSession(nextSession);
+      if (nextSession) {
+        // Si el video seguía en pantalla (o a punto de mostrarse) y recién
+        // ahora aparece una sesión (ej: vuelta del redirect de Google),
+        // lo cortamos y vamos directo al carrusel.
+        setIntroDone(true);
+      }
       if (nextSession?.user) {
         await syncProfile(nextSession.user);
       } else {
@@ -991,6 +1037,7 @@ export default function App() {
     });
 
     return () => {
+      clearTimeout(sessionCheckTimeout);
       listener.subscription.unsubscribe();
     };
   }, []);
@@ -1074,8 +1121,11 @@ export default function App() {
     return () => { cancelled = true; };
   }, [session?.user, pendingDeliveryId]);
 
-  if (!introDone) return <VideoIntro onFinish={() => setIntroDone(true)} />;
+  // Esperamos a saber si hay sesión ANTES de decidir si mostramos el video,
+  // para que un usuario ya logueado (o volviendo de un callback de OAuth)
+  // nunca vea ni un frame del splash.
   if (!sessionChecked) return null;
+  if (!introDone) return <VideoIntro onFinish={() => setIntroDone(true)} />;
   if (!session) return <LoginGate />;
 
   if (mainMenu) {
