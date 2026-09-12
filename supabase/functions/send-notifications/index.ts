@@ -7,6 +7,12 @@
 // contra taller_deliveries, inserta el registro de entrega y manda el push real
 // con VAPID.
 //
+// Cada entrega insertada en taller_deliveries queda con push_status
+// ('pending' por default, luego 'sent' o 'failed') y push_error si falló —
+// requiere las columnas nuevas (ver migración en este mismo PR/commit).
+// Cuando avanza current_day, se actualiza TANTO push_subscriptions como
+// user_plan_progress — la app lee esta última para mostrar el día actual.
+//
 // NO se hace deploy desde este código — eso se hace a mano con la CLI.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -143,12 +149,16 @@ async function deliveryExists(userId: string, dayNumber: number, deliveryType: D
   return Boolean(data);
 }
 
-async function sendPush(sub: PushSubscriptionRow, payload: Record<string, unknown>) {
+// deliveryId: la fila de taller_deliveries ya insertada para este envío —
+// queda registrado ahí si el push realmente salió o no, y por qué, porque
+// insertar la fila NO significa que el push haya llegado al teléfono.
+async function sendPush(sub: PushSubscriptionRow, deliveryId: string, payload: Record<string, unknown>) {
   try {
     await webpush.sendNotification(
       { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth_key } },
       JSON.stringify(payload),
     );
+    await supabase.from('taller_deliveries').update({ push_status: 'sent', push_error: null }).eq('id', deliveryId);
     return true;
   } catch (err) {
     const statusCode = (err as { statusCode?: number })?.statusCode;
@@ -157,7 +167,9 @@ async function sendPush(sub: PushSubscriptionRow, payload: Record<string, unknow
       // revocó el permiso, etc.) — la desactivamos para no reintentar en vano.
       await supabase.from('push_subscriptions').update({ is_active: false }).eq('id', sub.id);
     }
-    console.error(`push failed for subscription ${sub.id}:`, err);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`push failed for subscription ${sub.id} (delivery ${deliveryId}):`, err);
+    await supabase.from('taller_deliveries').update({ push_status: 'failed', push_error: message.slice(0, 500) }).eq('id', deliveryId);
     return false;
   }
 }
@@ -182,7 +194,7 @@ async function processMeditation(sub: PushSubscriptionRow, moment: MeditationMom
   }).select('id').single();
   if (insertError || !inserted) { console.error('insert taller_deliveries (meditation) failed:', insertError); return; }
 
-  await sendPush(sub, {
+  await sendPush(sub, inserted.id, {
     title: meditationTitles[moment],
     body: `Tu práctica del Día ${sub.current_day} está lista.`,
     url: `/?delivery=${inserted.id}`,
@@ -193,8 +205,17 @@ async function processMeditation(sub: PushSubscriptionRow, moment: MeditationMom
     const nextDay = sub.current_day + 1;
     if (nextDay > 40) {
       await supabase.from('push_subscriptions').update({ is_active: false }).eq('id', sub.id);
+      if (sub.active_taller_id) {
+        await supabase.from('user_plan_progress').update({ completed_at: new Date().toISOString() }).eq('user_id', sub.user_id).eq('collection_id', sub.active_taller_id);
+      }
     } else {
       await supabase.from('push_subscriptions').update({ current_day: nextDay }).eq('id', sub.id);
+      // La app lee current_day de esta tabla (user_plan_progress), no de
+      // push_subscriptions — sin esto, la UI se queda mostrando el día
+      // viejo para siempre aunque las entregas sigan avanzando bien.
+      if (sub.active_taller_id) {
+        await supabase.from('user_plan_progress').update({ current_day: nextDay }).eq('user_id', sub.user_id).eq('collection_id', sub.active_taller_id);
+      }
     }
   }
 }
@@ -218,7 +239,7 @@ async function processIntermediateMessage(sub: PushSubscriptionRow, messageIndex
   }).select('id').single();
   if (insertError || !inserted) { console.error('insert taller_deliveries (message) failed:', insertError); return; }
 
-  await sendPush(sub, {
+  await sendPush(sub, inserted.id, {
     title: 'Un momento para vos',
     body: messageText.split('\n')[0],
     url: `/?delivery=${inserted.id}`,
