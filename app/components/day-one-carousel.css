@@ -178,7 +178,8 @@
 }
 /* Solo el carrusel principal: el subtítulo de la card es más
    prominente, como label secundario de navegación. */
-.welcome-carousel-screen .day-one-subtitle {
+.welcome-carousel-screen .day-one-subtitle,
+.photo-cards-screen .day-one-subtitle {
   font-size: 19px;
   font-weight: 600;
   letter-spacing: .012em;
@@ -270,16 +271,19 @@
 /* Solo el carrusel principal de bienvenida: la imagen ocupa toda la
    card de esquina a esquina (fondo), con el texto superpuesto abajo
    a la izquierda sobre un degradé oscuro, estilo App Store/Apple News. */
-.welcome-carousel-screen .day-one-card {
+.welcome-carousel-screen .day-one-card,
+.photo-cards-screen .day-one-card {
   border-radius: 20px;
 }
-.welcome-carousel-screen .day-one-visual {
+.welcome-carousel-screen .day-one-visual,
+.photo-cards-screen .day-one-visual {
   position: absolute;
   inset: 0;
   z-index: 1;
   padding: 0;
 }
-.welcome-carousel-screen .day-one-visual::after {
+.welcome-carousel-screen .day-one-visual::after,
+.photo-cards-screen .day-one-visual::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -292,7 +296,8 @@
   border-radius: 0 0 20px 20px;
   pointer-events: none;
 }
-.welcome-carousel-screen .day-one-illustration {
+.welcome-carousel-screen .day-one-illustration,
+.photo-cards-screen .day-one-illustration {
   position: absolute;
   top: 0;
   left: 0;
@@ -303,7 +308,8 @@
   object-position: top center;
   border-radius: 0;
 }
-.welcome-carousel-screen .day-one-caption {
+.welcome-carousel-screen .day-one-caption,
+.photo-cards-screen .day-one-caption {
   position: absolute;
   bottom: 24px;
   left: 24px;
@@ -311,8 +317,10 @@
   z-index: 2;
   margin: 0;
 }
-.welcome-carousel-screen .day-one-title { color: #fff; }
-.welcome-carousel-screen .day-one-subtitle { color: #fff; opacity: .8; }
+.welcome-carousel-screen .day-one-title,
+.photo-cards-screen .day-one-title { color: #fff; }
+.welcome-carousel-screen .day-one-subtitle,
+.photo-cards-screen .day-one-subtitle { color: #fff; opacity: .8; }
 
 .day-one-placeholder {
   width: 160px;
