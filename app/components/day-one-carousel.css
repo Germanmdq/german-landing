@@ -345,6 +345,10 @@
 .welcome-carousel-screen .day-one-subtitle,
 .photo-cards-screen .day-one-subtitle { color: #fff; opacity: .8; }
 
+/* Meditaciones: mismas fotos edge-to-edge que el resto, pero centradas
+   (no "arriba") — las imágenes acá no son retratos de una persona. */
+.meditaciones-photo-screen .day-one-illustration { object-position: center; }
+
 .day-one-placeholder {
   width: 160px;
   height: 160px;
