@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, Heart, LogOut, Pause, Play, Search, Trash2, Check } from 'lucide-react';
+import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check } from 'lucide-react';
 import content from './content.generated.json';
 import { supabase } from './lib/supabase';
 import { subscribeToPush, ensurePushSubscription, disablePushSubscription, getPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
@@ -180,16 +180,46 @@ function Deck({ items, onSelect, favorites, onToggleFavorite }: { items: DeckIte
   return <div className="feature-list">{items.map((entry, index) => <DeckCard key={entry.title} item={entry} index={index} last={index === items.length - 1} onClick={() => onSelect(entry)} favorite={entry.reader ? favorites.some((favorite) => favorite.id === deckFavorite(entry).id) : undefined} onFavorite={entry.reader ? () => onToggleFavorite(deckFavorite(entry)) : undefined} />)}<div className="deck-end-space" aria-hidden="true" /></div>;
 }
 
-function CloseButton({ onClose }: { onClose: () => void }) {
-  return (
-    <button className="header-close" onClick={onClose} aria-label="Cerrar">
-      <X size={16} strokeWidth={2.4} />
-    </button>
-  );
+type NavTarget = 'home' | 'favorites' | 'biblioteca' | 'meditaciones' | 'talleres' | 'reunion' | 'espacio';
+const navMenuItems: { target: NavTarget; icon: string; label: string }[] = [
+  { target: 'home', icon: '🏠', label: 'Inicio' },
+  { target: 'favorites', icon: '❤️', label: 'Favoritos' },
+  { target: 'biblioteca', icon: '📚', label: 'Biblioteca' },
+  { target: 'meditaciones', icon: '🧘', label: 'Meditaciones' },
+  { target: 'talleres', icon: '✨', label: 'Prácticas guiadas' },
+  { target: 'reunion', icon: '📅', label: 'Reunión semanal' },
+  { target: 'espacio', icon: '👤', label: 'Mi perfil' },
+];
+
+function NavMenuSheet({ onSelect, onCancel }: { onSelect: (target: NavTarget) => void; onCancel: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const element = dialog.current;
+    element?.showModal();
+    return () => { element?.close(); previous?.focus(); };
+  }, []);
+  return <dialog ref={dialog} className="nav-menu-sheet" aria-label="Navegación" onCancel={(event) => { event.preventDefault(); onCancel(); }} onClick={(event) => { if (event.target === event.currentTarget) onCancel(); }}>
+    <div className="nav-menu-content">
+      <div className="time-sheet-handle" aria-hidden="true" />
+      <div className="nav-menu-list">
+        {navMenuItems.map((item) => <button key={item.target} type="button" className="nav-menu-row" onClick={() => onSelect(item.target)}><span className="nav-menu-icon">{item.icon}</span><span>{item.label}</span></button>)}
+      </div>
+      <button type="button" className="nav-menu-cancel" onClick={onCancel}>Cancelar</button>
+    </div>
+  </dialog>;
 }
 
-function FixedHeader({ eyebrow, title, subtitle, onBack }: { eyebrow: string; title: string; subtitle: string; onBack: () => void }) {
-  return <header className="feature-header"><CloseButton onClose={onBack} /><p>{eyebrow}</p><h1>{title}</h1><small>{subtitle}</small></header>;
+function FixedHeader({ eyebrow, title, subtitle, onBack, onNavigate }: { eyebrow: string; title: string; subtitle: string; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  return <header className="feature-header">
+    <div className="header-top-row">
+      <button type="button" className="header-back" onClick={onBack}><ChevronLeft size={22} strokeWidth={2.4} />Volver</button>
+    </div>
+    <button type="button" className="header-menu" onClick={() => setMenuOpen(true)} aria-label="Más opciones" aria-haspopup="dialog"><MoreHorizontal size={18} /></button>
+    <p>{eyebrow}</p><h1>{title}</h1><small>{subtitle}</small>
+    {menuOpen && <NavMenuSheet onSelect={(target) => { setMenuOpen(false); onNavigate(target); }} onCancel={() => setMenuOpen(false)} />}
+  </header>;
 }
 
 function ToggleSwitch({ checked, onChange, disabled, label }: { checked: boolean; onChange: () => void; disabled?: boolean; label: string }) {
@@ -239,9 +269,9 @@ function useNotificationsToggle(user: User) {
   return { active, loading, busy, error, toggle };
 }
 
-function WeeklyMeetingPanel({ onBack }: { onBack: () => void }) {
+function WeeklyMeetingPanel({ onBack, onNavigate }: { onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   return <section className="reader-section">
-    <FixedHeader eyebrow="EN VIVO" title="Reunión semanal" subtitle="Nos vemos en vivo cada semana." onBack={onBack} />
+    <FixedHeader eyebrow="EN VIVO" title="Reunión semanal" subtitle="Nos vemos en vivo cada semana." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body meeting-panel">
       <div className="meeting-schedule"><Clock3 size={20} /><span>Todos los jueves a las 20:00 hs (Argentina)</span></div>
       <a className="meeting-join" href="https://meet.google.com/PLACEHOLDER" target="_blank" rel="noopener noreferrer">Unirme a la reunión</a>
@@ -249,7 +279,7 @@ function WeeklyMeetingPanel({ onBack }: { onBack: () => void }) {
   </section>;
 }
 
-function NotificationsPanel({ onBack }: { onBack: () => void }) {
+function NotificationsPanel({ onBack, onNavigate }: { onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [editingTime, setEditingTime] = useState<'morning' | 'noon' | 'afternoon' | 'night' | null>(null);
   const timeLabels = { morning: 'Mañana', noon: 'Mediodía', afternoon: 'Tarde', night: 'Noche' };
@@ -272,7 +302,7 @@ function NotificationsPanel({ onBack }: { onBack: () => void }) {
     if (result === 'granted' && 'serviceWorker' in navigator) await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
   };
   return <section className="reader-section">
-    <FixedHeader eyebrow="NOTIFICACIONES" title="Tus horarios" subtitle="Los horarios quedan guardados en este dispositivo." onBack={onBack} />
+    <FixedHeader eyebrow="NOTIFICACIONES" title="Tus horarios" subtitle="Los horarios quedan guardados en este dispositivo." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body notification-settings">
       {permission !== 'unsupported' && <ShimmerButton className="notification-permission" onClick={requestPermission}><Bell size={18} />{permission === 'granted' ? 'Notificaciones activadas' : permission === 'denied' ? 'Permiso bloqueado en el navegador' : 'Activar notificaciones'}</ShimmerButton>}
       {(Object.keys(timeLabels) as (keyof typeof times)[]).map((key) => <button key={key} className="notification-time-row" onClick={() => setEditingTime(key)} aria-label={`Cambiar horario de ${timeLabels[key]}: ${times[key]}`} aria-haspopup="dialog"><span>{timeLabels[key]}</span><span className="notification-time-value">{times[key]}<ChevronRight size={17} /></span></button>)}
@@ -281,10 +311,10 @@ function NotificationsPanel({ onBack }: { onBack: () => void }) {
   </section>;
 }
 
-function ProfileScreen({ user, items, onSelect, onBack }: { user: User; items: DeckItem[]; onSelect: (item: DeckItem) => void; onBack: () => void }) {
+function ProfileScreen({ user, items, onSelect, onBack, onNavigate }: { user: User; items: DeckItem[]; onSelect: (item: DeckItem) => void; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   const notifications = useNotificationsToggle(user);
   return <section className="reader-section">
-    <FixedHeader eyebrow="MI PERFIL" title="Tu espacio" subtitle="Tu cuenta y tus elecciones." onBack={onBack} />
+    <FixedHeader eyebrow="MI PERFIL" title="Tu espacio" subtitle="Tu cuenta y tus elecciones." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body">
       <div className="ios-card">
         {items.map((item) => <button key={item.title} className="ios-row" onClick={() => onSelect(item)}>
@@ -301,11 +331,11 @@ function ProfileScreen({ user, items, onSelect, onBack }: { user: User; items: D
   </section>;
 }
 
-function Reader({ content: reader, onBack, favorite, onFavorite }: { content: ReaderContent; onBack: () => void; favorite: boolean; onFavorite: () => void }) {
-  return <section className="reader-section"><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} /><article className="reader-body"><button className={`reader-favorite${favorite ? ' is-favorite' : ''}`} onClick={onFavorite}><Heart size={18} fill={favorite ? 'currentColor' : 'none'} />{favorite ? 'Guardado en favoritos' : 'Guardar en favoritos'}</button>{reader.audioUrl && <AudioPlayer title={reader.title} audioUrl={reader.audioUrl} durationLabel={reader.duration} />}{reader.audios?.map((audio) => <AudioPlayer key={audio.label} title={audio.label} audioUrl={audio.url} />)}{reader.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</article></section>;
+function Reader({ content: reader, onBack, onNavigate, favorite, onFavorite }: { content: ReaderContent; onBack: () => void; onNavigate: (target: NavTarget) => void; favorite: boolean; onFavorite: () => void }) {
+  return <section className="reader-section"><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} onNavigate={onNavigate} /><article className="reader-body"><button className={`reader-favorite${favorite ? ' is-favorite' : ''}`} onClick={onFavorite}><Heart size={18} fill={favorite ? 'currentColor' : 'none'} />{favorite ? 'Guardado en favoritos' : 'Guardar en favoritos'}</button>{reader.audioUrl && <AudioPlayer title={reader.title} audioUrl={reader.audioUrl} durationLabel={reader.duration} />}{reader.audios?.map((audio) => <AudioPlayer key={audio.label} title={audio.label} audioUrl={audio.url} />)}{reader.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</article></section>;
 }
 
-function AccountPanel({ user, fullName, onBack, onNameSaved, onLogout }: { user: User; fullName: string | null; onBack: () => void; onNameSaved: (name: string) => void; onLogout: () => void }) {
+function AccountPanel({ user, fullName, onBack, onNavigate, onNameSaved, onLogout }: { user: User; fullName: string | null; onBack: () => void; onNavigate: (target: NavTarget) => void; onNameSaved: (name: string) => void; onLogout: () => void }) {
   const [name, setName] = useState(fullName || user.user_metadata?.full_name || '');
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
@@ -326,7 +356,7 @@ function AccountPanel({ user, fullName, onBack, onNameSaved, onLogout }: { user:
     setMessage('Cambios guardados.');
   };
   return <section className="reader-section account-section">
-    <FixedHeader eyebrow="MI PERFIL" title="Mi cuenta" subtitle="Tus datos y tu acceso a la aplicación." onBack={onBack} />
+    <FixedHeader eyebrow="MI PERFIL" title="Mi cuenta" subtitle="Tus datos y tu acceso a la aplicación." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body account-settings">
       <label>Correo electrónico<input value={user.email || ''} readOnly aria-readonly="true" /></label>
       <label>Nombre<input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" /></label>
@@ -379,7 +409,7 @@ function snippetAround(text: string, q: string, radius = 60): string {
   return (start > 0 ? '...' : '') + text.slice(start, end).trim() + (end < text.length ? '...' : '');
 }
 
-function LibraryPanel({ entries, onBack, onRead, favorites, onToggleFavorite }: { entries: LibraryEntry[]; onBack: () => void; onRead: (entry: LibraryEntry) => void; favorites: FavoriteRecord[]; onToggleFavorite: (favorite: FavoriteRecord) => void }) {
+function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggleFavorite }: { entries: LibraryEntry[]; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (entry: LibraryEntry) => void; favorites: FavoriteRecord[]; onToggleFavorite: (favorite: FavoriteRecord) => void }) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('Conferencias');
   const filters = ['Conferencias', 'Audios'];
@@ -395,7 +425,7 @@ function LibraryPanel({ entries, onBack, onRead, favorites, onToggleFavorite }: 
   });
   const q = query.trim();
   return <section className="reader-section library-section">
-    <FixedHeader eyebrow="PARA ESCUCHAR Y LEER" title="Tu biblioteca" subtitle="Buscá por conferencia, tema o etiqueta." onBack={onBack} />
+    <FixedHeader eyebrow="PARA ESCUCHAR Y LEER" title="Tu biblioteca" subtitle="Buscá por conferencia, tema o etiqueta." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body library-browser">
       <section className="library-controls">
         <div className="library-search-toolbar">
@@ -478,10 +508,10 @@ function ConfirmDialog({ title = '¿Eliminar?', description, confirmLabel = 'Eli
   </dialog>;
 }
 
-function FavoritesPanel({ favorites, onBack, onOpen, onRemove }: { favorites: FavoriteRecord[]; onBack: () => void; onOpen: (favorite: FavoriteRecord) => void; onRemove: (favorite: FavoriteRecord) => void }) {
+function FavoritesPanel({ favorites, onBack, onNavigate, onOpen, onRemove }: { favorites: FavoriteRecord[]; onBack: () => void; onNavigate: (target: NavTarget) => void; onOpen: (favorite: FavoriteRecord) => void; onRemove: (favorite: FavoriteRecord) => void }) {
   const [pendingRemoval, setPendingRemoval] = useState<FavoriteRecord | null>(null);
   return <section className="reader-section favorites-section">
-    <FixedHeader eyebrow="MI PERFIL" title="Favoritos" subtitle="Todo lo que guardaste, reunido en un solo lugar." onBack={onBack} />
+    <FixedHeader eyebrow="MI PERFIL" title="Favoritos" subtitle="Todo lo que guardaste, reunido en un solo lugar." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body favorites-browser">
       {!favorites.length && <div className="favorites-empty"><Heart size={30} /><b>Todavía no guardaste nada</b><p>Tocá el corazón de cualquier tarjeta para encontrarla después acá.</p></div>}
       {favorites.map((favorite, index) => <MagicCard key={favorite.id} delay={index * .04} className="favorite-content-card" onClick={() => onOpen(favorite)} style={{ '--category-tone': favorite.tone } as React.CSSProperties}><span>{favorite.icon}</span><div><small>FAVORITO</small><b>{favorite.title}</b><em>{favorite.detail}</em></div><span role="button" tabIndex={0} className="remove-favorite" onClick={(event) => { event.stopPropagation(); setPendingRemoval(favorite); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); setPendingRemoval(favorite); } }} aria-label={`Quitar ${favorite.title} de favoritos`}><Trash2 size={18} /></span></MagicCard>)}
@@ -505,7 +535,7 @@ const shiftHours = (time: string, hours: number) => {
 type WorkshopStage = 'loading' | 'onboarding' | 'confirmed' | 'days' | 'error';
 type WorkshopOnboardingStep = 'intro' | 'schedule' | 'frequency' | 'summary';
 
-function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => void; onRead: (reader: ReaderContent) => void }) {
+function WorkshopPanel({ user, onBack, onNavigate, onRead }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (reader: ReaderContent) => void }) {
   const [deliveries, setDeliveries] = useState<TallerDelivery[]>([]);
   const [collectionId, setCollectionId] = useState<string | null>(null);
   const [stage, setStage] = useState<WorkshopStage>('loading');
@@ -615,12 +645,12 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
     }
   };
 
-  if (stage === 'loading') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} /><div className="reader-body workshop-browser"><p className="library-empty">Cargando el taller…</p></div></section>;
+  if (stage === 'loading') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} onNavigate={onNavigate} /><div className="reader-body workshop-browser"><p className="library-empty">Cargando el taller…</p></div></section>;
 
-  if (stage === 'error') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} /><div className="reader-body workshop-browser"><p className="library-empty">No pudimos cargar el taller. Probá de nuevo más tarde.{loadError ? ` (${loadError})` : ''}</p></div></section>;
+  if (stage === 'error') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} onNavigate={onNavigate} /><div className="reader-body workshop-browser"><p className="library-empty">No pudimos cargar el taller. Probá de nuevo más tarde.{loadError ? ` (${loadError})` : ''}</p></div></section>;
 
   if (stage === 'onboarding' && step === 'intro') return <section className="reader-section">
-    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de Autoconcepto" subtitle="40 días para transformar cómo te ves y cómo ves la vida." onBack={onBack} />
+    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de Autoconcepto" subtitle="40 días para transformar cómo te ves y cómo ves la vida." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body">
       <p>Este es un recorrido de 40 días diseñado para volver a tu fuente. Cada día vas a recibir 4 meditaciones guiadas — una a la mañana, al mediodía, a la tarde y a la noche — que te van a acompañar a reconstruir tu autoconcepto desde adentro.</p>
       <p>Además, durante el día vas a recibir mensajes breves con frases e ideas para mantener tu atención enfocada. Vos elegís cada cuánto te llegan.</p>
@@ -630,7 +660,7 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
   </section>;
 
   if (stage === 'onboarding' && step === 'schedule') return <section className="reader-section">
-    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Elegí tus horarios" subtitle="¿A qué hora querés recibir cada meditación?" onBack={onBack} />
+    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Elegí tus horarios" subtitle="¿A qué hora querés recibir cada meditación?" onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body">
       <div className="ios-card">
         <button className="ios-row" onClick={() => setEditingTimezone(true)} aria-haspopup="dialog"><span className="ios-row-label">Zona horaria</span><span className="ios-row-value ios-row-value--muted">{timezone.replace(/_/g, ' ')}<ChevronRight size={17} /></span></button>
@@ -643,7 +673,7 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
   </section>;
 
   if (stage === 'onboarding' && step === 'frequency') return <section className="reader-section">
-    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Mensajes durante el día" subtitle="Cada día hay ~26 mensajes breves para mantener tu atención. ¿Cada cuánto querés recibirlos?" onBack={onBack} />
+    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Mensajes durante el día" subtitle="Cada día hay ~26 mensajes breves para mantener tu atención. ¿Cada cuánto querés recibirlos?" onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body">
       <div className="ios-card workshop-pills-card">
         <div className="workshop-pills">{workshopIntervalOptions.map((minutes) => <button key={minutes} type="button" className={`workshop-pill${messageInterval === minutes ? ' active' : ''}`} onClick={() => setMessageInterval(minutes)}>{workshopIntervalLabel(minutes)}</button>)}</div>
@@ -654,7 +684,7 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
   </section>;
 
   if (stage === 'onboarding') return <section className="reader-section">
-    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Tu taller está listo" subtitle="Revisá la configuración antes de empezar." onBack={onBack} />
+    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Tu taller está listo" subtitle="Revisá la configuración antes de empezar." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body">
       <div className="ios-card">
         <div className="ios-row"><span className="ios-row-label">Zona horaria</span><span className="ios-row-value ios-row-value--muted">{timezone.replace(/_/g, ' ')}</span></div>
@@ -671,7 +701,7 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
   </section>;
 
   if (stage === 'confirmed') return <section className="reader-section">
-    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="¡Listo!" subtitle="Ya está todo configurado." onBack={onBack} />
+    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="¡Listo!" subtitle="Ya está todo configurado." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body">
       <p>¡Listo! Tu primera práctica llega mañana a las {schedule.morning}. Preparate para 40 días que te van a cambiar la mirada.</p>
       <ShimmerButton type="button" className="account-save" onClick={() => setStage('days')}>Ver el taller</ShimmerButton>
@@ -679,7 +709,7 @@ function WorkshopPanel({ user, onBack, onRead }: { user: User; onBack: () => voi
   </section>;
 
   return <section className="reader-section workshop-section">
-    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle={currentDay != null ? `Vas por el día ${currentDay} de 40.` : 'Autoconcepto y control de la imaginación.'} onBack={onBack} />
+    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle={currentDay != null ? `Vas por el día ${currentDay} de 40.` : 'Autoconcepto y control de la imaginación.'} onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body workshop-browser">
       <div className="ios-card">
         <div className="ios-row"><span className="ios-row-label">Notificaciones</span>{notifications.loading ? <span className="ios-toggle-placeholder" aria-hidden="true" /> : <ToggleSwitch checked={notifications.active} onChange={notifications.toggle} disabled={notifications.busy} label="Notificaciones" />}</div>
@@ -826,6 +856,21 @@ export default function App() {
     if (meetingOpen) { setMeetingOpen(false); return setMainMenu(true); }
     if (trail.length) return setTrail((value) => value.slice(0, -1));
     setMainMenu(true);
+  };
+
+  const navigateTo = (target: NavTarget) => {
+    setReader(null);
+    setNotificationsOpen(false);
+    setAccountOpen(false);
+    setFavoritesOpen(false);
+    setWorkshopOpen(false);
+    setMeetingOpen(false);
+    setTrail([]);
+    if (target === 'home') { setMainMenu(true); return; }
+    setMainMenu(false);
+    if (target === 'favorites') { setFavoritesOpen(true); return; }
+    if (target === 'reunion') { setMeetingOpen(true); return; }
+    setTab(target);
   };
 
   const logout = () => {
@@ -1023,18 +1068,18 @@ export default function App() {
     const items = [...welcomeItems.slice(0, meditIndex + 1), meetingCard, ...welcomeItems.slice(meditIndex + 1)];
     return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>Bienvenido a<strong>Germán Asistente</strong></h1></header><DayOneCarousel label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'reunion') { setMeetingOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section></main>;
   }
-  if (meetingOpen) return <main className="app-shell app-main section-app"><WeeklyMeetingPanel onBack={back} /></main>;
-  if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} onBack={back} onNameSaved={setFullName} onLogout={logout} /></main>;
-  if (reader) { const favorite = deckFavorite({ icon: '📖', title: reader.title, detail: reader.detail, tone: palette[0], reader }); return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} favorite={favorites.some((item) => item.title === reader.title)} onFavorite={() => { const exact = favorites.find((item) => item.title === reader.title); toggleFavorite(exact || favorite); }} /></main>; }
-  if (favoritesOpen) return <main className="app-shell app-main section-app"><FavoritesPanel favorites={favorites} onBack={back} onOpen={(favorite) => { if (favorite.reader) setReader(favorite.reader); }} onRemove={toggleFavorite} /></main>;
-  if (workshopOpen) return <main className="app-shell app-main section-app"><WorkshopPanel user={session.user} onBack={back} onRead={setReader} /></main>;
-  if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} /></main>;
-  if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} onSelect={select} onBack={back} /></main>;
-  if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel onBack={back} /></main>;
+  if (meetingOpen) return <main className="app-shell app-main section-app"><WeeklyMeetingPanel onBack={back} onNavigate={navigateTo} /></main>;
+  if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} onBack={back} onNavigate={navigateTo} onNameSaved={setFullName} onLogout={logout} /></main>;
+  if (reader) { const favorite = deckFavorite({ icon: '📖', title: reader.title, detail: reader.detail, tone: palette[0], reader }); return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} onNavigate={navigateTo} favorite={favorites.some((item) => item.title === reader.title)} onFavorite={() => { const exact = favorites.find((item) => item.title === reader.title); toggleFavorite(exact || favorite); }} /></main>; }
+  if (favoritesOpen) return <main className="app-shell app-main section-app"><FavoritesPanel favorites={favorites} onBack={back} onNavigate={navigateTo} onOpen={(favorite) => { if (favorite.reader) setReader(favorite.reader); }} onRemove={toggleFavorite} /></main>;
+  if (workshopOpen) return <main className="app-shell app-main section-app"><WorkshopPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} /></main>;
+  if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} /></main>;
+  if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} onSelect={select} onBack={back} onNavigate={navigateTo} /></main>;
+  if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel onBack={back} onNavigate={navigateTo} /></main>;
   if (current?.title === 'Día 1') {
     const carouselKey = `${tab}-${trail.map((item) => item.title).join('/')}-dia1`;
-    return <main className="app-shell app-main section-app day-one-screen"><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} /><DayOneCarousel key={carouselKey} items={screen.items} initialIndex={carouselIndicesRef.current[carouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[carouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[carouselKey] = index; select(item); }} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section></main>;
+    return <main className="app-shell app-main section-app day-one-screen"><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><DayOneCarousel key={carouselKey} items={screen.items} initialIndex={carouselIndicesRef.current[carouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[carouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[carouselKey] = index; select(item); }} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section></main>;
   }
   const carouselKey = `${tab}-${trail.map((item) => item.title).join('/')}`;
-  return <main className="app-shell app-main section-app day-one-screen"><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} /><DayOneCarousel key={carouselKey} label={screen.title} items={screen.items.map((item) => item.accountPanel ? { ...item, image: '/images/mi-cuenta-acceso.png' } : item.title === 'Favoritos' ? { ...item, image: '/images/favoritos-guardados.png' } : item.title === 'Mi avance' ? { ...item, image: '/images/mi-avance-progreso.png' } : item.title === 'Configuración' ? { ...item, image: '/images/configuracion-horarios-zona.png' } : item.title === 'Activar notificaciones' ? { ...item, image: '/images/activar-notificaciones.png' } : item.title === 'Horarios de práctica' ? { ...item, image: '/images/horarios-practica.png' } : item.title === 'Preferencias' ? { ...item, image: '/images/preferencias-avisos.png' } : item.title === 'Prácticas de 7 días' ? { ...item, image: '/images/practicas-7-dias.png' } : item.title === 'Prácticas de 15 días' ? { ...item, image: '/images/practicas-15-dias.png' } : item.title === 'Prácticas de 40 días' ? { ...item, image: '/images/practicas-40-dias.png' } : item.title === 'Antes de una reunion, entrevista o examen' ? { ...item, image: '/images/antes-reunion-entrevista-examen.png' } : item.title === 'Cuando te agarro la ansiedad' ? { ...item, image: '/images/cuando-te-agarro-la-ansiedad.png' } : item.title === 'Cuando no podes parar la cabeza para dormir' ? { ...item, image: '/images/cuando-no-podes-parar-la-cabeza-para-dormir.png' } : item.title === 'Cuando te peleaste con alguien' ? { ...item, image: '/images/cuando-te-peleaste-con-alguien.png' } : item.title === 'Cuando te llego una mala noticia' ? { ...item, image: '/images/cuando-te-llego-una-mala-noticia.png' } : item.title === 'Antes de tomar una decision dificil' ? { ...item, image: '/images/antes-de-tomar-una-decision-dificil.png' } : item.title === 'Cuando te sentis solo' ? { ...item, image: '/images/cuando-te-sentis-solo.png' } : item.title === 'Cuando estas bajoneado sin saber por que' ? { ...item, image: '/images/cuando-estas-bajoneado-sin-saber-por-que.png' } : item.title === 'Antes de hablar en publico' ? { ...item, image: '/images/antes-de-hablar-en-publico.png' } : item.title === 'Cuando te ataca la culpa' ? { ...item, image: '/images/cuando-te-ataca-la-culpa.png' } : item.title === 'Para arrancar el dia con fuerza' ? { ...item, image: '/images/para-arrancar-el-dia-con-fuerza.png' } : item.title === 'Para cerrar el dia en paz' ? { ...item, image: '/images/para-cerrar-el-dia-en-paz.png' } : item.title === 'Cuando tenes miedo de algo' ? { ...item, image: '/images/cuando-tenes-miedo-de-algo.png' } : item.title === 'Cuando queres sentirte mejor rapido' ? { ...item, image: '/images/cuando-queres-sentirte-mejor-rapido.png' } : item.title === 'Cuando necesitas un envion de seguridad' ? { ...item, image: '/images/cuando-necesitas-un-envion-de-seguridad.png' } : item.title === 'Preguntar' ? { ...item, image: '/images/preguntar.png' } : item.title === 'Escuchar' ? { ...item, image: '/images/escuchar.png' } : item.title === 'Guardadas' ? { ...item, image: '/images/guardadas.png' } : item.title === 'Objetivo' ? { ...item, image: '/images/objetivo.png' } : item.title === 'Duración' ? { ...item, image: '/images/duracion.png' } : item.title === 'Momento' ? { ...item, image: '/images/momento.png' } : item)} initialIndex={carouselIndicesRef.current[carouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[carouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[carouselKey] = index; select(item); }} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section></main>;
+  return <main className="app-shell app-main section-app day-one-screen"><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><DayOneCarousel key={carouselKey} label={screen.title} items={screen.items.map((item) => item.accountPanel ? { ...item, image: '/images/mi-cuenta-acceso.png' } : item.title === 'Favoritos' ? { ...item, image: '/images/favoritos-guardados.png' } : item.title === 'Mi avance' ? { ...item, image: '/images/mi-avance-progreso.png' } : item.title === 'Configuración' ? { ...item, image: '/images/configuracion-horarios-zona.png' } : item.title === 'Activar notificaciones' ? { ...item, image: '/images/activar-notificaciones.png' } : item.title === 'Horarios de práctica' ? { ...item, image: '/images/horarios-practica.png' } : item.title === 'Preferencias' ? { ...item, image: '/images/preferencias-avisos.png' } : item.title === 'Prácticas de 7 días' ? { ...item, image: '/images/practicas-7-dias.png' } : item.title === 'Prácticas de 15 días' ? { ...item, image: '/images/practicas-15-dias.png' } : item.title === 'Prácticas de 40 días' ? { ...item, image: '/images/practicas-40-dias.png' } : item.title === 'Antes de una reunion, entrevista o examen' ? { ...item, image: '/images/antes-reunion-entrevista-examen.png' } : item.title === 'Cuando te agarro la ansiedad' ? { ...item, image: '/images/cuando-te-agarro-la-ansiedad.png' } : item.title === 'Cuando no podes parar la cabeza para dormir' ? { ...item, image: '/images/cuando-no-podes-parar-la-cabeza-para-dormir.png' } : item.title === 'Cuando te peleaste con alguien' ? { ...item, image: '/images/cuando-te-peleaste-con-alguien.png' } : item.title === 'Cuando te llego una mala noticia' ? { ...item, image: '/images/cuando-te-llego-una-mala-noticia.png' } : item.title === 'Antes de tomar una decision dificil' ? { ...item, image: '/images/antes-de-tomar-una-decision-dificil.png' } : item.title === 'Cuando te sentis solo' ? { ...item, image: '/images/cuando-te-sentis-solo.png' } : item.title === 'Cuando estas bajoneado sin saber por que' ? { ...item, image: '/images/cuando-estas-bajoneado-sin-saber-por-que.png' } : item.title === 'Antes de hablar en publico' ? { ...item, image: '/images/antes-de-hablar-en-publico.png' } : item.title === 'Cuando te ataca la culpa' ? { ...item, image: '/images/cuando-te-ataca-la-culpa.png' } : item.title === 'Para arrancar el dia con fuerza' ? { ...item, image: '/images/para-arrancar-el-dia-con-fuerza.png' } : item.title === 'Para cerrar el dia en paz' ? { ...item, image: '/images/para-cerrar-el-dia-en-paz.png' } : item.title === 'Cuando tenes miedo de algo' ? { ...item, image: '/images/cuando-tenes-miedo-de-algo.png' } : item.title === 'Cuando queres sentirte mejor rapido' ? { ...item, image: '/images/cuando-queres-sentirte-mejor-rapido.png' } : item.title === 'Cuando necesitas un envion de seguridad' ? { ...item, image: '/images/cuando-necesitas-un-envion-de-seguridad.png' } : item.title === 'Preguntar' ? { ...item, image: '/images/preguntar.png' } : item.title === 'Escuchar' ? { ...item, image: '/images/escuchar.png' } : item.title === 'Guardadas' ? { ...item, image: '/images/guardadas.png' } : item.title === 'Objetivo' ? { ...item, image: '/images/objetivo.png' } : item.title === 'Duración' ? { ...item, image: '/images/duracion.png' } : item.title === 'Momento' ? { ...item, image: '/images/momento.png' } : item)} initialIndex={carouselIndicesRef.current[carouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[carouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[carouselKey] = index; select(item); }} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section></main>;
 }
