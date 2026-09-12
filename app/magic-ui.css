@@ -16,7 +16,7 @@
 html, body {
   background: var(--ui-bg) !important;
   color: var(--ui-ink);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif !important;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif !important;
 }
 
 button, input { font-family: inherit !important; }
@@ -107,7 +107,7 @@ button, input { font-family: inherit !important; }
 }
 
 .assistant-welcome p { margin: 0 0 9px; color: var(--ui-muted); font-size: 18px; font-weight: 540; letter-spacing: -.025em; }
-.assistant-welcome h1 { margin: 0; color: var(--ui-ink); font-size: clamp(34px, 9vw, 43px); line-height: .98; letter-spacing: -.052em; font-weight: 760; }
+.assistant-welcome h1 { margin: 0; color: var(--ui-ink); font-size: 32px; line-height: 1.06; letter-spacing: -.022em; font-weight: 700; }
 .assistant-welcome h1 strong { display: block; margin-top: 4px; color: var(--ui-accent); font-weight: 790; }
 
 .category-list,
@@ -236,25 +236,7 @@ button, input { font-family: inherit !important; }
   -webkit-backdrop-filter: blur(18px);
 }
 
-.header-back {
-  min-height: 30px;
-  margin: 0 0 10px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  border: 0;
-  border-radius: 0;
-  background: none;
-  box-shadow: none;
-  color: var(--ui-accent);
-  font-size: 17px;
-  font-weight: 400;
-}
-.header-back svg { width: 22px; height: 22px; }
-.header-back:active { opacity: .55; }
-
-.feature-header > p { margin: 0 0 5px; color: var(--ui-accent); font-size: 10px; line-height: 1; letter-spacing: .17em; font-weight: 800; }
+.feature-header > p { margin: 0 0 5px; color: var(--ui-accent); font-size: 12px; line-height: 1; letter-spacing: .08em; font-weight: 600; text-transform: uppercase; }
 .feature-header h1 {
   width: 100%;
   max-width: 100%;
@@ -262,10 +244,10 @@ button, input { font-family: inherit !important; }
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--ui-ink);
-  font-size: clamp(29px, 8vw, 38px);
-  line-height: 1.02;
-  letter-spacing: -.05em;
-  font-weight: 780;
+  font-size: 32px;
+  line-height: 1.06;
+  letter-spacing: -.022em;
+  font-weight: 700;
 }
 .feature-header > small { display: -webkit-box; max-width: 370px; margin-top: 5px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: var(--ui-muted); font-size: 13px; line-height: 1.28; }
 
@@ -278,7 +260,7 @@ button, input { font-family: inherit !important; }
   background: #fff;
   -webkit-overflow-scrolling: touch;
 }
-.reader-body > p { margin: 0 0 19px; color: #343138; font-size: 17px; line-height: 1.68; }
+.reader-body > p { margin: 0 0 19px; color: #86868b; font-size: 17px; font-weight: 400; line-height: 1.47; }
 
 /* Biblioteca: lista clara, buscador fijo visualmente y cero superposición. */
 .library-browser { display: block; }

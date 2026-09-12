@@ -29,6 +29,7 @@ export function DayOneCarousel<T extends Item>({
   const [ended, setEnded] = useState(false);
   const [progress, setProgress] = useState(0);
   const [inView, setInView] = useState(true);
+  const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set());
   const reduced = useRef(false);
 
   const move = useCallback((index: number, manual = true) => {
@@ -112,6 +113,28 @@ export function DayOneCarousel<T extends Item>({
     return () => cancelAnimationFrame(animation);
   }, [playing, inView, items.length, move]);
 
+  // Animación de entrada por card: contenedor, luego texto (desde la
+  // izquierda), luego imagen (desde la derecha), disparado por card cuando
+  // entra al viewport del propio carrusel horizontal.
+  useEffect(() => {
+    const scrollerEl = scroller.current;
+    if (!scrollerEl) return;
+    const cards = Array.from(scrollerEl.querySelectorAll<HTMLElement>('.day-one-card'));
+    if (!cards.length) return;
+    const cardObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const index = cards.indexOf(entry.target as HTMLElement);
+        if (index === -1) return;
+        setVisibleCards((prev) => (prev.has(index) ? prev : new Set(prev).add(index)));
+        cardObserver.unobserve(entry.target);
+      });
+    }, { root: scrollerEl, threshold: 0.3 });
+    cards.forEach((card) => cardObserver.observe(card));
+    return () => cardObserver.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const interrupt = () => {
     setPlaying(false);
   };
@@ -152,7 +175,7 @@ export function DayOneCarousel<T extends Item>({
       }}
       onScroll={handleScroll}
     >
-      <div className="day-one-track">{items.map((item, index) => <article key={item.title} className="day-one-card" id={`day-one-slide-${index}`} aria-label={`${index + 1} de ${items.length}: ${item.title}`}>
+      <div className="day-one-track">{items.map((item, index) => <article key={item.title} className={`day-one-card${visibleCards.has(index) ? ' is-visible' : ''}`} id={`day-one-slide-${index}`} aria-label={`${index + 1} de ${items.length}: ${item.title}`}>
         <button className="day-one-open" onClick={() => { interrupt(); onSelect(item, index); }} tabIndex={active === index ? 0 : -1}>
           <span className="day-one-caption">
             <strong className="day-one-title">{item.title}</strong>
