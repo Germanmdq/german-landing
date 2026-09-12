@@ -237,6 +237,27 @@
   pointer-events: none;
 }
 .day-one-illustration--compact { transform: none; }
+
+/* Solo el carrusel principal de bienvenida: la imagen va pegada al
+   borde inferior de lado a lado (cover), no flotando centrada como en
+   los carruseles internos, con un degradé sutil detrás. */
+.welcome-carousel-screen .day-one-card {
+  background: linear-gradient(to bottom, #ffffff 0%, #F0F0F0 100%);
+}
+.welcome-carousel-screen .day-one-caption {
+  margin: 24px 24px 12px;
+}
+.welcome-carousel-screen .day-one-visual {
+  padding: 0;
+}
+.welcome-carousel-screen .day-one-illustration {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+  border-radius: 0 0 28px 28px;
+}
+
 .day-one-placeholder {
   width: 160px;
   height: 160px;
