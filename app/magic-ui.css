@@ -486,6 +486,31 @@ button, input { font-family: inherit !important; }
 .login-google-button:hover { background: #E8E8E8; }
 .login-google-button:active { transform: scale(.98); opacity: .85; }
 .login-google-button:disabled { opacity: .6; cursor: default; }
+
+/* Botón primario estilo Apple (pill), reusable en cualquier pantalla. */
+.btn-primary {
+  display: block;
+  width: 100%;
+  max-width: 340px;
+  margin: 24px auto 0;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 980px;
+  background: var(--ui-accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -.01em;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: none;
+  transition: opacity .2s ease;
+}
+.btn-primary:hover { opacity: .85; }
+.btn-primary:active { transform: scale(.98); }
+.btn-primary:disabled { opacity: .5; cursor: default; }
+
 .login-error {
   width: 100%;
   margin: 16px 0 0;

@@ -56,11 +56,9 @@ const findNumberedMessage = (body: string, index: number): string[] | null => {
 };
 
 const palette = ['#D92D35', '#E5484D', '#F2555A', '#FF6B6F'];
-const icons = ['●', '◆', '✦', '○'];
 const cleanParagraphs = (text: string) => text.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
 const deliveryTypeLabels: Record<TallerDeliveryType, string> = { meditation_morning: 'Meditación de la mañana', meditation_noon: 'Meditación del mediodía', meditation_afternoon: 'Meditación de la tarde', meditation_night: 'Meditación de la noche', intermediate_message: 'Mensaje' };
 const formatDeliveredAt = (iso: string) => new Date(iso).toLocaleString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-const leaf = (title: string, index: number, detail = ''): DeckItem => ({ icon: icons[index % icons.length], title, detail, tone: palette[index % palette.length] });
 const toTags = (value: unknown): string[] => Array.isArray(value) ? value.filter((tag): tag is string => typeof tag === 'string') : typeof value === 'string' ? value.split(',').map((tag) => tag.trim()).filter(Boolean) : [];
 const firstText = (record: Record<string, unknown>, keys: string[]) => keys.map((key) => record[key]).find((value): value is string => typeof value === 'string' && value.length > 0);
 const deckFavorite = (item: DeckItem): FavoriteRecord => ({ id: `deck:${item.title}`, title: item.title, detail: item.detail, icon: item.icon, tone: item.tone, reader: item.reader });
@@ -110,11 +108,9 @@ const screens: Record<Tab, Screen> = {
     { icon: '🌿', title: 'Prácticas de 15 días', detail: 'Amor, salud y dinero.', tone: palette[1] },
     { icon: '🌳', title: 'Prácticas de 40 días', detail: 'Autoconcepto y control de la imaginación.', tone: palette[2], workshopPanel: true },
   ] },
-  propia: { eyebrow: 'TU PROPIA PRÁCTICA', title: 'Creá tu recorrido', subtitle: 'Elegí qué querés trabajar y cómo querés hacerlo.', items: [
-    { icon: '🎯', title: 'Objetivo', detail: 'Amor, salud, dinero o imaginación.', tone: palette[0], children: ['Amor', 'Salud', 'Dinero', 'Imaginación'].map((title, index) => leaf(title, index)) },
-    { icon: '🗓️', title: 'Duración', detail: 'Una práctica, 7, 15 o 40 días.', tone: palette[1], children: ['Una práctica', '7 días', '15 días', '40 días'].map((title, index) => leaf(title, index)) },
-    { icon: '🔔', title: 'Momento', detail: 'Mañana, mediodía, tarde, noche o ahora.', tone: palette[2], children: ['Mañana', 'Mediodía', 'Tarde', 'Noche', 'Ahora'].map((title, index) => leaf(title, index)) },
-  ] },
+  // "Tu propia práctica" ya no es un deck navegable: es un formulario único
+  // (PropiaPracticaPanel) que intercepta la pestaña 'propia' directamente.
+  propia: { eyebrow: 'TU PROPIA PRÁCTICA', title: 'Creá tu recorrido', subtitle: 'Elegí qué querés trabajar y cómo querés hacerlo.', items: [] },
   meditaciones: { eyebrow: 'MEDITACIONES', title: '¿Qué necesitás ahora?', subtitle: 'Elegí el momento y abrí directamente la práctica.', items: momentNodes },
   biblioteca: { eyebrow: 'PARA ESCUCHAR Y LEER', title: 'Tu biblioteca', subtitle: 'Contenido organizado por formato.', items: [
     { icon: '🎧', title: 'Meditaciones', detail: 'Prácticas disponibles para escuchar y leer.', tone: palette[0], children: momentNodes },
@@ -728,6 +724,139 @@ function WorkshopPanel({ user, onBack, onNavigate, onRead }: { user: User; onBac
   </section>;
 }
 
+// Sheet genérico de una sola lista (reusa el mismo look que TimezonePicker,
+// sin buscador, para listas cortas de opciones: tema, duración, frecuencia).
+function OptionSheet({ title, options, value, onCancel, onSave }: { title: string; options: { value: string; label: string }[]; value: string | null; onCancel: () => void; onSave: (value: string) => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const element = dialog.current;
+    element?.showModal();
+    return () => { element?.close(); previous?.focus(); };
+  }, []);
+  return <dialog ref={dialog} className="time-sheet" aria-labelledby="option-sheet-title" onCancel={(event) => { event.preventDefault(); onCancel(); }} onClick={(event) => { if (event.target === event.currentTarget) onCancel(); }}>
+    <div className="time-sheet-content">
+      <div className="time-sheet-handle" aria-hidden="true" />
+      <header><button onClick={onCancel}>Cancelar</button><h2 id="option-sheet-title">{title}</h2><button style={{ visibility: 'hidden' }}>Cancelar</button></header>
+      <div className="timezone-list">
+        {options.map((option) => <button key={option.value} className={`timezone-option${option.value === value ? ' selected' : ''}`} onClick={() => onSave(option.value)}>{option.label}</button>)}
+      </div>
+    </div>
+  </dialog>;
+}
+
+type PropiaTema = 'Amor y relaciones' | 'Dinero y trabajo' | 'Salud y bienestar' | 'Imaginación';
+const propiaTemaOptions: PropiaTema[] = ['Amor y relaciones', 'Dinero y trabajo', 'Salud y bienestar', 'Imaginación'];
+type PropiaDuracion = 'Una práctica' | '7 días' | '15 días' | '40 días';
+const propiaDuracionOptions: PropiaDuracion[] = ['Una práctica', '7 días', '15 días', '40 días'];
+type PropiaEditingField = 'tema' | 'duracion' | 'frecuencia' | null;
+
+function PropiaPracticaPanel({ user, onBack, onNavigate, onRead }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (reader: ReaderContent) => void }) {
+  const [tema, setTema] = useState<PropiaTema | null>(null);
+  const [duracion, setDuracion] = useState<PropiaDuracion | null>(null);
+  const [frequency, setFrequency] = useState<typeof workshopIntervalOptions[number]>(40);
+  const [schedule, setSchedule] = useState<WorkshopSchedule>(defaultWorkshopSchedule);
+  const [timezone, setTimezone] = useState(detectTimezone);
+  const [editingField, setEditingField] = useState<PropiaEditingField>(null);
+  const [editingMoment, setEditingMoment] = useState<typeof workshopMomentKeys[number] | null>(null);
+  const [editingTimezone, setEditingTimezone] = useState(false);
+  const [errors, setErrors] = useState<{ tema?: string; duracion?: string }>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState('');
+  const [confirmed, setConfirmed] = useState(false);
+
+  const needsSchedule = duracion === '7 días' || duracion === '15 días' || duracion === '40 días';
+
+  const submit = async () => {
+    const nextErrors: { tema?: string; duracion?: string } = {};
+    if (!tema) nextErrors.tema = 'Elegí un tema';
+    if (!duracion) nextErrors.duracion = 'Elegí una duración';
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
+    setMessage('');
+
+    if (duracion === 'Una práctica') {
+      const plan = planNodes.find((node) => node.title === tema);
+      const firstDay = plan?.children?.[0];
+      const firstPractice = firstDay?.children?.find((item) => item.reader);
+      console.log('[propia] "Una práctica" ->', tema, '-> encontrado:', Boolean(firstPractice?.reader));
+      if (!firstPractice?.reader) {
+        setMessage('No encontramos contenido para este tema todavía.');
+        return;
+      }
+      onRead(firstPractice.reader);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      console.log('[propia] activando notificaciones para', tema, duracion);
+      const result = await ensurePushSubscription(user);
+      if (result.error) {
+        console.error('[propia] no se pudo activar notificaciones:', result.error);
+        setMessage(result.error);
+        return;
+      }
+      localStorage.setItem('german-propia-practica', JSON.stringify({ tema, duracion, frequency, schedule, timezone, savedAt: new Date().toISOString() }));
+      console.log('[propia] guardado localmente y notificaciones activas');
+      setConfirmed(true);
+    } catch (err) {
+      console.error('[propia] excepción al guardar la práctica:', err);
+      setMessage(err instanceof Error ? err.message : 'No pudimos guardar tu práctica.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (confirmed) {
+    return <section className="reader-section">
+      <FixedHeader eyebrow="TU PROPIA PRÁCTICA" title="¡Listo!" subtitle="Ya está todo configurado." onBack={onBack} onNavigate={onNavigate} />
+      <div className="reader-body">
+        <p>Elegiste <strong>{tema}</strong> durante <strong>{duracion}</strong>. Vas a recibir tus prácticas por notificación en los horarios que configuraste.</p>
+        <button type="button" className="btn-primary" onClick={onBack}>Volver al inicio</button>
+      </div>
+    </section>;
+  }
+
+  return <section className="reader-section">
+    <FixedHeader eyebrow="TU PROPIA PRÁCTICA" title="Creá tu recorrido" subtitle="Elegí qué practicar, cuánto tiempo y cuándo." onBack={onBack} onNavigate={onNavigate} />
+    <div className="reader-body">
+      <div className="ios-card">
+        <button type="button" className="ios-row" onClick={() => setEditingField('tema')} aria-haspopup="dialog">
+          <span className="ios-row-label">Tema</span>
+          <span className={`ios-row-value${tema ? '' : ' ios-row-value--muted'}`}>{tema || 'Elegir'}<ChevronRight size={17} /></span>
+        </button>
+        <button type="button" className="ios-row" onClick={() => setEditingField('duracion')} aria-haspopup="dialog">
+          <span className="ios-row-label">Duración</span>
+          <span className={`ios-row-value${duracion ? '' : ' ios-row-value--muted'}`}>{duracion || 'Elegir'}<ChevronRight size={17} /></span>
+        </button>
+        {needsSchedule && <button type="button" className="ios-row" onClick={() => setEditingField('frecuencia')} aria-haspopup="dialog">
+          <span className="ios-row-label">Frecuencia</span>
+          <span className="ios-row-value">{workshopIntervalLabel(frequency)}<ChevronRight size={17} /></span>
+        </button>}
+        {needsSchedule && workshopMomentKeys.map((key) => <button key={key} type="button" className="ios-row" onClick={() => setEditingMoment(key)} aria-label={`Cambiar horario de ${workshopMomentPickerLabels[key]}: ${schedule[key]}`} aria-haspopup="dialog">
+          <span className="ios-row-label">{workshopMomentPickerLabels[key]}</span>
+          <span className="ios-row-value">{schedule[key]}<ChevronRight size={17} /></span>
+        </button>)}
+        {needsSchedule && <button type="button" className="ios-row" onClick={() => setEditingTimezone(true)} aria-haspopup="dialog">
+          <span className="ios-row-label">Zona horaria</span>
+          <span className="ios-row-value ios-row-value--muted">{timezone.replace(/_/g, ' ')}<ChevronRight size={17} /></span>
+        </button>}
+      </div>
+      {errors.tema && <p className="account-message">{errors.tema}</p>}
+      {errors.duracion && <p className="account-message">{errors.duracion}</p>}
+      {message && <p className="account-message">{message}</p>}
+      <button type="button" className="btn-primary" onClick={submit} disabled={submitting}>{submitting ? 'Un momento…' : 'Comenzar práctica'}</button>
+    </div>
+
+    {editingField === 'tema' && <OptionSheet title="Tema" options={propiaTemaOptions.map((option) => ({ value: option, label: option }))} value={tema} onCancel={() => setEditingField(null)} onSave={(value) => { setTema(value as PropiaTema); setEditingField(null); }} />}
+    {editingField === 'duracion' && <OptionSheet title="Duración" options={propiaDuracionOptions.map((option) => ({ value: option, label: option }))} value={duracion} onCancel={() => setEditingField(null)} onSave={(value) => { setDuracion(value as PropiaDuracion); setEditingField(null); }} />}
+    {editingField === 'frecuencia' && <OptionSheet title="Frecuencia" options={workshopIntervalOptions.map((minutes) => ({ value: String(minutes), label: workshopIntervalLabel(minutes) }))} value={String(frequency)} onCancel={() => setEditingField(null)} onSave={(value) => { setFrequency(Number(value) as typeof workshopIntervalOptions[number]); setEditingField(null); }} />}
+    {editingMoment && <TimePicker label={workshopMomentPickerLabels[editingMoment]} value={schedule[editingMoment]} onCancel={() => setEditingMoment(null)} onSave={(value) => { setSchedule((current) => ({ ...current, [editingMoment]: value })); setEditingMoment(null); }} />}
+    {editingTimezone && <TimezonePicker value={timezone} onCancel={() => setEditingTimezone(false)} onSave={(zone) => { setTimezone(zone); setEditingTimezone(false); }} />}
+  </section>;
+}
+
 // Detecta si la URL actual es un callback de OAuth (implicit flow con
 // #access_token en el hash, o PKCE con ?code= en query, o un ?error=).
 // Se usa para no mostrar el video splash al volver de loguearse con Google.
@@ -1164,6 +1293,7 @@ export default function App() {
   if (workshopOpen) return <main className="app-shell app-main section-app"><WorkshopPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} /></main>;
   if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} /></main>;
   if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} onSelect={select} onBack={back} onNavigate={navigateTo} /></main>;
+  if (tab === 'propia' && !trail.length) return <main className="app-shell app-main section-app"><PropiaPracticaPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} /></main>;
   if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel onBack={back} onNavigate={navigateTo} /></main>;
   if (current?.title === 'Día 1') {
     const carouselKey = `${tab}-${trail.map((item) => item.title).join('/')}-dia1`;
@@ -1172,11 +1302,9 @@ export default function App() {
   const carouselKey = `${tab}-${trail.map((item) => item.title).join('/')}`;
   // Estas pantallas tienen fotos reales de fondo (a diferencia del resto de
   // las pantallas internas, que siguen con ícono chico + texto arriba):
-  // Prácticas guiadas, su sub-deck de 7 días, Consultas y Tu propia práctica
-  // (Objetivo/Duración/Momento).
+  // Prácticas guiadas, su sub-deck de 7 días, y Consultas.
   const photoCardsScreen = (tab === 'talleres' && trail.length === 0)
     || (tab === 'talleres' && trail.length === 1 && trail[0].title === 'Prácticas de 7 días')
-    || (tab === 'consultas' && trail.length === 0)
-    || (tab === 'propia' && trail.length === 0);
-  return <main className={`app-shell app-main section-app day-one-screen${photoCardsScreen ? ' photo-cards-screen' : ''}`}><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><DayOneCarousel key={carouselKey} label={screen.title} items={screen.items.map((item) => item.accountPanel ? { ...item, image: '/images/mi-cuenta-acceso.png' } : item.title === 'Favoritos' ? { ...item, image: '/images/favoritos-guardados.png' } : item.title === 'Mi avance' ? { ...item, image: '/images/mi-avance-progreso.png' } : item.title === 'Configuración' ? { ...item, image: '/images/configuracion-horarios-zona.png' } : item.title === 'Activar notificaciones' ? { ...item, image: '/images/activar-notificaciones.png' } : item.title === 'Horarios de práctica' ? { ...item, image: '/images/horarios-practica.png' } : item.title === 'Preferencias' ? { ...item, image: '/images/preferencias-avisos.png' } : item.title === 'Prácticas de 7 días' ? { ...item, image: '/images/interno-7dias.png' } : item.title === 'Prácticas de 15 días' ? { ...item, image: '/images/interno-15dias.png' } : item.title === 'Prácticas de 40 días' ? { ...item, image: '/images/interno-40dias.png' } : item.title === 'Amor y relaciones' ? { ...item, image: '/images/interno-amor.png' } : item.title === 'Dinero y trabajo' ? { ...item, image: '/images/interno-dinero.png' } : item.title === 'Salud y bienestar' ? { ...item, image: '/images/interno-salud.png' } : item.title === 'Antes de una reunion, entrevista o examen' ? { ...item, image: '/images/antes-reunion-entrevista-examen.png' } : item.title === 'Cuando te agarro la ansiedad' ? { ...item, image: '/images/cuando-te-agarro-la-ansiedad.png' } : item.title === 'Cuando no podes parar la cabeza para dormir' ? { ...item, image: '/images/cuando-no-podes-parar-la-cabeza-para-dormir.png' } : item.title === 'Cuando te peleaste con alguien' ? { ...item, image: '/images/cuando-te-peleaste-con-alguien.png' } : item.title === 'Cuando te llego una mala noticia' ? { ...item, image: '/images/cuando-te-llego-una-mala-noticia.png' } : item.title === 'Antes de tomar una decision dificil' ? { ...item, image: '/images/antes-de-tomar-una-decision-dificil.png' } : item.title === 'Cuando te sentis solo' ? { ...item, image: '/images/cuando-te-sentis-solo.png' } : item.title === 'Cuando estas bajoneado sin saber por que' ? { ...item, image: '/images/cuando-estas-bajoneado-sin-saber-por-que.png' } : item.title === 'Antes de hablar en publico' ? { ...item, image: '/images/antes-de-hablar-en-publico.png' } : item.title === 'Cuando te ataca la culpa' ? { ...item, image: '/images/cuando-te-ataca-la-culpa.png' } : item.title === 'Para arrancar el dia con fuerza' ? { ...item, image: '/images/para-arrancar-el-dia-con-fuerza.png' } : item.title === 'Para cerrar el dia en paz' ? { ...item, image: '/images/para-cerrar-el-dia-en-paz.png' } : item.title === 'Cuando tenes miedo de algo' ? { ...item, image: '/images/cuando-tenes-miedo-de-algo.png' } : item.title === 'Cuando queres sentirte mejor rapido' ? { ...item, image: '/images/cuando-queres-sentirte-mejor-rapido.png' } : item.title === 'Cuando necesitas un envion de seguridad' ? { ...item, image: '/images/cuando-necesitas-un-envion-de-seguridad.png' } : item.title === 'Preguntar' ? { ...item, image: '/images/interno-preguntar.png' } : item.title === 'Escuchar' ? { ...item, image: '/images/interno-escuchar.png' } : item.title === 'Guardadas' ? { ...item, image: '/images/interno-guardadas.png' } : item.title === 'Objetivo' ? { ...item, image: '/images/interno-objetivo.png' } : item.title === 'Duración' ? { ...item, image: '/images/interno-duracion.png' } : item.title === 'Momento' ? { ...item, image: '/images/interno-momento.png' } : item)} initialIndex={carouselIndicesRef.current[carouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[carouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[carouselKey] = index; select(item); }} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section></main>;
+    || (tab === 'consultas' && trail.length === 0);
+  return <main className={`app-shell app-main section-app day-one-screen${photoCardsScreen ? ' photo-cards-screen' : ''}`}><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><DayOneCarousel key={carouselKey} label={screen.title} items={screen.items.map((item) => item.accountPanel ? { ...item, image: '/images/mi-cuenta-acceso.png' } : item.title === 'Favoritos' ? { ...item, image: '/images/favoritos-guardados.png' } : item.title === 'Mi avance' ? { ...item, image: '/images/mi-avance-progreso.png' } : item.title === 'Configuración' ? { ...item, image: '/images/configuracion-horarios-zona.png' } : item.title === 'Activar notificaciones' ? { ...item, image: '/images/activar-notificaciones.png' } : item.title === 'Horarios de práctica' ? { ...item, image: '/images/horarios-practica.png' } : item.title === 'Preferencias' ? { ...item, image: '/images/preferencias-avisos.png' } : item.title === 'Prácticas de 7 días' ? { ...item, image: '/images/interno-7dias.png' } : item.title === 'Prácticas de 15 días' ? { ...item, image: '/images/interno-15dias.png' } : item.title === 'Prácticas de 40 días' ? { ...item, image: '/images/interno-40dias.png' } : item.title === 'Amor y relaciones' ? { ...item, image: '/images/interno-amor.png' } : item.title === 'Dinero y trabajo' ? { ...item, image: '/images/interno-dinero.png' } : item.title === 'Salud y bienestar' ? { ...item, image: '/images/interno-salud.png' } : item.title === 'Antes de una reunion, entrevista o examen' ? { ...item, image: '/images/antes-reunion-entrevista-examen.png' } : item.title === 'Cuando te agarro la ansiedad' ? { ...item, image: '/images/cuando-te-agarro-la-ansiedad.png' } : item.title === 'Cuando no podes parar la cabeza para dormir' ? { ...item, image: '/images/cuando-no-podes-parar-la-cabeza-para-dormir.png' } : item.title === 'Cuando te peleaste con alguien' ? { ...item, image: '/images/cuando-te-peleaste-con-alguien.png' } : item.title === 'Cuando te llego una mala noticia' ? { ...item, image: '/images/cuando-te-llego-una-mala-noticia.png' } : item.title === 'Antes de tomar una decision dificil' ? { ...item, image: '/images/antes-de-tomar-una-decision-dificil.png' } : item.title === 'Cuando te sentis solo' ? { ...item, image: '/images/cuando-te-sentis-solo.png' } : item.title === 'Cuando estas bajoneado sin saber por que' ? { ...item, image: '/images/cuando-estas-bajoneado-sin-saber-por-que.png' } : item.title === 'Antes de hablar en publico' ? { ...item, image: '/images/antes-de-hablar-en-publico.png' } : item.title === 'Cuando te ataca la culpa' ? { ...item, image: '/images/cuando-te-ataca-la-culpa.png' } : item.title === 'Para arrancar el dia con fuerza' ? { ...item, image: '/images/para-arrancar-el-dia-con-fuerza.png' } : item.title === 'Para cerrar el dia en paz' ? { ...item, image: '/images/para-cerrar-el-dia-en-paz.png' } : item.title === 'Cuando tenes miedo de algo' ? { ...item, image: '/images/cuando-tenes-miedo-de-algo.png' } : item.title === 'Cuando queres sentirte mejor rapido' ? { ...item, image: '/images/cuando-queres-sentirte-mejor-rapido.png' } : item.title === 'Cuando necesitas un envion de seguridad' ? { ...item, image: '/images/cuando-necesitas-un-envion-de-seguridad.png' } : item.title === 'Preguntar' ? { ...item, image: '/images/interno-preguntar.png' } : item.title === 'Escuchar' ? { ...item, image: '/images/interno-escuchar.png' } : item.title === 'Guardadas' ? { ...item, image: '/images/interno-guardadas.png' } : item)} initialIndex={carouselIndicesRef.current[carouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[carouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[carouselKey] = index; select(item); }} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section></main>;
 }
