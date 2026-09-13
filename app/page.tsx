@@ -958,9 +958,9 @@ function LoginGate() {
       provider: 'google',
       options: {
         redirectTo,
-        // Evita forzar el selector de cuentas. Google reutiliza la última
-        // sesión disponible cuando puede hacerlo.
-        queryParams: { prompt: 'none' },
+        // Siempre preguntamos qué cuenta de Google usar. Es importante en una
+        // PWA compartida o cuando la persona alterna entre dos cuentas.
+        queryParams: { prompt: 'select_account' },
       },
     });
     if (error) {
@@ -1164,33 +1164,35 @@ export default function App() {
       try { setFavorites(JSON.parse(savedFavorites) as FavoriteRecord[]); } catch { localStorage.removeItem('german-favorites'); }
     }
 
+    // La sesión de Supabase se restaura desde almacenamiento local. No
+    // bloqueamos la primera pintura esperando perfil/red: eso hacía que una
+    // PWA con conexión lenta pareciera congelada.
     console.log('[auth] pidiendo getSession()...');
     // Red de seguridad: si getSession() nunca resuelve (colgado por red u
     // otro motivo), no dejamos la app trabada en blanco para siempre.
     const sessionCheckTimeout = setTimeout(() => {
-      console.warn('[auth] getSession() no resolvió a tiempo (6s), forzando sessionChecked igual');
+      console.warn('[auth] getSession() no resolvió a tiempo (1.5s), mostrando la app igual');
       setSessionChecked(true);
-    }, 6000);
+    }, 1500);
 
-    supabase.auth.getSession().then(async ({ data }) => {
+    supabase.auth.getSession().then(({ data }) => {
       clearTimeout(sessionCheckTimeout);
       console.log('[auth] getSession() resolvió:', data.session ? `sesión de ${data.session.user.email}` : 'sin sesión');
       setSession(data.session);
-      if (data.session?.user) {
-        await syncProfile(data.session.user);
-      }
       setSessionChecked(true);
+      if (data.session?.user) void syncProfile(data.session.user);
     }).catch((err) => {
       clearTimeout(sessionCheckTimeout);
       console.error('[auth] error obteniendo la sesión:', err);
       setSessionChecked(true);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       console.log('[auth] onAuthStateChange:', event, nextSession ? `sesión de ${nextSession.user.email}` : 'sin sesión');
       setSession(nextSession);
+      setSessionChecked(true);
       if (nextSession?.user) {
-        await syncProfile(nextSession.user);
+        void syncProfile(nextSession.user);
       } else {
         setFullName(null);
       }
