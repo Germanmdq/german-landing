@@ -77,6 +77,19 @@ function localMinutesNow(date: Date, timeZone: string): number {
   return hour * 60 + minute;
 }
 
+function localDateKey(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const year = parts.find((p) => p.type === 'year')?.value ?? '';
+  const month = parts.find((p) => p.type === 'month')?.value ?? '';
+  const day = parts.find((p) => p.type === 'day')?.value ?? '';
+  return `${year}-${month}-${day}`;
+}
+
 function withinWindow(nowMinutes: number, targetMinutes: number, windowMinutes = MATCH_WINDOW_MINUTES): boolean {
   const diff = Math.abs(nowMinutes - targetMinutes);
   return Math.min(diff, 1440 - diff) <= windowMinutes;
@@ -149,6 +162,45 @@ async function deliveryExists(userId: string, dayNumber: number, deliveryType: D
   return Boolean(data);
 }
 
+// Reserva atómica de una entrega. deliveryExists() por sí solo no alcanza:
+// dos invocaciones del cron pueden comprobar a la vez que no existe y luego
+// insertar ambas. La base debe tener los índices únicos de la migración
+// 20260912_taller_deliveries_dedup.sql; si otra invocación ganó la carrera,
+// Postgres devuelve 23505 y simplemente no enviamos un segundo push.
+async function reserveDelivery(values: {
+  user_id: string;
+  content_id: string;
+  asset_id: string | null;
+  day_number: number;
+  delivery_type: DeliveryType;
+  message_index?: number | null;
+}) {
+  const { data, error } = await supabase
+    .from('taller_deliveries')
+    .insert(values)
+    .select('id')
+    .single();
+  if (error?.code === '23505') return null;
+  if (error || !data) {
+    console.error('reserve taller_deliveries failed:', error);
+    return null;
+  }
+  return data as { id: string };
+}
+
+async function nightAlreadySentToday(userId: string, now: Date, timeZone: string) {
+  const { data } = await supabase
+    .from('taller_deliveries')
+    .select('delivered_at')
+    .eq('user_id', userId)
+    .eq('delivery_type', 'meditation_night')
+    .order('delivered_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data?.delivered_at) return false;
+  return localDateKey(new Date(data.delivered_at), timeZone) === localDateKey(now, timeZone);
+}
+
 // deliveryId: la fila de taller_deliveries ya insertada para este envío —
 // queda registrado ahí si el push realmente salió o no, y por qué, porque
 // insertar la fila NO significa que el push haya llegado al teléfono.
@@ -176,23 +228,28 @@ async function sendPush(sub: PushSubscriptionRow, deliveryId: string, payload: R
 
 // --- Procesamiento de una suscripción ---------------------------------------
 
-async function processMeditation(sub: PushSubscriptionRow, moment: MeditationMoment) {
+async function processMeditation(sub: PushSubscriptionRow, moment: MeditationMoment, now: Date) {
   if (!sub.active_taller_id) return;
   const deliveryType = momentToDeliveryType[moment];
+  // current_day cambia después de la meditación nocturna. Sin esta guarda, el
+  // cron del minuto siguiente puede interpretar el nuevo día y mandar otra
+  // meditación nocturna dentro de la misma ventana horaria.
+  if (moment === 'night' && sub.timezone && await nightAlreadySentToday(sub.user_id, now, sub.timezone)) return;
   if (await deliveryExists(sub.user_id, sub.current_day, deliveryType, null)) return;
 
   const dayContent = await getDayContent(sub.active_taller_id, sub.current_day);
   if (!dayContent) return;
   const assetId = await getMomentAsset(dayContent.id, moment);
 
-  const { data: inserted, error: insertError } = await supabase.from('taller_deliveries').insert({
+  const inserted = await reserveDelivery({
     user_id: sub.user_id,
     content_id: dayContent.id,
     asset_id: assetId,
     day_number: sub.current_day,
     delivery_type: deliveryType,
-  }).select('id').single();
-  if (insertError || !inserted) { console.error('insert taller_deliveries (meditation) failed:', insertError); return; }
+    message_index: null,
+  });
+  if (!inserted) return;
 
   await sendPush(sub, inserted.id, {
     title: meditationTitles[moment],
@@ -229,15 +286,15 @@ async function processIntermediateMessage(sub: PushSubscriptionRow, messageIndex
   const messageText = findNumberedMessageText(dayContent.body || '', messageIndex);
   if (!messageText) return; // no hay un mensaje #N para este día, no hay nada que mandar
 
-  const { data: inserted, error: insertError } = await supabase.from('taller_deliveries').insert({
+  const inserted = await reserveDelivery({
     user_id: sub.user_id,
     content_id: dayContent.id,
     asset_id: null,
     day_number: sub.current_day,
     delivery_type: 'intermediate_message',
     message_index: messageIndex,
-  }).select('id').single();
-  if (insertError || !inserted) { console.error('insert taller_deliveries (message) failed:', insertError); return; }
+  });
+  if (!inserted) return;
 
   await sendPush(sub, inserted.id, {
     title: 'Un momento para vos',
@@ -255,7 +312,7 @@ async function processSubscription(sub: PushSubscriptionRow, now: Date) {
   for (const moment of moments) {
     const target = sub[moment];
     if (target && withinWindow(nowMinutes, minutesOfDay(target))) {
-      await processMeditation(sub, moment);
+      await processMeditation(sub, moment, now);
       return; // una sola cosa por tick para esta suscripción
     }
   }

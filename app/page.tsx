@@ -1045,7 +1045,16 @@ export default function App() {
   };
 
   const logout = () => {
-    void supabase.auth.signOut().finally(() => {
+    void (async () => {
+      // Este navegador/PWA puede usarse luego con otra cuenta. Antes de cerrar
+      // sesión desactivamos los pushes del usuario actual para que el mismo
+      // dispositivo no siga recibiendo entregas de la cuenta que salió.
+      if (session?.user) {
+        const { error } = await disablePushSubscription(session.user.id);
+        if (error) console.error('[logout] no se pudo desactivar push:', error);
+      }
+      await supabase.auth.signOut();
+    })().finally(() => {
       setSession(null);
       setFullName(null);
       setTrail([]);
