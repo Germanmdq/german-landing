@@ -2,7 +2,7 @@
 // hace que el navegador detecte un service worker nuevo y lo reinstale —
 // eso es lo que fuerza a los usuarios con la PWA ya instalada a agarrar la
 // versión nueva de la app, más allá de cualquier header de caché.
-const CACHE_NAME = 'german-app-v2';
+const CACHE_NAME = 'german-app-v3';
 
 self.addEventListener('install', () => self.skipWaiting());
 
@@ -21,6 +21,10 @@ self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
   event.waitUntil(self.registration.showNotification(data.title || 'Asistente Germán', {
     body: data.body || 'Germán te dejó una práctica.',
+    icon: data.icon || '/images/german-welcome.png',
+    badge: data.badge || '/images/german-welcome.png',
+    tag: data.tag || 'german-asistente',
+    renotify: true,
     data: { url: data.url || '/' },
   }));
 });
