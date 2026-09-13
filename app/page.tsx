@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight } from 'lucide-react';
+import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, Mail } from 'lucide-react';
 import content from './content.generated.json';
 import { supabase } from './lib/supabase';
 import { subscribeToPush, ensurePushSubscription, disablePushSubscription, getPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
@@ -947,15 +947,21 @@ function VideoIntro({ onFinish }: { onFinish: () => void }) {
 function LoginGate() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [email, setEmail] = useState('');
 
-  const submit = async () => {
+  const googleLogin = async () => {
     setBusy(true);
     setMessage('');
     const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
     console.log('[auth] iniciando signInWithOAuth (Google), redirectTo=', redirectTo);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo },
+      options: {
+        redirectTo,
+        // Evita forzar el selector de cuentas. Google reutiliza la última
+        // sesión disponible cuando puede hacerlo.
+        queryParams: { prompt: 'none' },
+      },
     });
     if (error) {
       console.error('[auth] error en signInWithOAuth:', error);
@@ -964,12 +970,36 @@ function LoginGate() {
     }
   };
 
+  const emailLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const cleanEmail = email.trim();
+    if (!cleanEmail) return setMessage('Escribí tu correo electrónico.');
+    setBusy(true);
+    setMessage('');
+    const emailRedirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
+    const { error } = await supabase.auth.signInWithOtp({
+      email: cleanEmail,
+      options: { emailRedirectTo, shouldCreateUser: true },
+    });
+    setBusy(false);
+    setMessage(error ? error.message : 'Te enviamos un enlace para entrar. Revisá tu correo.');
+  };
+
   return (
     <main className="app-shell login-screen">
       <div className="login-card">
-        <h1 className="login-title">Germán <span>Asistente</span></h1>
-        <p className="login-subtitle">Iniciá sesión para continuar</p>
-        <button type="button" className="login-google-button" onClick={submit} disabled={busy}>
+        <div className="login-brand-mark">G</div>
+        <h1 className="login-title">Bienvenido</h1>
+        <p className="login-subtitle">Ingresá o creá tu cuenta para continuar con Germán Asistente.</p>
+        <form className="login-email-form" onSubmit={emailLogin}>
+          <div className="login-email-field">
+            <Mail size={19} aria-hidden="true" />
+            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Correo electrónico" autoComplete="email" inputMode="email" />
+            <button type="submit" disabled={busy || !email.trim()} aria-label="Continuar con correo"><ArrowRight size={18} /></button>
+          </div>
+        </form>
+        <div className="login-divider"><span>o</span></div>
+        <button type="button" className="login-google-button" onClick={googleLogin} disabled={busy}>
           <svg width="20" height="20" viewBox="0 0 18 18" aria-hidden="true">
             <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" />
             <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" />
@@ -980,8 +1010,9 @@ function LoginGate() {
           <ArrowRight size={18} strokeWidth={2.4} />
         </button>
         {message && <p className="login-error">{message}</p>}
+        <p className="login-account-copy">Si el correo todavía no existe, creamos tu cuenta automáticamente.</p>
       </div>
-      <p className="login-terms">Al continuar, aceptás los términos de uso.</p>
+      <p className="login-terms">Al continuar, aceptás los términos de uso y la política de privacidad.</p>
     </main>
   );
 }

@@ -335,3 +335,25 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .account-settings input, .login-form input, .name-field input, .library-search { background: #f5f5f7; border-color: #e8e8ed; border-radius: 24px; }
 .time-sheet { background: #f5f5f7; }
 .time-sheet header .time-save { background: #e8e8ed; color: #1d1d1f; box-shadow: none; }
+
+/* Login posterior al video: tarjeta limpia, inspirada en el patrón Spectrum/Apple. */
+.login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px 20px max(24px,env(safe-area-inset-bottom)); background: #F5F5F7 !important; }
+.login-card { width: 100%; max-width: 410px; padding: 34px 26px 28px; border-radius: 28px; background: #fff; border: 1px solid #e8e8ed; box-shadow: 0 16px 45px rgba(0,0,0,.08); }
+.login-brand-mark { width: 52px; height: 52px; margin: 0 auto 20px; display: grid; place-items: center; border-radius: 16px; background: #1d1d1f; color: #fff; font-size: 25px; font-weight: 750; letter-spacing: -.04em; }
+.login-title { margin: 0; color: #1d1d1f; font-size: 30px; line-height: 1.08; font-weight: 650; letter-spacing: -.035em; text-align: center; }
+.login-subtitle { max-width: 320px; margin: 9px auto 26px; color: #6e6e73; font-size: 15px; line-height: 1.45; text-align: center; }
+.login-email-form { margin: 0; }
+.login-email-field { min-height: 56px; display: flex; align-items: center; gap: 10px; padding: 5px 6px 5px 17px; border: 1px solid #d2d2d7; border-radius: 999px; background: #f5f5f7; color: #86868b; }
+.login-email-field:focus-within { border-color: #86868b; box-shadow: 0 0 0 3px rgba(0,0,0,.06); }
+.login-email-field input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; color: #1d1d1f; font-size: 16px; }
+.login-email-field input::placeholder { color: #86868b; }
+.login-email-field button { width: 44px; height: 44px; flex: 0 0 44px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: #1d1d1f; color: #fff; }
+.login-email-field button:disabled { opacity: .28; }
+.login-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #86868b; font-size: 13px; }
+.login-divider::before,.login-divider::after { content: ''; height: 1px; flex: 1; background: #e5e5ea; }
+.login-google-button { width: 100%; min-height: 56px; display: grid; grid-template-columns: 24px 1fr 20px; align-items: center; gap: 10px; padding: 0 18px; border: 1px solid #d2d2d7; border-radius: 999px; background: #fff; color: #1d1d1f; font-size: 16px; font-weight: 600; text-align: center; }
+.login-google-button:active { background: #f5f5f7; }
+.login-google-button:disabled { opacity: .55; }
+.login-error { margin: 17px 2px 0; color: #b42318; font-size: 13px; line-height: 1.4; text-align: center; }
+.login-account-copy { margin: 18px 10px 0; color: #86868b; font-size: 12px; line-height: 1.45; text-align: center; }
+.login-terms { max-width: 350px; margin: 18px auto 0; color: #86868b; font-size: 11px; line-height: 1.4; text-align: center; }
