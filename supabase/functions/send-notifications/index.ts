@@ -276,10 +276,20 @@ async function hasActiveDevice(userId: string) {
 
 async function processMeditation(enrollment: ProgramEnrollmentRow, moment: MeditationMoment, now: Date) {
   const deliveryType = momentToDeliveryType[moment];
-  // current_day cambia después de la meditación nocturna. Sin esta guarda, el
-  // cron del minuto siguiente puede interpretar el nuevo día y mandar otra
-  // meditación nocturna dentro de la misma ventana horaria.
-  if (moment === 'night' && enrollment.timezone && await nightAlreadySentToday(enrollment.id, now, enrollment.timezone)) return;
+  // La noche necesita una reserva ATÓMICA en la base. El chequeo histórico por
+  // delivered_at no alcanza si dos ejecuciones del cron se superponen: ambas
+  // pueden leer "todavía no enviado" antes de que la otra inserte. claim_program_night
+  // permite que una sola ejecución gane por fecha local y día de inscripción.
+  if (moment === 'night' && enrollment.timezone) {
+    const localDate = localDateKey(now, enrollment.timezone);
+    const { data: claimed, error: claimError } = await supabase.rpc('claim_program_night', {
+      p_enrollment_id: enrollment.id,
+      p_current_day: enrollment.current_day,
+      p_local_date: localDate,
+    });
+    if (claimError) throw claimError;
+    if (!claimed) return;
+  }
   if (await deliveryExists(enrollment.id, enrollment.current_day, deliveryType, null)) return;
   const lastDay = moment === 'night' ? await getProgramLastDay(enrollment.collection_id) : null;
   if (moment === 'night' && !lastDay) return;
