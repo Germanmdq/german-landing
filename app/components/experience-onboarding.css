@@ -1,0 +1,79 @@
+.experience-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: grid;
+  place-items: center;
+  padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+  background: rgba(23, 23, 25, .34);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.experience-modal {
+  position: relative;
+  width: min(100%, 408px);
+  max-height: min(760px, calc(100dvh - 36px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+  overflow: auto;
+  padding: 34px 24px 24px;
+  border-radius: 28px;
+  background: #fff;
+  color: #1d1d1f;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, .18), 0 3px 12px rgba(0, 0, 0, .08);
+  scrollbar-width: thin;
+  scrollbar-color: #c7c7cc transparent;
+}
+
+.experience-modal--tutorial { padding-top: 20px; }
+.experience-modal h1 { max-width: 330px; margin: 0 auto; font-size: clamp(27px, 7.2vw, 34px); line-height: 1.04; letter-spacing: -.035em; text-align: center; text-wrap: balance; }
+.experience-modal > p { max-width: 320px; margin: 12px auto 24px; color: #626268; font-size: 15px; line-height: 1.48; text-align: center; }
+.experience-close { position: absolute; z-index: 2; top: 14px; right: 14px; width: 38px; height: 38px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: #f0f0f3; color: #3a3a3c; }
+.experience-close:active { transform: scale(.96); }
+.experience-mark { width: 58px; height: 58px; display: grid; place-items: center; margin: 0 auto 18px; border-radius: 17px; background: #1d1d1f; color: #fff; }
+.experience-mark--bell { background: #d92d35; }
+
+.device-options { display: grid; gap: 12px; }
+.device-options button { position: relative; min-height: 76px; display: grid; grid-template-columns: 38px minmax(0, 1fr) 22px; grid-template-rows: auto auto; align-items: center; column-gap: 13px; padding: 15px 17px; border: 0; border-radius: 16px; background: #f2f2f5; color: #1d1d1f; text-align: left; box-shadow: inset 0 0 0 1px rgba(0,0,0,.035); }
+.device-options button.is-suggested { background: #f9eded; box-shadow: inset 0 0 0 1px #eec7ca; }
+.device-options button > :first-child { grid-row: 1 / 3; }
+.device-options button > svg:last-child { grid-column: 3; grid-row: 1 / 3; color: #8e8e93; }
+.device-options strong { align-self: end; font-size: 18px; letter-spacing: -.015em; }
+.device-options small { align-self: start; color: #727277; font-size: 12px; }
+.apple-symbol { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 31px; line-height: 1; text-align: center; }
+.experience-later { width: 100%; min-height: 46px; margin-top: 10px; border: 0; background: transparent; color: #6e6e73; font-size: 14px; }
+
+.tutorial-header { min-height: 40px; display: flex; align-items: center; justify-content: space-between; margin: 0 38px 14px 0; color: #707075; font-size: 13px; font-variant-numeric: tabular-nums; }
+.tutorial-header button { min-height: 40px; display: inline-flex; align-items: center; gap: 5px; padding: 0; border: 0; background: transparent; color: #1d1d1f; font-size: 14px; }
+.tutorial-image-frame { width: min(100%, 284px); aspect-ratio: 2 / 3; margin: 18px auto 12px; overflow: hidden; border-radius: 16px; background: #edf4fa; box-shadow: 0 10px 26px rgba(28, 55, 86, .13); touch-action: pan-y; user-select: none; }
+.tutorial-image-frame img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.tutorial-image-frame--android { width: min(100%, 266px); margin-top: 13px; }
+.tutorial-progress { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 20px; }
+.tutorial-progress i { width: 6px; height: 6px; border-radius: 99px; background: #d1d1d6; transition: width .2s ease, background-color .2s ease; }
+.tutorial-progress i.is-current { width: 22px; background: #d92d35; }
+.tutorial-actions { display: flex; align-items: center; gap: 9px; margin-top: 8px; }
+.tutorial-primary, .tutorial-back { min-height: 50px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 15px; font-size: 15px; font-weight: 700; }
+.tutorial-primary { flex: 1; padding: 0 20px; background: #1d1d1f; color: #fff; }
+.tutorial-primary:disabled { opacity: .55; cursor: default; }
+.tutorial-primary--wide { width: 100%; margin-top: 10px; }
+.tutorial-back { padding: 0 15px; background: #ededf0; color: #3a3a3c; }
+.android-instruction { margin-bottom: 12px !important; color: #263c78 !important; font-size: 16px !important; font-weight: 750; letter-spacing: .01em; text-transform: uppercase; }
+.install-feedback { margin: 10px auto 0 !important; color: #56565c !important; font-size: 13px !important; }
+.install-feedback--error { color: #b42318 !important; }
+
+.notification-onboarding { padding-top: 36px; }
+.notification-onboarding h1 span { font-size: .72em; }
+.notification-onboarding > p { margin-bottom: 10px; }
+.notification-onboarding .notification-detail { margin-top: 0; margin-bottom: 22px; color: #6e6e73; font-size: 14px; }
+
+@media (max-height: 720px) {
+  .experience-modal { padding: 24px 20px 18px; border-radius: 24px; }
+  .experience-modal--tutorial { padding-top: 14px; }
+  .experience-modal h1 { font-size: 25px; }
+  .tutorial-header { margin-bottom: 7px; }
+  .tutorial-image-frame { width: min(100%, 230px); margin-block: 11px 6px; }
+  .tutorial-actions { margin-top: 3px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-progress i { transition: none; }
+}

@@ -207,3 +207,27 @@ export async function getPushSubscriptionActive(userId: string): Promise<boolean
     return false;
   }
 }
+
+export async function getCurrentBrowserPushSubscriptionActive(userId: string): Promise<boolean> {
+  const subscription = await getExistingBrowserSubscription();
+  if (!subscription) return false;
+
+  try {
+    const { data, error } = await supabase
+      .from('push_subscriptions')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('endpoint', subscription.endpoint)
+      .eq('is_active', true)
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      console.error('[push] error leyendo la suscripción de este navegador:', error);
+      return false;
+    }
+    return Boolean(data);
+  } catch (err) {
+    console.error('[push] excepción leyendo la suscripción de este navegador:', err);
+    return false;
+  }
+}

@@ -2,13 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, Mail } from 'lucide-react';
+import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, Mail, LockKeyhole, Download } from 'lucide-react';
 import content from './content.generated.json';
 import { supabase } from './lib/supabase';
-import { subscribeToPush, ensurePushSubscription, reconcilePushSubscription, disablePushSubscription, disableCurrentBrowserPushSubscription, getPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
+import { subscribeToPush, ensurePushSubscription, reconcilePushSubscription, disablePushSubscription, disableCurrentBrowserPushSubscription, getPushSubscriptionActive, getCurrentBrowserPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
+import { detectInstallPlatform, hasNativeInstallPrompt, isRunningStandalone, listenForPwaInstallation, promptNativeInstallation } from './lib/pwa';
+import { InstallOnboarding, NotificationOnboarding } from './components/experience-onboarding';
 import { MagicCard, ShimmerButton } from './components/magic-ui';
 import './magic-ui.css';
 import './modern-ui.css';
+import './components/experience-onboarding.css';
 import './components/day-one-carousel.css';
 import { DayOneCarousel } from './components/day-one-carousel';
 import { TimePicker } from './components/time-picker';
@@ -275,8 +278,10 @@ function WeeklyMeetingPanel({ onBack, onNavigate }: { onBack: () => void; onNavi
   </section>;
 }
 
-function NotificationsPanel({ onBack, onNavigate }: { onBack: () => void; onNavigate: (target: NavTarget) => void }) {
+function NotificationsPanel({ user, onBack, onNavigate }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
+  const [permissionMessage, setPermissionMessage] = useState('');
+  const [permissionBusy, setPermissionBusy] = useState(false);
   const [editingTime, setEditingTime] = useState<'morning' | 'noon' | 'afternoon' | 'night' | null>(null);
   const timeLabels = { morning: 'Mañana', noon: 'Mediodía', afternoon: 'Tarde', night: 'Noche' };
   const [times, setTimes] = useState({ morning: '07:50', noon: '12:30', afternoon: '17:00', night: '22:45' });
@@ -293,21 +298,26 @@ function NotificationsPanel({ onBack, onNavigate }: { onBack: () => void; onNavi
   };
   const requestPermission = async () => {
     if (!('Notification' in window)) return;
-    const result = await Notification.requestPermission();
-    setPermission(result);
-    if (result === 'granted' && 'serviceWorker' in navigator) await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+    setPermissionBusy(true);
+    setPermissionMessage('');
+    const result = await ensurePushSubscription(user);
+    setPermission(Notification.permission);
+    setPermissionBusy(false);
+    if (result.error) setPermissionMessage(result.error);
   };
   return <section className="reader-section">
     <FixedHeader eyebrow="NOTIFICACIONES" title="Tus horarios" subtitle="Los horarios quedan guardados en este dispositivo." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body notification-settings">
-      {permission !== 'unsupported' && <ShimmerButton className="notification-permission" onClick={requestPermission}><Bell size={18} />{permission === 'granted' ? 'Notificaciones activadas' : permission === 'denied' ? 'Permiso bloqueado en el navegador' : 'Activar notificaciones'}</ShimmerButton>}
+      {permission !== 'unsupported' && <ShimmerButton className="notification-permission" onClick={requestPermission} disabled={permissionBusy || permission === 'denied'}><Bell size={18} />{permissionBusy ? 'Activando…' : permission === 'granted' ? 'Notificaciones activadas' : permission === 'denied' ? 'Permiso bloqueado en el navegador' : 'Activar notificaciones'}</ShimmerButton>}
+      {permission === 'denied' && <p className="notification-help">Para activarlas, habilitá las notificaciones de Germán desde los Ajustes de tu teléfono y volvé a abrir la app.</p>}
+      {permissionMessage && <p className="account-message" role="alert">{permissionMessage}</p>}
       {(Object.keys(timeLabels) as (keyof typeof times)[]).map((key) => <button key={key} className="notification-time-row" onClick={() => setEditingTime(key)} aria-label={`Cambiar horario de ${timeLabels[key]}: ${times[key]}`} aria-haspopup="dialog"><span>{timeLabels[key]}</span><span className="notification-time-value">{times[key]}<ChevronRight size={17} /></span></button>)}
       {editingTime && <TimePicker label={timeLabels[editingTime]} value={times[editingTime]} onCancel={() => setEditingTime(null)} onSave={(value) => { updateTime(editingTime, value); setEditingTime(null); }} />}
     </div>
   </section>;
 }
 
-function ProfileScreen({ user, items, onSelect, onBack, onNavigate }: { user: User; items: DeckItem[]; onSelect: (item: DeckItem) => void; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
+function ProfileScreen({ user, items, showInstall, onInstall, onSelect, onBack, onNavigate }: { user: User; items: DeckItem[]; showInstall: boolean; onInstall: () => void; onSelect: (item: DeckItem) => void; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   const notifications = useNotificationsToggle(user);
   return <section className="reader-section">
     <FixedHeader eyebrow="MI PERFIL" title="Tu espacio" subtitle="Tu cuenta y tus elecciones." onBack={onBack} onNavigate={onNavigate} />
@@ -317,6 +327,10 @@ function ProfileScreen({ user, items, onSelect, onBack, onNavigate }: { user: Us
           <span className="ios-row-label">{item.title}</span>
           <span className="ios-row-value ios-row-value--muted"><ChevronRight size={17} /></span>
         </button>)}
+        {showInstall && <button type="button" className="ios-row" onClick={onInstall}>
+          <span className="ios-row-label install-profile-label"><Download size={18} />Instalar Asistente Germán</span>
+          <span className="ios-row-value ios-row-value--muted"><ChevronRight size={17} /></span>
+        </button>}
         <div className="ios-row">
           <span className="ios-row-label">Notificaciones</span>
           {notifications.loading ? <span className="ios-toggle-placeholder" aria-hidden="true" /> : <ToggleSwitch checked={notifications.active} onChange={notifications.toggle} disabled={notifications.busy} label="Notificaciones" />}
@@ -1047,6 +1061,7 @@ function LoginGate() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const googleLogin = async () => {
     setBusy(true);
@@ -1075,13 +1090,10 @@ function LoginGate() {
     if (!cleanEmail) return setMessage('Escribí tu correo electrónico.');
     setBusy(true);
     setMessage('');
-    const emailRedirectTo = typeof window !== 'undefined' ? window.location.href : undefined;
-    const { error } = await supabase.auth.signInWithOtp({
-      email: cleanEmail,
-      options: { emailRedirectTo, shouldCreateUser: true },
-    });
+    if (!password) return setMessage('Escribí tu contraseña.');
+    const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
     setBusy(false);
-    setMessage(error ? error.message : 'Te enviamos un enlace para entrar. Revisá tu correo.');
+    setMessage(error ? 'El correo o la contraseña no son correctos.' : '');
   };
 
   return (
@@ -1094,7 +1106,11 @@ function LoginGate() {
           <div className="login-email-field">
             <Mail size={19} aria-hidden="true" />
             <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Correo electrónico" autoComplete="email" inputMode="email" />
-            <button type="submit" disabled={busy || !email.trim()} aria-label="Continuar con correo"><ArrowRight size={18} /></button>
+          </div>
+          <div className="login-email-field">
+            <LockKeyhole size={19} aria-hidden="true" />
+            <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Contraseña" autoComplete="current-password" />
+            <button type="submit" disabled={busy || !email.trim() || !password} aria-label="Ingresar"><ArrowRight size={18} /></button>
           </div>
         </form>
         <div className="login-divider"><span>o</span></div>
@@ -1140,6 +1156,10 @@ export default function App() {
   const [favoritesOpen, setFavoritesOpen] = useState(false);
   const [workshopOpen, setWorkshopOpen] = useState(false);
   const [meetingOpen, setMeetingOpen] = useState(false);
+  const [installOpen, setInstallOpen] = useState(false);
+  const [installPlatform, setInstallPlatform] = useState<ReturnType<typeof detectInstallPlatform>>('other');
+  const [installPromptAvailable, setInstallPromptAvailable] = useState(false);
+  const [standalone, setStandalone] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteRecord[]>([]);
   const [libraryItems, setLibraryItems] = useState<LibraryEntry[]>([]);
   const mainCardIndexRef = useRef(0);
@@ -1307,6 +1327,23 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    setInstallPlatform(detectInstallPlatform());
+    setStandalone(isRunningStandalone());
+    setInstallPromptAvailable(hasNativeInstallPrompt());
+    return listenForPwaInstallation(({ installed, promptAvailable, standalone: nextStandalone }) => {
+      setInstallPromptAvailable(promptAvailable);
+      const isInstalled = nextStandalone || installed;
+      setStandalone(isInstalled);
+      if (isInstalled) setInstallOpen(false);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!session?.user || pendingDeliveryId) return;
+    if (!standalone) setInstallOpen(true);
+  }, [session?.user, standalone, pendingDeliveryId]);
+
   // Nota: la animación de entrada de las MagicCard ya se maneja adentro del
   // propio componente (app/components/magic-ui.tsx, un IntersectionObserver
   // por card, así funciona sin importar en qué pantalla/momento se monten).
@@ -1420,7 +1457,7 @@ export default function App() {
     const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/german-perfil.png' : target === 'biblioteca' ? '/images/german-biblioteca.png' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
     const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
     const items = [...welcomeItems.slice(0, meditIndex + 1), meetingCard, ...welcomeItems.slice(meditIndex + 1)];
-    return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'reunion') { setMeetingOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section></main>;
+    return <><main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'reunion') { setMeetingOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section></main>{installOpen && !standalone && !pendingDeliveryId && <InstallOnboarding suggestedPlatform={installPlatform} nativePromptAvailable={installPromptAvailable} onClose={() => { setInstallOpen(false); window.setTimeout(() => { if (!isRunningStandalone()) setInstallOpen(true); }, 1200); }} onInstallAndroid={promptNativeInstallation} onRecheckInstallation={() => { const installed = isRunningStandalone(); setStandalone(installed); return installed; }} />}</>;
   }
   if (meetingOpen) return <main className="app-shell app-main section-app"><WeeklyMeetingPanel onBack={back} onNavigate={navigateTo} /></main>;
   if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} onBack={back} onNavigate={navigateTo} onNameSaved={setFullName} onLogout={logout} /></main>;
@@ -1428,9 +1465,9 @@ export default function App() {
   if (favoritesOpen) return <main className="app-shell app-main section-app"><FavoritesPanel favorites={favorites} onBack={back} onNavigate={navigateTo} onOpen={(favorite) => { if (favorite.reader) setReader(favorite.reader); }} onRemove={toggleFavorite} /></main>;
   if (workshopOpen) return <main className="app-shell app-main section-app"><WorkshopPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} /></main>;
   if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} /></main>;
-  if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} onSelect={select} onBack={back} onNavigate={navigateTo} /></main>;
+  if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} showInstall={!standalone} onInstall={() => setInstallOpen(true)} onSelect={select} onBack={back} onNavigate={navigateTo} /></main>;
   if (tab === 'propia' && !trail.length) return <main className="app-shell app-main section-app"><PropiaPracticaPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} /></main>;
-  if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel onBack={back} onNavigate={navigateTo} /></main>;
+  if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel user={session.user} onBack={back} onNavigate={navigateTo} /></main>;
   if (current?.title === 'Día 1') {
     const carouselKey = `${tab}-${trail.map((item) => item.title).join('/')}-dia1`;
     return <main className="app-shell app-main section-app day-one-screen"><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><DayOneCarousel key={carouselKey} items={screen.items} initialIndex={carouselIndicesRef.current[carouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[carouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[carouselKey] = index; select(item); }} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section></main>;
