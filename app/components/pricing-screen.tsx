@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Check } from 'lucide-react';
+import { BookOpen, Check, Headphones, Mail, MessageCircle, Users, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { PAYMENT_PLANS, type PaymentPlan, type PaymentProvider } from '../lib/payments';
 import './payments.css';
@@ -9,11 +9,11 @@ import './payments.css';
 type ProviderConfig = { providers: Record<PaymentProvider, boolean>; mercadoPagoPrices: Partial<Record<PaymentPlan, { amount: string; currency: string }>> };
 
 const benefits = [
-  'Asistente Germán durante todo el día',
-  'Talleres y reuniones en vivo de lunes a viernes',
-  'Club de la Imaginación completo',
-  'Un mail nuevo cada día',
-  'Libros, biblioteca, meditaciones, audios y prácticas',
+  { icon: Headphones, top: '500+', bottom: 'Meditaciones' },
+  { icon: BookOpen, top: '800+', bottom: 'Textos y libros' },
+  { icon: MessageCircle, top: 'Asistente', bottom: 'todo el día' },
+  { icon: Users, top: 'Talleres', bottom: 'Lun a Vie' },
+  { icon: Mail, top: 'Un mail', bottom: 'cada día' },
 ];
 
 const ars: Record<PaymentPlan, string> = { '30_days': '$35.000', annual: '$250.000', lifetime: '$350.000' };
@@ -41,11 +41,18 @@ export function PricingScreen() {
 
   return <main className="payment-screen"><div className="payment-shell">
     <header className="payment-hero">
-      <img src="/images/german-welcome.png" alt="Germán Asistente" />
-      <p className="payment-eyebrow">ASISTENTE GERMÁN + CLUB DE LA IMAGINACIÓN</p>
-      <h1>Elegí cómo querés seguir.</h1>
-      <p>Todo incluido. Elegís solamente por cuánto tiempo.</p>
+      <a className="payment-close" href="/" aria-label="Cerrar"><X size={22} /></a>
+      <img className="payment-tree" src="/images/paywall-tree-eye.png" alt="El Club de la Imaginación" />
+      <div className="payment-hero-copy">
+        <p className="payment-eyebrow">ASISTENTE GERMÁN · EL CLUB DE LA IMAGINACIÓN</p>
+        <h1>Todo el Club.<br/><em>Todos los días.</em></h1>
+        <p>Tu asistente, talleres en vivo, biblioteca, meditaciones y acompañamiento diario.</p>
+      </div>
     </header>
+
+    <section className="payment-benefit-strip" aria-label="Todo lo que incluye">
+      {benefits.map(({ icon: Icon, top, bottom }) => <div className="payment-benefit-tile" key={top + bottom}><Icon size={19}/><b>{top}</b><span>{bottom}</span></div>)}
+    </section>
 
     <section className="payment-plans" aria-label="Opciones de acceso">
       {(Object.keys(PAYMENT_PLANS) as PaymentPlan[]).map((key) => { const item = PAYMENT_PLANS[key]; const selected = plan === key; return <button key={key} type="button" className={`payment-plan${selected ? ' is-selected' : ''}${key === 'lifetime' ? ' is-featured' : ''}`} onClick={() => setPlan(key)}>
@@ -56,10 +63,7 @@ export function PricingScreen() {
       </button>; })}
     </section>
 
-    <section className="payment-included" aria-label="Incluido en todos los planes">
-      <p className="payment-included-title">INCLUIDO EN CUALQUIER PLAN</p>
-      <div className="payment-included-grid">{benefits.map((benefit) => <p key={benefit}><Check size={14} />{benefit}</p>)}</div>
-    </section>
+
 
     <section className="payment-providers"><h2>Continuar con {duration[plan]}</h2><p className="payment-selected-price">{ars[plan]} ARS <span>· o US${Number(PAYMENT_PLANS[plan].amount)}</span></p>
       <button className="payment-provider payment-provider--mp" disabled={!config?.providers.mercadopago || busy !== null} onClick={() => void pay('mercadopago')}>{busy === 'mercadopago' ? 'Abriendo Mercado Pago…' : 'Pagar con Mercado Pago'}</button>{config && !config.providers.mercadopago && <p className="payment-provider-note">Mercado Pago · Próximamente disponible</p>}
