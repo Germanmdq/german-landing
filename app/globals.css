@@ -165,3 +165,12 @@ h1, h2 {
   opacity: 1;
   transform: translateX(0);
 }
+
+/* Entrada privada para presentar y activar Germán Asistente */
+.activation-entry{min-height:100dvh;background:#fbf9f6;color:#2a2730;display:flex;flex-direction:column;max-width:480px;margin:0 auto;overflow:hidden}
+.activation-video{width:100%;height:min(62dvh,620px);object-fit:cover;object-position:center top;background:#fff;display:block}
+.activation-entry-copy{padding:22px 24px 32px;background:#fff;border-radius:28px 28px 0 0;margin-top:-24px;position:relative;box-shadow:0 -12px 34px rgba(42,39,48,.08)}
+.activation-entry-copy p{margin:0 0 7px;color:#a72f63;font-size:11px;font-weight:800;letter-spacing:.12em}
+.activation-entry-copy h1{margin:0;font-size:35px;line-height:.98;letter-spacing:-.045em;font-weight:650}.activation-entry-copy h1 strong{display:block;color:#a72f63;font-weight:750}
+.activation-entry-copy span{display:block;margin:15px 0 20px;color:#766e78;font-size:15px;line-height:1.45}
+.activation-entry-copy button{width:100%;min-height:54px;border:0;border-radius:16px;background:#a72f63;color:#fff;font:inherit;font-weight:750;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 9px 22px rgba(167,47,99,.2)}
