@@ -195,7 +195,7 @@ const navMenuItems: { target: NavTarget; icon: string; label: string }[] = [
   { target: 'biblioteca', icon: '📚', label: 'Biblioteca' },
   { target: 'meditaciones', icon: '🧘', label: 'Meditaciones' },
   { target: 'talleres', icon: '✨', label: 'Prácticas guiadas' },
-  { target: 'reunion', icon: '📅', label: 'Reunión semanal' },
+  { target: 'reunion', icon: '📅', label: 'Talleres en vivo' },
   { target: 'espacio', icon: '👤', label: 'Mi perfil' },
 ];
 
@@ -278,11 +278,27 @@ function useNotificationsToggle(user: User) {
 }
 
 function WeeklyMeetingPanel({ onBack, onNavigate }: { onBack: () => void; onNavigate: (target: NavTarget) => void }) {
+  const [joining, setJoining] = useState(false);
+  const [message, setMessage] = useState('');
+  const openWorkshops = async () => {
+    setJoining(true); setMessage('');
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) { setMessage('Necesitás iniciar sesión.'); return; }
+      const response = await fetch('/api/workshops/telegram', { headers: { Authorization: `Bearer ${data.session.access_token}` }, cache: 'no-store' });
+      const result = await response.json() as { url?: string; error?: string };
+      if (!response.ok || !result.url) { setMessage(result.error || 'No pudimos abrir los talleres.'); return; }
+      window.open(result.url, '_blank', 'noopener,noreferrer');
+    } catch { setMessage('No pudimos abrir los talleres. Probá de nuevo.'); }
+    finally { setJoining(false); }
+  };
   return <section className="reader-section">
-    <FixedHeader eyebrow="EN VIVO" title="Reunión semanal" subtitle="Nos vemos en vivo cada semana." onBack={onBack} onNavigate={onNavigate} />
+    <FixedHeader eyebrow="EN VIVO" title="Talleres en vivo" subtitle="Un espacio para encontrarnos de lunes a viernes." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body meeting-panel">
-      <div className="meeting-schedule"><Clock3 size={20} /><span>Todos los jueves a las 20:00 hs (Argentina)</span></div>
-      <a className="meeting-join" href="https://meet.google.com/PLACEHOLDER" target="_blank" rel="noopener noreferrer">Unirme a la reunión</a>
+      <div className="meeting-schedule"><Clock3 size={20} /><span>Reuniones en vivo de lunes a viernes</span></div>
+      <p className="workshop-hint">Incluidas con tu acceso al Club de la Imaginación.</p>
+      <button className="meeting-join" type="button" onClick={() => void openWorkshops()} disabled={joining}>{joining ? 'Abriendo…' : 'Ingresar a los talleres'}</button>
+      {message && <p className="account-message" role="alert">{message}</p>}
     </div>
   </section>;
 }
@@ -1503,7 +1519,7 @@ export default function App() {
   if (!session) return <LoginGate />;
 
   if (mainMenu) {
-    const meetingCard = { target: 'reunion' as const, title: 'Reunión semanal', detail: 'Encontrémonos en vivo.', image: '/images/german-reunion.webp' };
+    const meetingCard = { target: 'reunion' as const, title: 'Talleres en vivo', detail: 'Reuniones de lunes a viernes.', image: '/images/german-reunion.webp' };
     const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/german-perfil.png' : target === 'biblioteca' ? '/images/german-biblioteca.png' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
     const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
     const items = [...welcomeItems.slice(0, meditIndex + 1), meetingCard, ...welcomeItems.slice(meditIndex + 1)];

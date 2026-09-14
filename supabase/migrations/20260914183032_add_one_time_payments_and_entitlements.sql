@@ -144,9 +144,5 @@ create trigger payments_apply_entitlement
 after insert or update on public.payments
 for each row execute function private.apply_approved_payment_entitlement();
 
--- Existing users keep their current access. Accounts created after this
--- migration require an approved one-time payment.
-insert into public.user_entitlements (user_id, lifetime)
-select id, true
-from auth.users
-on conflict (user_id) do nothing;
+-- No se concede acceso automáticamente a usuarios existentes.
+-- Los accesos se crean únicamente por un pago aprobado o por una concesión administrativa explícita.
