@@ -42,7 +42,7 @@ export function PricingScreen() {
   return <main className="payment-screen"><div className="payment-shell">
     <header className="payment-hero">
       <a className="payment-close" href="/" aria-label="Cerrar"><X size={22} /></a>
-      <img className="payment-tree" src="/images/paywall-tree-eye-black.png" alt="El Club de la Imaginación" />
+      <img className="payment-tree" src="/images/paywall-tree-eye.png" alt="El Club de la Imaginación" />
       <div className="payment-hero-copy">
         <h1>Todo el Club.<br/><em>Todos los días.</em></h1>
         <p>Tu asistente, talleres en vivo, biblioteca, meditaciones y acompañamiento diario.</p>

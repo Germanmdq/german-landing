@@ -28,7 +28,11 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const target = new URL(event.notification.data?.url || '/', self.location.origin);
+  const rawTarget = new URL(event.notification.data?.url || '/', self.location.origin);
+  const deliveryMatch = rawTarget.pathname.match(/^\/delivery\/([^/]+)$/);
+  const target = deliveryMatch
+    ? new URL(`/?delivery=${encodeURIComponent(decodeURIComponent(deliveryMatch[1]))}`, self.location.origin)
+    : rawTarget;
   target.searchParams.set('push', Date.now().toString());
   event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (windows) => {
     await caches.delete(LAST_PUSH_CACHE);

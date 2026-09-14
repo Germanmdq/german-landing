@@ -23,3 +23,6 @@
 
 /* Hero logo asset already has a true black background; keep it centered and seamless. */
 .payment-tree{object-fit:cover;object-position:50% 38%;background:#050506}
+
+/* Keep payment CTAs visibly red even while provider configuration is pending. */
+.payment-provider,.payment-provider:disabled,.payment-provider--mp,.payment-provider--paypal{background:#ef2636!important;color:#fff!important;border:0!important;opacity:1;box-shadow:0 8px 20px rgba(239,38,54,.24),0 5px 14px rgba(0,0,0,.30)!important}

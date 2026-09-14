@@ -312,7 +312,7 @@ async function processMeditation(enrollment: ProgramEnrollmentRow, moment: Medit
   await sendToActiveDevices(enrollment, inserted.id, {
     title: meditationTitles[moment],
     body: `Tu práctica del Día ${enrollment.current_day} está lista.`,
-    url: `/?delivery=${inserted.id}`,
+    url: `/delivery/${inserted.id}`,
     data: { type: deliveryType, day: enrollment.current_day },
   });
 
@@ -348,7 +348,7 @@ async function processIntermediateMessage(enrollment: ProgramEnrollmentRow, mess
   await sendToActiveDevices(enrollment, inserted.id, {
     title: 'Un momento para vos',
     body: messageText.split('\n')[0],
-    url: `/?delivery=${inserted.id}`,
+    url: `/delivery/${inserted.id}`,
     data: { type: 'intermediate_message', day: enrollment.current_day, index: messageIndex },
   });
 }
@@ -422,7 +422,7 @@ async function retrySingleDelivery(subscriptionId: string, deliveryId: string) {
   const payload = {
     title: moment ? meditationTitles[moment] : 'Un momento para vos',
     body: body.split('\n')[0],
-    url: `/?delivery=${delivery.id}`,
+    url: `/delivery/${delivery.id}`,
     data: { type: deliveryType, day: delivery.day_number, retry: true },
   };
 
