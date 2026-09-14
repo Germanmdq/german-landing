@@ -7,3 +7,13 @@
 .payment-plan-copy small,.payment-plan-price small{color:#77747b}
 .payment-plan-price strong{color:#151519}
 .payment-plan.is-selected .payment-plan-price strong{color:#ef2636}
+/* Restore dark plan cards; payment CTAs are the white elevated buttons. */
+.payment-plan{background:linear-gradient(135deg,#18181b,#0d0d0f);border-color:#303035;color:#fff;box-shadow:0 9px 25px rgba(0,0,0,.24)}
+.payment-plan.is-selected{border:1.5px solid #ef2636;background:linear-gradient(135deg,#18181b,#0d0d0f);box-shadow:0 0 0 1px rgba(239,38,54,.18),0 12px 34px rgba(239,38,54,.12)}
+.payment-plan.is-featured.is-selected{background:radial-gradient(circle at 78% 50%,rgba(239,38,54,.20),transparent 52%),linear-gradient(135deg,#211012,#0d0d0f)}
+.payment-plan-check{border-color:#66666d;color:#fff}
+.payment-plan-copy small,.payment-plan-price small{color:#9d9ca3}
+.payment-plan-price strong{color:#fff}
+.payment-plan.is-selected .payment-plan-price strong{color:#ff3947}
+.payment-provider,.payment-provider--mp:not(:disabled),.payment-provider--paypal:not(:disabled){background:#fff;color:#151519;border:1px solid rgba(255,255,255,.9);box-shadow:0 7px 18px rgba(0,0,0,.28),0 1px 0 rgba(255,255,255,.75) inset}
+.payment-provider:active:not(:disabled){transform:translateY(1px);box-shadow:0 4px 12px rgba(0,0,0,.24)}
