@@ -44,7 +44,6 @@ export function PricingScreen() {
       <a className="payment-close" href="/" aria-label="Cerrar"><X size={22} /></a>
       <img className="payment-tree" src="/images/paywall-tree-eye.png" alt="El Club de la Imaginación" />
       <div className="payment-hero-copy">
-        <p className="payment-eyebrow">ASISTENTE GERMÁN · EL CLUB DE LA IMAGINACIÓN</p>
         <h1>Todo el Club.<br/><em>Todos los días.</em></h1>
         <p>Tu asistente, talleres en vivo, biblioteca, meditaciones y acompañamiento diario.</p>
       </div>
