@@ -90,6 +90,9 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .ios-toggle-thumb { display: block; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.15), 0 1px 1px rgba(0,0,0,.16); transition: transform .3s ease; transform: translateX(0); }
 .ios-toggle.is-on .ios-toggle-thumb { transform: translateX(20px); }
 .workshop-notifications-warning { color: #8E8E93; font-size: 13px; line-height: 1.5; margin: 4px 0 20px; }
+.workshop-abandon { display: block; width: 100%; margin: 28px 0 8px; padding: 12px; border: 0; background: transparent; color: #8E8E93; font: inherit; font-size: 14px; text-decoration: underline; text-underline-offset: 4px; }
+.workshop-abandon:hover { color: #C42B35; }
+.workshop-abandon:focus-visible { outline: 2px solid #C42B35; outline-offset: 2px; border-radius: 10px; }
 
 /* Confirmación de eliminar, estilo iOS: sheet desde abajo con blur. */
 .confirm-sheet { position: fixed; inset: auto 0 0; width: min(100%, 480px); max-width: 480px; margin: 0 auto; padding: 0; border: 0; border-radius: 20px 20px 0 0; background: #fff; box-shadow: 0 -12px 60px rgba(0,0,0,.18); }

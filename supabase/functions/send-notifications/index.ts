@@ -1,17 +1,13 @@
 // Edge Function: send-notifications
 //
 // Pensada para correr cada minuto via pg_cron (SQL y pasos de deploy entregados
-// aparte, no en este repo). Por cada suscripción activa en push_subscriptions,
-// revisa si corresponde enviar una meditación o un mensaje intermedio según el
-// horario configurado por el usuario (en su propia timezone), evita duplicados
-// contra taller_deliveries, inserta el registro de entrega y manda el push real
-// con VAPID.
+// aparte, no en este repo). Procesa exclusivamente program_enrollments activas;
+// push_subscriptions sólo aporta los dispositivos activos del usuario.
 //
 // Cada entrega insertada en taller_deliveries queda con push_status
 // ('pending' por default, luego 'sent' o 'failed') y push_error si falló —
 // requiere las columnas nuevas (ver migración en este mismo PR/commit).
-// Cuando avanza current_day, se actualiza TANTO push_subscriptions como
-// user_plan_progress — la app lee esta última para mostrar el día actual.
+// El progreso y los horarios viven únicamente en program_enrollments.
 //
 // NO se hace deploy desde este código — eso se hace a mano con la CLI.
 
@@ -23,6 +19,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY')!;
 const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY')!;
 const VAPID_EMAIL = Deno.env.get('VAPID_EMAIL')!;
+const PUSH_CRON_TOKEN = Deno.env.get('PUSH_CRON_TOKEN')!;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 webpush.setVapidDetails(`mailto:${VAPID_EMAIL}`, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
@@ -46,21 +43,27 @@ const meditationTitles: Record<MeditationMoment, string> = {
   night: 'Meditación de la noche',
 };
 
-type PushSubscriptionRow = {
+type PushDeviceRow = {
   id: string;
   user_id: string;
   endpoint: string;
   p256dh: string;
   auth_key: string;
+  is_active: boolean;
+};
+
+type ProgramEnrollmentRow = {
+  id: string;
+  user_id: string;
+  collection_id: string;
+  status: 'active' | 'abandoned' | 'completed';
   morning: string | null;
   noon: string | null;
   afternoon: string | null;
   night: string | null;
   timezone: string | null;
   message_interval_minutes: number | null;
-  active_taller_id: string | null;
   current_day: number;
-  is_active: boolean;
 };
 
 // --- Helpers de tiempo -----------------------------------------------------
@@ -138,6 +141,18 @@ async function getDayContent(collectionId: string, dayNumber: number) {
   return data.content_items as unknown as { id: string; title: string; body: string } | null;
 }
 
+async function getProgramLastDay(collectionId: string) {
+  const { data, error } = await supabase
+    .from('collection_items')
+    .select('sort_order')
+    .eq('collection_id', collectionId)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data.sort_order as number;
+}
+
 async function getMomentAsset(contentId: string, moment: MeditationMoment) {
   const { data, error } = await supabase
     .from('content_assets')
@@ -149,11 +164,11 @@ async function getMomentAsset(contentId: string, moment: MeditationMoment) {
   return data.id as string;
 }
 
-async function deliveryExists(userId: string, dayNumber: number, deliveryType: DeliveryType, messageIndex: number | null) {
+async function deliveryExists(enrollmentId: string, dayNumber: number, deliveryType: DeliveryType, messageIndex: number | null) {
   const base = supabase
     .from('taller_deliveries')
     .select('id')
-    .eq('user_id', userId)
+    .eq('enrollment_id', enrollmentId)
     .eq('day_number', dayNumber)
     .eq('delivery_type', deliveryType);
   const { data } = messageIndex == null
@@ -168,6 +183,7 @@ async function deliveryExists(userId: string, dayNumber: number, deliveryType: D
 // 20260912_taller_deliveries_dedup.sql; si otra invocación ganó la carrera,
 // Postgres devuelve 23505 y simplemente no enviamos un segundo push.
 async function reserveDelivery(values: {
+  enrollment_id: string;
   user_id: string;
   content_id: string;
   asset_id: string | null;
@@ -188,11 +204,11 @@ async function reserveDelivery(values: {
   return data as { id: string };
 }
 
-async function nightAlreadySentToday(userId: string, now: Date, timeZone: string) {
+async function nightAlreadySentToday(enrollmentId: string, now: Date, timeZone: string) {
   const { data } = await supabase
     .from('taller_deliveries')
     .select('delivered_at')
-    .eq('user_id', userId)
+    .eq('enrollment_id', enrollmentId)
     .eq('delivery_type', 'meditation_night')
     .order('delivered_at', { ascending: false })
     .limit(1)
@@ -204,142 +220,255 @@ async function nightAlreadySentToday(userId: string, now: Date, timeZone: string
 // deliveryId: la fila de taller_deliveries ya insertada para este envío —
 // queda registrado ahí si el push realmente salió o no, y por qué, porque
 // insertar la fila NO significa que el push haya llegado al teléfono.
-async function sendPush(sub: PushSubscriptionRow, deliveryId: string, payload: Record<string, unknown>) {
+async function sendPush(device: PushDeviceRow, payload: Record<string, unknown>) {
   try {
     await webpush.sendNotification(
-      { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth_key } },
+      { endpoint: device.endpoint, keys: { p256dh: device.p256dh, auth: device.auth_key } },
       JSON.stringify(payload),
     );
-    await supabase.from('taller_deliveries').update({ push_status: 'sent', push_error: null }).eq('id', deliveryId);
     return true;
   } catch (err) {
     const statusCode = (err as { statusCode?: number })?.statusCode;
     if (statusCode === 404 || statusCode === 410) {
       // La suscripción ya no existe del lado del navegador (desinstaló la PWA,
       // revocó el permiso, etc.) — la desactivamos para no reintentar en vano.
-      await supabase.from('push_subscriptions').update({ is_active: false }).eq('id', sub.id);
+      await supabase.from('push_subscriptions').update({ is_active: false }).eq('id', device.id);
     }
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`push failed for subscription ${sub.id} (delivery ${deliveryId}):`, err);
-    await supabase.from('taller_deliveries').update({ push_status: 'failed', push_error: message.slice(0, 500) }).eq('id', deliveryId);
-    return false;
+    console.error(`push failed for subscription ${device.id}:`, err);
+    return message.slice(0, 500);
   }
+}
+
+async function sendToActiveDevices(enrollment: ProgramEnrollmentRow, deliveryId: string, payload: Record<string, unknown>) {
+  const { data, error } = await supabase
+    .from('push_subscriptions')
+    .select('id,user_id,endpoint,p256dh,auth_key,is_active')
+    .eq('user_id', enrollment.user_id)
+    .eq('is_active', true);
+  if (error) {
+    await supabase.from('taller_deliveries').update({ push_status: 'failed', push_error: error.message.slice(0, 500) }).eq('id', deliveryId);
+    return;
+  }
+
+  const results = await Promise.all((data || []).map((device) => sendPush(device as PushDeviceRow, payload)));
+  const errors = results.filter((result): result is string => typeof result === 'string');
+  const sent = results.some((result) => result === true);
+  await supabase.from('taller_deliveries').update({
+    push_status: sent ? 'sent' : 'failed',
+    push_error: errors.length ? errors.join('; ').slice(0, 500) : (sent ? null : 'No hay dispositivos push activos'),
+  }).eq('id', deliveryId);
+}
+
+async function hasActiveDevice(userId: string) {
+  const { data, error } = await supabase
+    .from('push_subscriptions')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
 }
 
 // --- Procesamiento de una suscripción ---------------------------------------
 
-async function processMeditation(sub: PushSubscriptionRow, moment: MeditationMoment, now: Date) {
-  if (!sub.active_taller_id) return;
+async function processMeditation(enrollment: ProgramEnrollmentRow, moment: MeditationMoment, now: Date) {
   const deliveryType = momentToDeliveryType[moment];
   // current_day cambia después de la meditación nocturna. Sin esta guarda, el
   // cron del minuto siguiente puede interpretar el nuevo día y mandar otra
   // meditación nocturna dentro de la misma ventana horaria.
-  if (moment === 'night' && sub.timezone && await nightAlreadySentToday(sub.user_id, now, sub.timezone)) return;
-  if (await deliveryExists(sub.user_id, sub.current_day, deliveryType, null)) return;
+  if (moment === 'night' && enrollment.timezone && await nightAlreadySentToday(enrollment.id, now, enrollment.timezone)) return;
+  if (await deliveryExists(enrollment.id, enrollment.current_day, deliveryType, null)) return;
+  const lastDay = moment === 'night' ? await getProgramLastDay(enrollment.collection_id) : null;
+  if (moment === 'night' && !lastDay) return;
 
-  const dayContent = await getDayContent(sub.active_taller_id, sub.current_day);
+  const dayContent = await getDayContent(enrollment.collection_id, enrollment.current_day);
   if (!dayContent) return;
   const assetId = await getMomentAsset(dayContent.id, moment);
 
   const inserted = await reserveDelivery({
-    user_id: sub.user_id,
+    enrollment_id: enrollment.id,
+    user_id: enrollment.user_id,
     content_id: dayContent.id,
     asset_id: assetId,
-    day_number: sub.current_day,
+    day_number: enrollment.current_day,
     delivery_type: deliveryType,
     message_index: null,
   });
   if (!inserted) return;
 
-  await sendPush(sub, inserted.id, {
+  await sendToActiveDevices(enrollment, inserted.id, {
     title: meditationTitles[moment],
-    body: `Tu práctica del Día ${sub.current_day} está lista.`,
+    body: `Tu práctica del Día ${enrollment.current_day} está lista.`,
     url: `/?delivery=${inserted.id}`,
-    data: { type: deliveryType, day: sub.current_day },
+    data: { type: deliveryType, day: enrollment.current_day },
   });
 
   if (moment === 'night') {
-    const nextDay = sub.current_day + 1;
-    if (nextDay > 40) {
-      await supabase.from('push_subscriptions').update({ is_active: false }).eq('id', sub.id);
-      if (sub.active_taller_id) {
-        await supabase.from('user_plan_progress').update({ completed_at: new Date().toISOString() }).eq('user_id', sub.user_id).eq('collection_id', sub.active_taller_id);
-      }
+    const nextDay = enrollment.current_day + 1;
+    if (nextDay > lastDay!) {
+      await supabase.from('program_enrollments').update({ status: 'completed', completed_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', enrollment.id).eq('status', 'active').eq('current_day', enrollment.current_day);
     } else {
-      await supabase.from('push_subscriptions').update({ current_day: nextDay }).eq('id', sub.id);
-      // La app lee current_day de esta tabla (user_plan_progress), no de
-      // push_subscriptions — sin esto, la UI se queda mostrando el día
-      // viejo para siempre aunque las entregas sigan avanzando bien.
-      if (sub.active_taller_id) {
-        await supabase.from('user_plan_progress').update({ current_day: nextDay }).eq('user_id', sub.user_id).eq('collection_id', sub.active_taller_id);
-      }
+      await supabase.from('program_enrollments').update({ current_day: nextDay, updated_at: new Date().toISOString() }).eq('id', enrollment.id).eq('status', 'active').eq('current_day', enrollment.current_day);
     }
   }
 }
 
-async function processIntermediateMessage(sub: PushSubscriptionRow, messageIndex: number) {
-  if (!sub.active_taller_id) return;
-  if (await deliveryExists(sub.user_id, sub.current_day, 'intermediate_message', messageIndex)) return;
+async function processIntermediateMessage(enrollment: ProgramEnrollmentRow, messageIndex: number) {
+  if (await deliveryExists(enrollment.id, enrollment.current_day, 'intermediate_message', messageIndex)) return;
 
-  const dayContent = await getDayContent(sub.active_taller_id, sub.current_day);
+  const dayContent = await getDayContent(enrollment.collection_id, enrollment.current_day);
   if (!dayContent) return;
   const messageText = findNumberedMessageText(dayContent.body || '', messageIndex);
   if (!messageText) return; // no hay un mensaje #N para este día, no hay nada que mandar
 
   const inserted = await reserveDelivery({
-    user_id: sub.user_id,
+    enrollment_id: enrollment.id,
+    user_id: enrollment.user_id,
     content_id: dayContent.id,
     asset_id: null,
-    day_number: sub.current_day,
+    day_number: enrollment.current_day,
     delivery_type: 'intermediate_message',
     message_index: messageIndex,
   });
   if (!inserted) return;
 
-  await sendPush(sub, inserted.id, {
+  await sendToActiveDevices(enrollment, inserted.id, {
     title: 'Un momento para vos',
     body: messageText.split('\n')[0],
     url: `/?delivery=${inserted.id}`,
-    data: { type: 'intermediate_message', day: sub.current_day, index: messageIndex },
+    data: { type: 'intermediate_message', day: enrollment.current_day, index: messageIndex },
   });
 }
 
-async function processSubscription(sub: PushSubscriptionRow, now: Date) {
-  if (!sub.is_active || !sub.timezone) return;
-  const nowMinutes = localMinutesNow(now, sub.timezone);
+async function processEnrollment(enrollment: ProgramEnrollmentRow, now: Date) {
+  if (enrollment.status !== 'active' || !enrollment.timezone) return;
+  if (!await hasActiveDevice(enrollment.user_id)) return;
+  const nowMinutes = localMinutesNow(now, enrollment.timezone);
 
   const moments: MeditationMoment[] = ['morning', 'noon', 'afternoon', 'night'];
   for (const moment of moments) {
-    const target = sub[moment];
+    const target = enrollment[moment];
     if (target && withinWindow(nowMinutes, minutesOfDay(target))) {
-      await processMeditation(sub, moment, now);
+      await processMeditation(enrollment, moment, now);
       return; // una sola cosa por tick para esta suscripción
     }
   }
 
-  if (sub.morning && sub.night && sub.message_interval_minutes) {
-    const slot = matchIntermediateSlot(nowMinutes, sub.morning, sub.night, sub.message_interval_minutes);
-    if (slot != null) await processIntermediateMessage(sub, slot);
+  if (enrollment.morning && enrollment.night && enrollment.message_interval_minutes) {
+    const slot = matchIntermediateSlot(nowMinutes, enrollment.morning, enrollment.night, enrollment.message_interval_minutes);
+    if (slot != null) await processIntermediateMessage(enrollment, slot);
   }
+}
+
+// --- Diagnóstico y prueba controlada -----------------------------------------
+
+type InvocationBody = {
+  mode?: 'run' | 'diagnostics' | 'retry-delivery';
+  subscriptionId?: string;
+  deliveryId?: string;
+};
+
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+}
+
+function isAuthorized(req: Request) {
+  return req.headers.get('Authorization') === `Bearer ${PUSH_CRON_TOKEN}`;
+}
+
+async function sha256(value: string) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function retrySingleDelivery(subscriptionId: string, deliveryId: string) {
+  const [{ data: device, error: deviceError }, { data: delivery, error: deliveryError }] = await Promise.all([
+    supabase
+      .from('push_subscriptions')
+      .select('id,user_id,endpoint,p256dh,auth_key,is_active')
+      .eq('id', subscriptionId)
+      .eq('is_active', true)
+      .maybeSingle(),
+    supabase
+      .from('taller_deliveries')
+      .select('id,user_id,day_number,delivery_type,message_index,push_status,content_items(title,body)')
+      .eq('id', deliveryId)
+      .maybeSingle(),
+  ]);
+
+  if (deviceError || !device) return jsonResponse({ ok: false, error: 'Active push subscription not found' }, 404);
+  if (deliveryError || !delivery) return jsonResponse({ ok: false, error: 'Delivery not found' }, 404);
+  if (device.user_id !== delivery.user_id) return jsonResponse({ ok: false, error: 'Subscription and delivery belong to different users' }, 403);
+
+  const content = delivery.content_items as unknown as { title: string; body: string } | null;
+  const deliveryType = delivery.delivery_type as DeliveryType;
+  const moment = (Object.entries(momentToDeliveryType).find(([, value]) => value === deliveryType)?.[0] ?? null) as MeditationMoment | null;
+  const body = deliveryType === 'intermediate_message' && delivery.message_index != null
+    ? findNumberedMessageText(content?.body || '', delivery.message_index) || 'Tenés una práctica pendiente.'
+    : `Tu práctica del Día ${delivery.day_number} está lista.`;
+  const payload = {
+    title: moment ? meditationTitles[moment] : 'Un momento para vos',
+    body: body.split('\n')[0],
+    url: `/?delivery=${delivery.id}`,
+    data: { type: deliveryType, day: delivery.day_number, retry: true },
+  };
+
+  await supabase.from('taller_deliveries').update({ push_status: 'pending', push_error: null }).eq('id', delivery.id);
+  const result = await sendPush(device as PushDeviceRow, payload);
+  const sent = result === true;
+  const pushError = sent ? null : result;
+  await supabase.from('taller_deliveries').update({
+    push_status: sent ? 'sent' : 'failed',
+    push_error: pushError,
+  }).eq('id', delivery.id);
+
+  console.info(JSON.stringify({ event: 'controlled-push-test', subscriptionId, deliveryId, push_status: sent ? 'sent' : 'failed' }));
+  return jsonResponse({ ok: sent, deliveryId, push_status: sent ? 'sent' : 'failed', error: pushError }, sent ? 200 : 502);
 }
 
 // --- Entry point -------------------------------------------------------------
 
-Deno.serve(async (_req) => {
-  const now = new Date();
-  const { data: subscriptions, error } = await supabase
-    .from('push_subscriptions')
-    .select('*')
-    .eq('is_active', true);
+Deno.serve(async (req) => {
+  if (!isAuthorized(req)) return jsonResponse({ ok: false, error: 'Unauthorized' }, 401);
 
-  if (error) {
-    return new Response(JSON.stringify({ ok: false, error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  let body: InvocationBody = {};
+  try {
+    body = await req.json();
+  } catch {
+    return jsonResponse({ ok: false, error: 'Invalid JSON body' }, 400);
   }
 
-  const results = await Promise.allSettled((subscriptions || []).map((sub) => processSubscription(sub as PushSubscriptionRow, now)));
-  const failed = results.filter((r) => r.status === 'rejected').length;
+  if (body.mode === 'diagnostics') {
+    return jsonResponse({ ok: true, vapidPublicKeySha256: await sha256(VAPID_PUBLIC_KEY) });
+  }
 
-  return new Response(JSON.stringify({ ok: true, processed: subscriptions?.length || 0, failed }), {
-    headers: { 'Content-Type': 'application/json' },
+  if (body.mode === 'retry-delivery') {
+    if (!body.subscriptionId || !body.deliveryId) return jsonResponse({ ok: false, error: 'subscriptionId and deliveryId are required' }, 400);
+    return retrySingleDelivery(body.subscriptionId, body.deliveryId);
+  }
+
+  const now = new Date();
+  const { data: enrollments, error } = await supabase
+    .from('program_enrollments')
+    .select('*')
+    .eq('status', 'active');
+
+  if (error) {
+    return jsonResponse({ ok: false, error: error.message }, 500);
+  }
+
+  const results = await Promise.allSettled((enrollments || []).map((enrollment) => processEnrollment(enrollment as ProgramEnrollmentRow, now)));
+  const rejected = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected');
+  const failed = rejected.length;
+
+  rejected.forEach((result) => {
+    const message = result.reason instanceof Error ? result.reason.message : String(result.reason);
+    console.error(JSON.stringify({ event: 'scheduled-push-error', error: message.slice(0, 500) }));
   });
+
+  console.info(JSON.stringify({ event: 'scheduled-push-run', processed: enrollments?.length || 0, failed }));
+  return jsonResponse({ ok: true, processed: enrollments?.length || 0, failed });
 });

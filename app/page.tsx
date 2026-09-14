@@ -5,7 +5,7 @@ import type { Session, User } from '@supabase/supabase-js';
 import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, Mail } from 'lucide-react';
 import content from './content.generated.json';
 import { supabase } from './lib/supabase';
-import { subscribeToPush, ensurePushSubscription, disablePushSubscription, getPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
+import { subscribeToPush, ensurePushSubscription, reconcilePushSubscription, disablePushSubscription, disableCurrentBrowserPushSubscription, getPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
 import { MagicCard, ShimmerButton } from './components/magic-ui';
 import './magic-ui.css';
 import './modern-ui.css';
@@ -528,12 +528,15 @@ const shiftHours = (time: string, hours: number) => {
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 };
 
-type WorkshopStage = 'loading' | 'onboarding' | 'confirmed' | 'days' | 'error';
+type WorkshopStage = 'loading' | 'onboarding' | 'conflict' | 'confirmed' | 'days' | 'error';
 type WorkshopOnboardingStep = 'intro' | 'schedule' | 'frequency' | 'summary';
+type ActiveProgramEnrollment = { id: string; collection_id: string; current_day: number; morning: string; noon: string; afternoon: string; night: string; timezone: string; message_interval_minutes: number; collections: { title: string } | null };
 
 function WorkshopPanel({ user, onBack, onNavigate, onRead }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (reader: ReaderContent) => void }) {
   const [deliveries, setDeliveries] = useState<TallerDelivery[]>([]);
   const [collectionId, setCollectionId] = useState<string | null>(null);
+  const [enrollmentId, setEnrollmentId] = useState<string | null>(null);
+  const [activeProgram, setActiveProgram] = useState<ActiveProgramEnrollment | null>(null);
   const [stage, setStage] = useState<WorkshopStage>('loading');
   const [currentDay, setCurrentDay] = useState<number | null>(null);
   const [step, setStep] = useState<WorkshopOnboardingStep>('intro');
@@ -545,6 +548,7 @@ function WorkshopPanel({ user, onBack, onNavigate, onRead }: { user: User; onBac
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [loadError, setLoadError] = useState('');
+  const [confirmingAbandon, setConfirmingAbandon] = useState(false);
   const notifications = useNotificationsToggle(user);
 
   useEffect(() => {
@@ -562,23 +566,30 @@ function WorkshopPanel({ user, onBack, onNavigate, onRead }: { user: User; onBac
         if (!collection) { console.error('[workshop] no existe la collection taller-40-dias'); setLoadError('No encontramos el taller.'); setStage('error'); return; }
         setCollectionId(collection.id);
 
-        console.log('[workshop] buscando user_plan_progress para', user.id);
-        const { data: progress, error: progressError } = await supabase
-          .from('user_plan_progress')
-          .select('current_day')
+        console.log('[workshop] buscando programa activo para', user.id);
+        const { data: enrollmentData, error: enrollmentError } = await supabase
+          .from('program_enrollments')
+          .select('id,collection_id,current_day,morning,noon,afternoon,night,timezone,message_interval_minutes,collections(title)')
           .eq('user_id', user.id)
-          .eq('collection_id', collection.id)
+          .eq('status', 'active')
           .maybeSingle();
         if (cancelled) return;
-        if (progressError) { console.error('[workshop] error buscando user_plan_progress:', progressError); setLoadError(progressError.message); setStage('error'); return; }
-        if (!progress) { console.log('[workshop] sin progreso todavía -> onboarding'); setStage('onboarding'); return; }
-        setCurrentDay(progress.current_day);
+        if (enrollmentError) { console.error('[workshop] error buscando program_enrollments:', enrollmentError); setLoadError(enrollmentError.message); setStage('error'); return; }
+        if (!enrollmentData) { console.log('[workshop] sin programa activo -> onboarding'); setStage('onboarding'); return; }
+        const enrollment = enrollmentData as unknown as ActiveProgramEnrollment;
+        setActiveProgram(enrollment);
+        if (enrollment.collection_id !== collection.id) { setStage('conflict'); return; }
+        setEnrollmentId(enrollment.id);
+        setCurrentDay(enrollment.current_day);
+        setSchedule({ morning: enrollment.morning.slice(0, 5), noon: enrollment.noon.slice(0, 5), afternoon: enrollment.afternoon.slice(0, 5), night: enrollment.night.slice(0, 5) });
+        setTimezone(enrollment.timezone);
+        if (workshopIntervalOptions.includes(enrollment.message_interval_minutes as typeof workshopIntervalOptions[number])) setMessageInterval(enrollment.message_interval_minutes as typeof workshopIntervalOptions[number]);
 
         console.log('[workshop] buscando taller_deliveries…');
         const { data: deliveryRows, error: deliveryError } = await supabase
           .from('taller_deliveries')
           .select('id,day_number,delivery_type,delivered_at,seen_at,message_index,content_items(title,body),content_assets(source_url)')
-          .eq('user_id', user.id)
+          .eq('enrollment_id', enrollment.id)
           .order('delivered_at', { ascending: false });
         if (cancelled) return;
         if (deliveryError) { console.error('[workshop] error buscando taller_deliveries:', deliveryError); setLoadError(deliveryError.message); setStage('error'); return; }
@@ -615,20 +626,73 @@ function WorkshopPanel({ user, onBack, onNavigate, onRead }: { user: User; onBac
     return () => { cancelled = true; };
   }, [user.id]);
 
+  const enrollmentParams = () => ({
+    p_collection_id: collectionId,
+    p_morning: schedule.morning,
+    p_noon: schedule.noon,
+    p_afternoon: schedule.afternoon,
+    p_night: schedule.night,
+    p_timezone: timezone,
+    p_message_interval_minutes: messageInterval,
+  });
+
   const startWorkshop = async () => {
     if (!collectionId) return;
     setSaving(true);
     setSaveError('');
-    const subscribeResult = await subscribeToPush(user, { ...schedule, timezone, messageIntervalMinutes: messageInterval }, collectionId);
+    const subscribeResult = await subscribeToPush(user);
     if (subscribeResult.error) {
       setSaving(false);
       setSaveError(subscribeResult.error);
       return;
     }
-    const { error: progressError } = await supabase.from('user_plan_progress').insert({ user_id: user.id, collection_id: collectionId, current_day: 1 });
+    const { data: enrollment, error: progressError } = await supabase.rpc('start_program', enrollmentParams()).single();
     setSaving(false);
     if (progressError) { setSaveError(progressError.message); return; }
+    setEnrollmentId((enrollment as { id: string }).id);
     setCurrentDay(1);
+    setStage('confirmed');
+  };
+
+  const abandonProgram = async () => {
+    if (!activeProgram && !enrollmentId) return;
+    setSaving(true);
+    setSaveError('');
+    const id = activeProgram?.id || enrollmentId!;
+    const { error } = await supabase.rpc('abandon_program', { p_enrollment_id: id });
+    setSaving(false);
+    if (error) { setSaveError(error.message); return; }
+    setConfirmingAbandon(false);
+    setActiveProgram(null);
+    setEnrollmentId(null);
+    setCurrentDay(null);
+    setDeliveries([]);
+    onBack();
+  };
+
+  const abandonAndStartWorkshop = async () => {
+    if (!activeProgram || !collectionId) return;
+    setSaving(true);
+    setSaveError('');
+    const subscribeResult = await subscribeToPush(user);
+    if (subscribeResult.error) { setSaving(false); setSaveError(subscribeResult.error); return; }
+    const { data: enrollment, error } = await supabase.rpc('switch_program', {
+      p_current_enrollment_id: activeProgram.id,
+      p_new_collection_id: collectionId,
+      p_morning: schedule.morning,
+      p_noon: schedule.noon,
+      p_afternoon: schedule.afternoon,
+      p_night: schedule.night,
+      p_timezone: timezone,
+      p_message_interval_minutes: messageInterval,
+    }).single();
+    setSaving(false);
+    if (error) { setSaveError(error.message); return; }
+    setConfirmingAbandon(false);
+    setActiveProgram(null);
+    setEnrollmentId((enrollment as { id: string }).id);
+    setCurrentDay(1);
+    setDeliveries([]);
     setStage('confirmed');
   };
 
@@ -644,6 +708,27 @@ function WorkshopPanel({ user, onBack, onNavigate, onRead }: { user: User; onBac
   if (stage === 'loading') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} onNavigate={onNavigate} /><div className="reader-body workshop-browser"><p className="library-empty">Cargando el taller…</p></div></section>;
 
   if (stage === 'error') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} onNavigate={onNavigate} /><div className="reader-body workshop-browser"><p className="library-empty">No pudimos cargar el taller. Probá de nuevo más tarde.{loadError ? ` (${loadError})` : ''}</p></div></section>;
+
+  if (stage === 'conflict' && activeProgram) {
+    const activeTitle = activeProgram.collections?.title || 'otro programa';
+    return <section className="reader-section workshop-section">
+      <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Ya tenés un programa activo" subtitle={`Estás realizando ${activeTitle}.`} onBack={onBack} onNavigate={onNavigate} />
+      <div className="reader-body">
+        <p>Para comenzar Taller de 40 días, primero tenés que abandonar tu programa actual.</p>
+        {saveError && <p className="account-message" role="alert">{saveError}</p>}
+        <ShimmerButton type="button" className="account-save" onClick={onBack}>Continuar mi programa</ShimmerButton>
+        <button type="button" className="workshop-abandon" onClick={() => setConfirmingAbandon(true)}>Abandonar y empezar el nuevo</button>
+      </div>
+      {confirmingAbandon && <ConfirmDialog
+        title={`¿Querés abandonar ${activeTitle}?`}
+        description={`Vas a dejar de recibir sus prácticas y notificaciones. Taller de 40 días comenzará desde el Día 1.`}
+        confirmLabel={saving ? 'Un momento…' : 'Abandonar y empezar'}
+        cancelLabel="Seguir con mi programa"
+        onCancel={() => { if (!saving) setConfirmingAbandon(false); }}
+        onConfirm={() => { if (!saving) void abandonAndStartWorkshop(); }}
+      />}
+    </section>;
+  }
 
   if (stage === 'onboarding' && step === 'intro') return <section className="reader-section">
     <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de Autoconcepto" subtitle="40 días para transformar cómo te ves y cómo ves la vida." onBack={onBack} onNavigate={onNavigate} />
@@ -720,7 +805,16 @@ function WorkshopPanel({ user, onBack, onNavigate, onRead }: { user: User; onBac
         </div>
         <span className="library-card-actions">{delivery.seenAt ? <i className="delivery-seen" aria-label="Ya visto"><Check size={16} /></i> : <i className="delivery-unseen" aria-label="Sin ver" />}<i><ChevronRight size={19} /></i></span>
       </MagicCard>)}</div>}
+      {saveError && <p className="account-message" role="alert">{saveError}</p>}
+      <button type="button" className="workshop-abandon" onClick={() => setConfirmingAbandon(true)}>Abandonar programa</button>
     </div>
+    {confirmingAbandon && <ConfirmDialog
+      title="¿Querés abandonar Taller de 40 días?"
+      description="Vas a dejar de recibir sus prácticas y notificaciones. Podrás empezar otro programa desde el Día 1."
+      confirmLabel={saving ? 'Un momento…' : 'Abandonar programa'}
+      onCancel={() => { if (!saving) setConfirmingAbandon(false); }}
+      onConfirm={() => { if (!saving) void abandonProgram(); }}
+    />}
   </section>;
 }
 
@@ -870,6 +964,11 @@ function hasOAuthCallbackParams() {
     || /(^|[#&?])error(_description)?=/.test(hash + search);
 }
 
+function getDeliveryIdFromUrl() {
+  if (typeof window === 'undefined') return null;
+  return new URLSearchParams(window.location.search).get('delivery');
+}
+
 function VideoIntro({ onFinish }: { onFinish: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [showEnter, setShowEnter] = useState(false);
@@ -952,7 +1051,7 @@ function LoginGate() {
   const googleLogin = async () => {
     setBusy(true);
     setMessage('');
-    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
+    const redirectTo = typeof window !== 'undefined' ? window.location.href : undefined;
     console.log('[auth] iniciando signInWithOAuth (Google), redirectTo=', redirectTo);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -976,7 +1075,7 @@ function LoginGate() {
     if (!cleanEmail) return setMessage('Escribí tu correo electrónico.');
     setBusy(true);
     setMessage('');
-    const emailRedirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
+    const emailRedirectTo = typeof window !== 'undefined' ? window.location.href : undefined;
     const { error } = await supabase.auth.signInWithOtp({
       email: cleanEmail,
       options: { emailRedirectTo, shouldCreateUser: true },
@@ -1018,16 +1117,18 @@ function LoginGate() {
 }
 
 export default function App() {
-  // El splash SIEMPRE se muestra al abrir la app. La ÚNICA excepción es
-  // venir de un callback de OAuth (Google) en la URL — ninguna otra
-  // condición (sesión activa, lo que sea) lo salta.
+  // El splash se salta al volver de OAuth y al abrir una entrega desde push.
+  // El deep-link debe llevar al contenido inmediatamente, incluso si primero
+  // hace falta restaurar la sesión o iniciar sesión.
   const isOAuthCallback = hasOAuthCallbackParams();
+  const initialDeliveryId = getDeliveryIdFromUrl();
   const [showVideo, setShowVideo] = useState(() => {
     if (isOAuthCallback) console.log('[auth] callback de OAuth detectado en la URL al montar, saltando el video');
-    return !isOAuthCallback;
+    if (initialDeliveryId) console.log('[deep-link] entrega detectada en la URL al montar, saltando el video');
+    return !isOAuthCallback && !initialDeliveryId;
   });
   const [sessionChecked, setSessionChecked] = useState(false);
-  const [pendingDeliveryId, setPendingDeliveryId] = useState(() => (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('delivery') : null));
+  const [pendingDeliveryId, setPendingDeliveryId] = useState(initialDeliveryId);
   const [session, setSession] = useState<Session | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
   const [mainMenu, setMainMenu] = useState(true);
@@ -1081,7 +1182,7 @@ export default function App() {
       // sesión desactivamos los pushes del usuario actual para que el mismo
       // dispositivo no siga recibiendo entregas de la cuenta que salió.
       if (session?.user) {
-        const { error } = await disablePushSubscription(session.user.id);
+        const { error } = await disableCurrentBrowserPushSubscription(session.user.id);
         if (error) console.error('[logout] no se pudo desactivar push:', error);
       }
       await supabase.auth.signOut();
@@ -1181,6 +1282,7 @@ export default function App() {
       setSession(data.session);
       setSessionChecked(true);
       if (data.session?.user) void syncProfile(data.session.user);
+      if (data.session?.user) void reconcilePushSubscription(data.session.user);
     }).catch((err) => {
       clearTimeout(sessionCheckTimeout);
       console.error('[auth] error obteniendo la sesión:', err);
@@ -1193,6 +1295,7 @@ export default function App() {
       setSessionChecked(true);
       if (nextSession?.user) {
         void syncProfile(nextSession.user);
+        if (event === 'SIGNED_IN') void reconcilePushSubscription(nextSession.user);
       } else {
         setFullName(null);
       }
@@ -1306,8 +1409,8 @@ export default function App() {
 
   // Esperamos a saber si hay sesión antes de decidir la siguiente pantalla
   // (para no mostrar LoginGate de arranque si en realidad hay sesión) —
-  // pero esto no afecta si se muestra el video: eso se decide únicamente
-  // por la URL (callback de OAuth sí/no), más arriba.
+  // pero esto no afecta si se muestra el video: callback de OAuth y deep-link
+  // de entrega lo saltean desde el estado inicial.
   if (!sessionChecked) return null;
   if (showVideo) return <VideoIntro onFinish={() => setShowVideo(false)} />;
   if (!session) return <LoginGate />;
