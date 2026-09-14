@@ -16,6 +16,7 @@ import './components/day-one-carousel.css';
 import { DayOneCarousel } from './components/day-one-carousel';
 import { TimePicker } from './components/time-picker';
 import { TimezonePicker } from './components/timezone-picker';
+import { hasActiveAccess, type Entitlement } from './lib/payments';
 
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'consultas' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string; audios?: { label: string; url: string }[] };
@@ -357,6 +358,16 @@ function AccountPanel({ user, fullName, onBack, onNavigate, onNameSaved, onLogou
   const [name, setName] = useState(fullName || user.user_metadata?.full_name || '');
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
+  const [entitlement, setEntitlement] = useState<Entitlement>(null);
+  const [accessLoaded, setAccessLoaded] = useState(false);
+  const [accessUnavailable, setAccessUnavailable] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void supabase.from('user_entitlements').select('access_until,lifetime').eq('user_id', user.id).maybeSingle().then(({ data, error }) => {
+      if (!cancelled) { setEntitlement(data); setAccessUnavailable(Boolean(error)); setAccessLoaded(true); }
+    });
+    return () => { cancelled = true; };
+  }, [user.id]);
   const save = async () => {
     const cleanName = name.trim();
     if (!cleanName) return setMessage('Escribí tu nombre para guardarlo.');
@@ -380,7 +391,7 @@ function AccountPanel({ user, fullName, onBack, onNavigate, onNameSaved, onLogou
       <label>Nombre<input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" /></label>
       <ShimmerButton className="account-save" onClick={save} disabled={saving}>{saving ? 'Guardando…' : 'Guardar cambios'}</ShimmerButton>
       {message && <p className="account-message">{message}</p>}
-      <section className="subscription-card"><p> SUSCRIPCIÓN</p><b>Plan gratuito</b><span>Tu cuenta está activa. Los próximos planes pagos aparecerán acá.</span></section>
+      <section className="subscription-card"><p>TU ACCESO</p><b>{!accessLoaded ? 'Consultando…' : accessUnavailable ? 'Acceso actual' : entitlement?.lifetime ? 'Acceso de por vida' : hasActiveAccess(entitlement) ? 'Acceso activo' : 'Sin acceso activo'}</b><span>{accessUnavailable ? 'Tu acceso actual no cambia.' : entitlement?.lifetime ? 'Podés usar el Asistente para siempre.' : hasActiveAccess(entitlement) && entitlement?.access_until ? `Disponible hasta el ${new Date(entitlement.access_until).toLocaleDateString('es-AR')}.` : 'Elegí una opción para activar tu acceso cuando quieras.'}</span><button type="button" className="access-action" onClick={() => window.location.assign('/access')}>Ver opciones de acceso</button></section>
       <button className="account-logout" onClick={onLogout}><LogOut size={17} /> Cerrar sesión</button>
     </div>
   </section>;
