@@ -1066,7 +1066,7 @@ function LoginGate() {
   const googleLogin = async () => {
     setBusy(true);
     setMessage('');
-    const redirectTo = typeof window !== 'undefined' ? window.location.href : undefined;
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
     console.log('[auth] iniciando signInWithOAuth (Google), redirectTo=', redirectTo);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -1125,7 +1125,7 @@ function LoginGate() {
           <ArrowRight size={18} strokeWidth={2.4} />
         </button>
         {message && <p className="login-error">{message}</p>}
-        <p className="login-account-copy">Si el correo todavía no existe, creamos tu cuenta automáticamente.</p>
+        <p className="login-account-copy">Ingresá con tu correo y contraseña, o continuá con Google.</p>
       </div>
       <p className="login-terms">Al continuar, aceptás los términos de uso y la política de privacidad.</p>
     </main>
@@ -1157,6 +1157,7 @@ export default function App() {
   const [workshopOpen, setWorkshopOpen] = useState(false);
   const [meetingOpen, setMeetingOpen] = useState(false);
   const [installOpen, setInstallOpen] = useState(false);
+  const [installDismissed, setInstallDismissed] = useState(false);
   const [installPlatform, setInstallPlatform] = useState<ReturnType<typeof detectInstallPlatform>>('other');
   const [installPromptAvailable, setInstallPromptAvailable] = useState(false);
   const [standalone, setStandalone] = useState(false);
@@ -1340,9 +1341,9 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!session?.user || pendingDeliveryId) return;
-    if (!standalone) setInstallOpen(true);
-  }, [session?.user, standalone, pendingDeliveryId]);
+    if (!session?.user || pendingDeliveryId || standalone || installDismissed) return;
+    setInstallOpen(true);
+  }, [session?.user, standalone, pendingDeliveryId, installDismissed]);
 
   // Nota: la animación de entrada de las MagicCard ya se maneja adentro del
   // propio componente (app/components/magic-ui.tsx, un IntersectionObserver
@@ -1457,7 +1458,7 @@ export default function App() {
     const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/german-perfil.png' : target === 'biblioteca' ? '/images/german-biblioteca.png' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
     const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
     const items = [...welcomeItems.slice(0, meditIndex + 1), meetingCard, ...welcomeItems.slice(meditIndex + 1)];
-    return <><main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'reunion') { setMeetingOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section></main>{installOpen && !standalone && !pendingDeliveryId && <InstallOnboarding suggestedPlatform={installPlatform} nativePromptAvailable={installPromptAvailable} onClose={() => { setInstallOpen(false); window.setTimeout(() => { if (!isRunningStandalone()) setInstallOpen(true); }, 1200); }} onInstallAndroid={promptNativeInstallation} onRecheckInstallation={() => { const installed = isRunningStandalone(); setStandalone(installed); return installed; }} />}</>;
+    return <><main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'reunion') { setMeetingOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section></main>{installOpen && !standalone && !pendingDeliveryId && <InstallOnboarding suggestedPlatform={installPlatform} nativePromptAvailable={installPromptAvailable} onClose={() => { setInstallOpen(false); setInstallDismissed(true); }} onInstallAndroid={promptNativeInstallation} onRecheckInstallation={() => { const installed = isRunningStandalone(); setStandalone(installed); return installed; }} />}</>;
   }
   if (meetingOpen) return <main className="app-shell app-main section-app"><WeeklyMeetingPanel onBack={back} onNavigate={navigateTo} /></main>;
   if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} onBack={back} onNavigate={navigateTo} onNameSaved={setFullName} onLogout={logout} /></main>;
@@ -1465,7 +1466,7 @@ export default function App() {
   if (favoritesOpen) return <main className="app-shell app-main section-app"><FavoritesPanel favorites={favorites} onBack={back} onNavigate={navigateTo} onOpen={(favorite) => { if (favorite.reader) setReader(favorite.reader); }} onRemove={toggleFavorite} /></main>;
   if (workshopOpen) return <main className="app-shell app-main section-app"><WorkshopPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} /></main>;
   if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} /></main>;
-  if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} showInstall={!standalone} onInstall={() => setInstallOpen(true)} onSelect={select} onBack={back} onNavigate={navigateTo} /></main>;
+  if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} showInstall={!standalone} onInstall={() => { setInstallDismissed(false); setInstallOpen(true); }} onSelect={select} onBack={back} onNavigate={navigateTo} /></main>;
   if (tab === 'propia' && !trail.length) return <main className="app-shell app-main section-app"><PropiaPracticaPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} /></main>;
   if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel user={session.user} onBack={back} onNavigate={navigateTo} /></main>;
   if (current?.title === 'Día 1') {
