@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, Mail, LockKeyhole, Download } from 'lucide-react';
+import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, Download } from 'lucide-react';
 import content from './content.generated.json';
 import { supabase } from './lib/supabase';
 import { subscribeToPush, ensurePushSubscription, reconcilePushSubscription, disablePushSubscription, disableCurrentBrowserPushSubscription, getPushSubscriptionActive, getCurrentBrowserPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
@@ -17,6 +17,8 @@ import { DayOneCarousel } from './components/day-one-carousel';
 import { TimePicker } from './components/time-picker';
 import { TimezonePicker } from './components/timezone-picker';
 import { hasActiveAccess, type Entitlement } from './lib/payments';
+import { LoginGate } from './components/login-gate';
+import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, type TallerDeliveryType } from './lib/taller-delivery';
 
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'consultas' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string; audios?: { label: string; url: string }[] };
@@ -24,53 +26,10 @@ type DeckItem = { icon: string; title: string; detail: string; tone: string; ima
 type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string };
 type FavoriteRecord = { id: string; title: string; detail: string; icon: string; tone: string; reader?: ReaderContent };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
-type TallerDeliveryType = 'meditation_morning' | 'meditation_noon' | 'meditation_afternoon' | 'meditation_night' | 'intermediate_message';
 type TallerDelivery = { id: string; dayNumber: number; deliveryType: TallerDeliveryType; deliveredAt: string; seenAt: string | null; title: string; paragraphs: string[]; audioUrl?: string };
-const deliveryMomentPatterns: Partial<Record<TallerDeliveryType, RegExp>> = {
-  meditation_morning: /ma(ñ|n)ana/i,
-  meditation_noon: /mediod(í|i)a/i,
-  meditation_afternoon: /tarde/i,
-  meditation_night: /noche/i,
-};
-const extractMeditationSection = (body: string, deliveryType: TallerDeliveryType): string[] | null => {
-  const momentPattern = deliveryMomentPatterns[deliveryType];
-  if (!momentPattern) return null;
-  const lines = body.split('\n');
-  let capturing = false;
-  const captured: string[] = [];
-  for (const line of lines) {
-    const isHeader = /^#{1,6}\s+/.test(line);
-    if (isHeader) {
-      if (capturing) break;
-      if (/medita/i.test(line) && momentPattern.test(line)) capturing = true;
-      continue;
-    }
-    if (capturing) captured.push(line);
-  }
-  const text = captured.join('\n').trim();
-  return text ? cleanParagraphs(text) : null;
-};
-const findNumberedMessage = (body: string, index: number): string[] | null => {
-  // El contenido histórico puede venir con saltos reales o con HTML <br>.
-  // Normalizamos ambos formatos antes de buscar el marcador numerado.
-  const normalizedBody = body
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/\r\n?/g, '\n');
-  const marker = new RegExp(`(?:^|\\n)\\s*0*${index}\\.\\s*`, 'm');
-  const match = marker.exec(normalizedBody);
-  if (!match) return null;
-
-  const afterMarker = normalizedBody.slice(match.index + match[0].length);
-  const nextMarkerIndex = afterMarker.search(/\n\s*0*\d+\.\s*/m);
-  const text = (nextMarkerIndex >= 0 ? afterMarker.slice(0, nextMarkerIndex) : afterMarker).trim();
-  const paragraphs = cleanParagraphs(text);
-  return paragraphs.length ? paragraphs : null;
-};
 
 const palette = ['#D92D35', '#E5484D', '#F2555A', '#FF6B6F'];
 const cleanParagraphs = (text: string) => text.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
-const deliveryTypeLabels: Record<TallerDeliveryType, string> = { meditation_morning: 'Meditación de la mañana', meditation_noon: 'Meditación del mediodía', meditation_afternoon: 'Meditación de la tarde', meditation_night: 'Meditación de la noche', intermediate_message: 'Mensaje' };
-const formatDeliveredAt = (iso: string) => new Date(iso).toLocaleString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const toTags = (value: unknown): string[] => Array.isArray(value) ? value.filter((tag): tag is string => typeof tag === 'string') : typeof value === 'string' ? value.split(',').map((tag) => tag.trim()).filter(Boolean) : [];
 const firstText = (record: Record<string, unknown>, keys: string[]) => keys.map((key) => record[key]).find((value): value is string => typeof value === 'string' && value.length > 0);
 const deckFavorite = (item: DeckItem): FavoriteRecord => ({ id: `deck:${item.title}`, title: item.title, detail: item.detail, icon: item.icon, tone: item.tone, reader: item.reader });
@@ -649,9 +608,7 @@ function WorkshopPanel({ user, onBack, onNavigate, onRead }: { user: User; onBac
           const asset = row.content_assets as unknown as { source_url: string } | null;
           const deliveryType = row.delivery_type as TallerDeliveryType;
           const body = item?.body || '';
-          const paragraphs = deliveryType === 'intermediate_message'
-            ? (row.message_index != null ? findNumberedMessage(body, row.message_index) : null)
-            : extractMeditationSection(body, deliveryType);
+          const paragraphs = extractDeliveryParagraphs(body, deliveryType, row.message_index);
           return {
             id: row.id,
             dayNumber: row.day_number,
@@ -1092,81 +1049,6 @@ function VideoIntro({ onFinish }: { onFinish: () => void }) {
   </div>;
 }
 
-function LoginGate() {
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
-  const googleLogin = async () => {
-    setBusy(true);
-    setMessage('');
-    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
-    console.log('[auth] iniciando signInWithOAuth (Google), redirectTo=', redirectTo);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo,
-        // Siempre preguntamos qué cuenta de Google usar. Es importante en una
-        // PWA compartida o cuando la persona alterna entre dos cuentas.
-        queryParams: { prompt: 'select_account' },
-      },
-    });
-    if (error) {
-      console.error('[auth] error en signInWithOAuth:', error);
-      setBusy(false);
-      setMessage(error.message);
-    }
-  };
-
-  const emailLogin = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const cleanEmail = email.trim();
-    if (!cleanEmail) return setMessage('Escribí tu correo electrónico.');
-    setBusy(true);
-    setMessage('');
-    if (!password) return setMessage('Escribí tu contraseña.');
-    const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
-    setBusy(false);
-    setMessage(error ? 'El correo o la contraseña no son correctos.' : '');
-  };
-
-  return (
-    <main className="app-shell login-screen">
-      <div className="login-card">
-        <div className="login-brand-mark">G</div>
-        <h1 className="login-title">Bienvenido</h1>
-        <p className="login-subtitle">Ingresá o creá tu cuenta para continuar con Germán Asistente.</p>
-        <form className="login-email-form" onSubmit={emailLogin}>
-          <div className="login-email-field">
-            <Mail size={19} aria-hidden="true" />
-            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Correo electrónico" autoComplete="email" inputMode="email" />
-          </div>
-          <div className="login-email-field">
-            <LockKeyhole size={19} aria-hidden="true" />
-            <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Contraseña" autoComplete="current-password" />
-            <button type="submit" disabled={busy || !email.trim() || !password} aria-label="Ingresar"><ArrowRight size={18} /></button>
-          </div>
-        </form>
-        <div className="login-divider"><span>o</span></div>
-        <button type="button" className="login-google-button" onClick={googleLogin} disabled={busy}>
-          <svg width="20" height="20" viewBox="0 0 18 18" aria-hidden="true">
-            <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" />
-            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" />
-            <path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z" />
-            <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" />
-          </svg>
-          <span>{busy ? 'Un momento…' : 'Continuar con Google'}</span>
-          <ArrowRight size={18} strokeWidth={2.4} />
-        </button>
-        {message && <p className="login-error">{message}</p>}
-        <p className="login-account-copy">Ingresá con tu correo y contraseña, o continuá con Google.</p>
-      </div>
-      <p className="login-terms">Al continuar, aceptás los términos de uso y la política de privacidad.</p>
-    </main>
-  );
-}
-
 export default function App() {
   // El splash se salta al volver de OAuth y al abrir una entrega desde push.
   // El deep-link debe llevar al contenido inmediatamente, incluso si primero
@@ -1196,7 +1078,13 @@ export default function App() {
     window.addEventListener('popstate', syncPushDeepLink);
     const onSwMessage = (event: MessageEvent) => {
       if (event.data?.type !== 'LAST_PUSH' || typeof event.data.url !== 'string') return;
-      const deliveryId = new URL(event.data.url, window.location.origin).searchParams.get('delivery');
+      const pushUrl = new URL(event.data.url, window.location.origin);
+      const deliveryPathMatch = pushUrl.pathname.match(/^\/delivery\/[^/]+$/);
+      if (deliveryPathMatch) {
+        window.location.assign(`${pushUrl.pathname}${pushUrl.search}${pushUrl.hash}`);
+        return;
+      }
+      const deliveryId = pushUrl.searchParams.get('delivery');
       if (!deliveryId) return;
       setShowVideo(false);
       setPendingDeliveryId(deliveryId);
@@ -1502,9 +1390,7 @@ export default function App() {
         const asset = row.content_assets as unknown as { source_url: string } | null;
         const deliveryType = row.delivery_type as TallerDeliveryType;
         const body = item?.body || '';
-        const paragraphs = deliveryType === 'intermediate_message'
-          ? (row.message_index != null ? findNumberedMessage(body, row.message_index) : null)
-          : extractMeditationSection(body, deliveryType);
+        const paragraphs = extractDeliveryParagraphs(body, deliveryType, row.message_index);
         if (!item?.body) {
           showDeliveryError('La entrega no tiene contenido asociado.');
           return;

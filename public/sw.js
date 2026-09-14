@@ -1,4 +1,4 @@
-const CACHE_NAME = 'german-app-v8';
+const CACHE_NAME = 'german-app-v9';
 const LAST_PUSH_CACHE = 'german-last-push-v1';
 
 self.addEventListener('install', () => self.skipWaiting());
@@ -28,20 +28,15 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const rawTarget = new URL(event.notification.data?.url || '/', self.location.origin);
-  const deliveryMatch = rawTarget.pathname.match(/^\/delivery\/([^/]+)$/);
-  const target = deliveryMatch
-    ? new URL(`/?delivery=${encodeURIComponent(decodeURIComponent(deliveryMatch[1]))}`, self.location.origin)
-    : rawTarget;
-  target.searchParams.set('push', Date.now().toString());
+  const targetUrl = new URL(event.notification.data?.url || '/', self.location.origin).href;
   event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (windows) => {
     await caches.delete(LAST_PUSH_CACHE);
     const existing = windows.find((client) => new URL(client.url).origin === self.location.origin) || windows[0];
     if (existing) {
-      const navigated = await existing.navigate(target.href);
+      const navigated = await existing.navigate(targetUrl);
       return (navigated || existing).focus();
     }
-    return clients.openWindow(target.href);
+    return clients.openWindow(targetUrl);
   }));
 });
 

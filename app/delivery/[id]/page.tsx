@@ -1,6 +1,9 @@
-import { redirect } from 'next/navigation';
+import { DeliveryScreen } from '../../components/delivery-screen';
+import '../../magic-ui.css';
+import '../../modern-ui.css';
+import '../delivery.css';
 
 export default async function DeliveryEntry({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  redirect(`/?delivery=${encodeURIComponent(id)}`);
+  return <DeliveryScreen deliveryId={id} />;
 }

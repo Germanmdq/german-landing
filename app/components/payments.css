@@ -22,7 +22,7 @@
 .payment-provider:active:not(:disabled){transform:translateY(1px);box-shadow:0 5px 13px rgba(239,38,54,.18),0 3px 9px rgba(0,0,0,.24)}
 
 /* Hero logo asset already has a true black background; keep it centered and seamless. */
-.payment-tree{object-fit:cover;object-position:50% 38%;background:#050506}
+.payment-tree{inset:-2px;width:calc(100% + 4px);height:calc(100% + 4px);display:block;object-fit:cover;object-position:50% 38%;background:#050506}
 
 /* Keep payment CTAs visibly red even while provider configuration is pending. */
 .payment-provider,.payment-provider:disabled,.payment-provider--mp,.payment-provider--paypal{background:#ef2636!important;color:#fff!important;border:0!important;opacity:1;box-shadow:0 8px 20px rgba(239,38,54,.24),0 5px 14px rgba(0,0,0,.30)!important}
