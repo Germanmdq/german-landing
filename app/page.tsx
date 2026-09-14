@@ -1180,6 +1180,37 @@ export default function App() {
   });
   const [sessionChecked, setSessionChecked] = useState(false);
   const [pendingDeliveryId, setPendingDeliveryId] = useState(initialDeliveryId);
+
+  // iOS puede reutilizar una PWA ya abierta cuando se toca un push. En ese caso
+  // el componente no se remonta: sincronizamos ?delivery= al volver a primer plano
+  // y apagamos el splash antes de abrir la entrega.
+  useEffect(() => {
+    const syncPushDeepLink = () => {
+      const deliveryId = getDeliveryIdFromUrl();
+      if (!deliveryId) return;
+      setShowVideo(false);
+      setPendingDeliveryId(deliveryId);
+    };
+    syncPushDeepLink();
+    window.addEventListener('pageshow', syncPushDeepLink);
+    window.addEventListener('popstate', syncPushDeepLink);
+    const onSwMessage = (event: MessageEvent) => {
+      if (event.data?.type !== 'LAST_PUSH' || typeof event.data.url !== 'string') return;
+      const deliveryId = new URL(event.data.url, window.location.origin).searchParams.get('delivery');
+      if (!deliveryId) return;
+      setShowVideo(false);
+      setPendingDeliveryId(deliveryId);
+    };
+    document.addEventListener('visibilitychange', syncPushDeepLink);
+    navigator.serviceWorker?.addEventListener('message', onSwMessage);
+    navigator.serviceWorker?.ready.then((registration) => registration.active?.postMessage({ type: 'GET_LAST_PUSH' })).catch(() => undefined);
+    return () => {
+      window.removeEventListener('pageshow', syncPushDeepLink);
+      window.removeEventListener('popstate', syncPushDeepLink);
+      document.removeEventListener('visibilitychange', syncPushDeepLink);
+      navigator.serviceWorker?.removeEventListener('message', onSwMessage);
+    };
+  }, []);
   const [session, setSession] = useState<Session | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
   const [mainMenu, setMainMenu] = useState(true);
@@ -1515,7 +1546,7 @@ export default function App() {
   // pero esto no afecta si se muestra el video: callback de OAuth y deep-link
   // de entrega lo saltean desde el estado inicial.
   if (!sessionChecked) return null;
-  if (showVideo) return <VideoIntro onFinish={() => setShowVideo(false)} />;
+  if (showVideo && !getDeliveryIdFromUrl() && !pendingDeliveryId) return <VideoIntro onFinish={() => setShowVideo(false)} />;
   if (!session) return <LoginGate />;
 
   if (mainMenu) {

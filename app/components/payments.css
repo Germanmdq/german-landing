@@ -20,3 +20,6 @@
 /* Final payment CTA treatment: solid red, white type, no border. */
 .payment-provider,.payment-provider--mp:not(:disabled),.payment-provider--paypal:not(:disabled){background:#ef2636;color:#fff;border:0;box-shadow:0 8px 20px rgba(239,38,54,.22),0 5px 14px rgba(0,0,0,.28)}
 .payment-provider:active:not(:disabled){transform:translateY(1px);box-shadow:0 5px 13px rgba(239,38,54,.18),0 3px 9px rgba(0,0,0,.24)}
+
+/* Hero logo asset already has a true black background; keep it centered and seamless. */
+.payment-tree{object-fit:cover;object-position:50% 38%;background:#050506}
