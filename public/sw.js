@@ -2,7 +2,7 @@
 // hace que el navegador detecte un service worker nuevo y lo reinstale —
 // eso es lo que fuerza a los usuarios con la PWA ya instalada a agarrar la
 // versión nueva de la app, más allá de cualquier header de caché.
-const CACHE_NAME = 'german-app-v4';
+const CACHE_NAME = 'german-app-v5';
 
 self.addEventListener('install', () => self.skipWaiting());
 
@@ -34,10 +34,10 @@ self.addEventListener('notificationclick', (event) => {
   const targetUrl = new URL(event.notification.data?.url || '/', self.location.origin).href;
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (windows) => {
-      const existing = windows[0];
+      const existing = windows.find((client) => new URL(client.url).origin === self.location.origin) || windows[0];
       if (existing) {
-        await existing.navigate(targetUrl);
-        return existing.focus();
+        const navigated = await existing.navigate(targetUrl);
+        return (navigated || existing).focus();
       }
       return clients.openWindow(targetUrl);
     })

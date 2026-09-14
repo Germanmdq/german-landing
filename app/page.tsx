@@ -50,12 +50,20 @@ const extractMeditationSection = (body: string, deliveryType: TallerDeliveryType
   return text ? cleanParagraphs(text) : null;
 };
 const findNumberedMessage = (body: string, index: number): string[] | null => {
-  const blocks = body.split(/\n\s*\n/).map((block) => block.trim()).filter(Boolean);
-  const pattern = new RegExp(`^0*${index}\\.\\s*`);
-  const block = blocks.find((candidate) => pattern.test(candidate));
-  if (!block) return null;
-  const text = block.replace(pattern, '').trim();
-  return text ? [text] : null;
+  // El contenido histórico puede venir con saltos reales o con HTML <br>.
+  // Normalizamos ambos formatos antes de buscar el marcador numerado.
+  const normalizedBody = body
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/\r\n?/g, '\n');
+  const marker = new RegExp(`(?:^|\\n)\\s*0*${index}\\.\\s*`, 'm');
+  const match = marker.exec(normalizedBody);
+  if (!match) return null;
+
+  const afterMarker = normalizedBody.slice(match.index + match[0].length);
+  const nextMarkerIndex = afterMarker.search(/\n\s*0*\d+\.\s*/m);
+  const text = (nextMarkerIndex >= 0 ? afterMarker.slice(0, nextMarkerIndex) : afterMarker).trim();
+  const paragraphs = cleanParagraphs(text);
+  return paragraphs.length ? paragraphs : null;
 };
 
 const palette = ['#D92D35', '#E5484D', '#F2555A', '#FF6B6F'];
@@ -1408,15 +1416,30 @@ export default function App() {
     if (!session?.user || !pendingDeliveryId) return;
     let cancelled = false;
     (async () => {
+      const deliveryId = pendingDeliveryId;
+      let openedSuccessfully = false;
+      const showDeliveryError = (reason: string) => {
+        console.error('[deep-link] entrega no disponible:', { deliveryId, reason });
+        setMainMenu(false);
+        setReader({
+          title: 'No pudimos abrir este mensaje',
+          eyebrow: 'TALLER DE 40 DÍAS',
+          detail: 'La entrega quedó identificada para que podamos revisarla.',
+          paragraphs: [reason, `Referencia de entrega: ${deliveryId}`],
+        });
+      };
       try {
-        console.log('[deep-link] abriendo entrega', pendingDeliveryId);
+        console.log('[deep-link] abriendo entrega', deliveryId);
         const { data: row, error } = await supabase
           .from('taller_deliveries')
           .select('id,day_number,delivery_type,delivered_at,seen_at,message_index,content_items(title,body),content_assets(source_url)')
-          .eq('id', pendingDeliveryId)
+          .eq('id', deliveryId)
           .maybeSingle();
         if (cancelled) return;
-        if (error || !row) { console.error('[deep-link] no se pudo cargar la entrega:', error); return; }
+        if (error || !row) {
+          showDeliveryError(error ? `No se pudo consultar la entrega: ${error.message}` : 'La entrega no existe o no está disponible para esta cuenta.');
+          return;
+        }
         const item = row.content_items as unknown as { title: string; body: string } | null;
         const asset = row.content_assets as unknown as { source_url: string } | null;
         const deliveryType = row.delivery_type as TallerDeliveryType;
@@ -1424,21 +1447,36 @@ export default function App() {
         const paragraphs = deliveryType === 'intermediate_message'
           ? (row.message_index != null ? findNumberedMessage(body, row.message_index) : null)
           : extractMeditationSection(body, deliveryType);
+        if (!item?.body) {
+          showDeliveryError('La entrega no tiene contenido asociado.');
+          return;
+        }
+        if (!paragraphs?.length) {
+          const messageReference = deliveryType === 'intermediate_message'
+            ? ` No se encontró el mensaje numerado ${row.message_index ?? 'sin índice'} en el contenido del Día ${row.day_number}.`
+            : ` No se encontró la sección correspondiente a ${deliveryTypeLabels[deliveryType]}.`;
+          showDeliveryError(`El contenido existe, pero no pudimos extraerlo.${messageReference}`);
+          return;
+        }
         setMainMenu(false);
         setReader({
           title: `Día ${row.day_number} · ${deliveryTypeLabels[deliveryType]}`,
           eyebrow: 'TALLER DE 40 DÍAS',
           detail: `Recibido ${formatDeliveredAt(row.delivered_at)}.`,
-          paragraphs: paragraphs || [],
+          paragraphs,
           audioUrl: asset?.source_url,
         });
-        if (!row.seen_at) void supabase.from('taller_deliveries').update({ seen_at: new Date().toISOString() }).eq('id', row.id);
+        openedSuccessfully = true;
+        if (!row.seen_at) {
+          const { error: seenError } = await supabase.from('taller_deliveries').update({ seen_at: new Date().toISOString() }).eq('id', row.id);
+          if (seenError) console.error('[deep-link] no se pudo marcar seen_at:', seenError);
+        }
       } catch (err) {
-        console.error('[deep-link] excepción abriendo la entrega:', err);
+        if (!cancelled) showDeliveryError(err instanceof Error ? `Ocurrió un error al abrir la entrega: ${err.message}` : 'Ocurrió un error inesperado al abrir la entrega.');
       } finally {
         if (!cancelled) {
           setPendingDeliveryId(null);
-          if (typeof window !== 'undefined') window.history.replaceState({}, '', window.location.pathname);
+          if (openedSuccessfully && typeof window !== 'undefined') window.history.replaceState({}, '', window.location.pathname);
         }
       }
     })();
