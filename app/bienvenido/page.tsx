@@ -4,6 +4,7 @@ import { ArrowRight, MessageCircle } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import { LoginGate } from '../components/login-gate';
 import { InstallOnboarding } from '../components/experience-onboarding';
+import '../components/experience-onboarding.css';
 import { supabase } from '../lib/supabase';
 import { detectInstallPlatform, hasNativeInstallPrompt, isRunningStandalone, listenForPwaInstallation, promptNativeInstallation } from '../lib/pwa';
 
