@@ -310,8 +310,8 @@ async function processMeditation(enrollment: ProgramEnrollmentRow, moment: Medit
   if (!inserted) return;
 
   await sendToActiveDevices(enrollment, inserted.id, {
-    title: meditationTitles[moment],
-    body: `Tu práctica del Día ${enrollment.current_day} está lista.`,
+    title: 'Mensaje de Germán',
+    body: '',
     url: `/delivery/${inserted.id}`,
     data: { type: deliveryType, day: enrollment.current_day },
   });
@@ -346,8 +346,8 @@ async function processIntermediateMessage(enrollment: ProgramEnrollmentRow, mess
   if (!inserted) return;
 
   await sendToActiveDevices(enrollment, inserted.id, {
-    title: 'Un momento para vos',
-    body: messageText.split('\n')[0],
+    title: 'Mensaje de Germán',
+    body: '',
     url: `/delivery/${inserted.id}`,
     data: { type: 'intermediate_message', day: enrollment.current_day, index: messageIndex },
   });
@@ -420,8 +420,8 @@ async function retrySingleDelivery(subscriptionId: string, deliveryId: string) {
     ? findNumberedMessageText(content?.body || '', delivery.message_index) || 'Tenés una práctica pendiente.'
     : `Tu práctica del Día ${delivery.day_number} está lista.`;
   const payload = {
-    title: moment ? meditationTitles[moment] : 'Un momento para vos',
-    body: body.split('\n')[0],
+    title: 'Mensaje de Germán',
+    body: '',
     url: `/delivery/${delivery.id}`,
     data: { type: deliveryType, day: delivery.day_number, retry: true },
   };
