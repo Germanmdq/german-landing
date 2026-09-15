@@ -10,6 +10,7 @@
     "test": "node --test --experimental-strip-types tests/*.test.ts"
   },
   "dependencies": {
+    "@base-ui/react": "^1.8.0",
     "@lottiefiles/dotlottie-react": "0.19.16",
     "@lottiefiles/dotlottie-web": "0.80.0",
     "@supabase/supabase-js": "2.57.4",

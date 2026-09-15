@@ -1,0 +1,38 @@
+.sona-fluid-tabs { width: max-content; max-width: 100%; overflow-x: auto; }
+.sona-fluid-tabs-list { display: flex; width: max-content; gap: 4px; padding: 4px; border-radius: 14px; background: var(--fluid-tabs-surface); }
+.sona-fluid-tab { position: relative; display: flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 17px; border: 0; border-radius: 11px; background: transparent; color: var(--fluid-tabs-label); font-size: 14px; font-weight: 650; white-space: nowrap; cursor: pointer; }
+.sona-fluid-tab.is-active { color: var(--fluid-tabs-label-active); }
+.sona-fluid-tab:focus-visible { outline: 3px solid var(--ui-accent); outline-offset: 2px; z-index: 2; }
+.sona-fluid-hover { position: absolute; inset: 0; border-radius: inherit; background: #fff7; opacity: 0; pointer-events: none; transition: opacity .15s ease; }
+.sona-fluid-tab:hover .sona-fluid-hover { opacity: 1; }
+.sona-fluid-indicator { position: absolute; inset: 0; border-radius: inherit; background: var(--fluid-tabs-surface-active); box-shadow: 0 2px 6px #0001; pointer-events: none; }
+.sona-fluid-label { position: relative; z-index: 1; }
+.sona-dialog-backdrop { position: fixed; inset: 0; z-index: 90; background: #11192773; backdrop-filter: blur(4px); }
+.sona-dialog-positioner { position: fixed; inset: 0; z-index: 91; display: flex; align-items: flex-end; justify-content: center; pointer-events: none; }
+.sona-dialog-popup { width: min(100%, 480px); pointer-events: auto; }
+.sona-dialog-content { width: 100%; padding: 12px 20px max(20px, env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; background: #fff; color: #1d1d1f; box-shadow: 0 -12px 50px #0002; text-align: center; }
+.sona-dialog-content::before { content: ''; display: block; width: 36px; height: 5px; margin: 0 auto 17px; border-radius: 5px; background: #c7c7cd; }
+.sona-dialog-title { margin: 0 0 8px; font-size: 19px; font-weight: 700; }
+.sona-dialog-description { margin: 0 0 22px; color: #63636b; font-size: 15px; line-height: 1.45; }
+.sona-dialog-actions { display: grid; gap: 10px; }
+.sona-dialog-actions button { min-height: 52px; border: 0; border-radius: 14px; font-weight: 650; font-size: 16px; }
+.sona-dialog-danger { background: #c42b35; color: #fff; }
+.sona-dialog-close { background: #f2f2f7; color: #1d1d1f; }
+.sona-dialog-actions button:focus-visible { outline: 3px solid #a91e29; outline-offset: 2px; }
+.sona-switch-wrap { display: inline-flex; }
+.sona-switch { display: inline-flex; align-items: center; position: relative; flex-shrink: 0; padding: 2px; border: 0; border-radius: 999px; background: #dedee4; cursor: pointer; touch-action: pan-y; transition: background-color .18s ease; }
+.sona-switch[data-checked] { background: var(--ui-accent); }
+.sona-switch[aria-invalid=true] { box-shadow: 0 0 0 2px #c42b35; }
+.sona-switch:disabled { opacity: .55; cursor: not-allowed; }
+.sona-switch:focus-visible { outline: 3px solid #a91e29; outline-offset: 3px; }
+.sona-switch-sm { width: 36px; height: 16px; }
+.sona-switch-md { width: 54px; height: 31px; }
+.sona-switch-lg { width: 80px; height: 39px; }
+.sona-switch-thumb { display: block; flex-shrink: 0; border-radius: 999px; background: white; box-shadow: 0 2px 6px #0003; }
+.sona-switch-thumb-sm { width: 21px; height: 13px; }
+.sona-switch-thumb-md { width: 32px; height: 27px; }
+.sona-switch-thumb-lg { width: 47px; height: 33px; }
+@media (prefers-reduced-motion: reduce) {
+  .sona-fluid-hover, .sona-switch { transition: none; }
+  .sona-dialog-backdrop { backdrop-filter: none; }
+}

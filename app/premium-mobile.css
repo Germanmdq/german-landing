@@ -1,0 +1,36 @@
+.main-navigation-dock { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 80; width: min(100%, 480px); display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; padding: 7px 8px max(8px, env(safe-area-inset-bottom)); border-top: 1px solid #e3e3e9; background: #fffffff2; backdrop-filter: blur(20px); box-shadow: 0 -7px 22px #1d1d1f0a; }
+.main-navigation-dock button { display: grid; justify-items: center; align-content: center; gap: 4px; min-height: 52px; padding: 4px 0; border: 0; border-radius: 11px; background: transparent; color: #6e6e73; font-size: 10px; font-weight: 600; line-height: 1; white-space: nowrap; }
+.main-navigation-dock button.is-current { background: #f1e9ec; color: #a52e46; }
+.main-navigation-dock button:active, .home-quick-access button:active, .ios-row:active, .nav-menu-row:active { transform: scale(.96); background-color: #f2e6ea; }
+.main-navigation-dock button:focus-visible, .home-quick-access button:focus-visible { outline: 3px solid #a91e29; outline-offset: 2px; }
+.home-quick-access { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; padding: 0 6.25% 13px; background: #f5f5f7; }
+.home-quick-access button { display: flex; align-items: center; gap: 7px; min-height: 43px; padding: 7px 9px; border: 1px solid #e2e2e8; border-radius: 12px; background: #fff; color: #33343b; font-size: 11px; font-weight: 650; text-align: left; box-shadow: 0 2px 6px #00000008; }
+.home-quick-access svg { width: 17px; height: 17px; flex-shrink: 0; color: #a52e46; }
+.home-quick-access span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.day-one-screen .day-one-section { padding-bottom: calc(82px + env(safe-area-inset-bottom)) !important; }
+.reader-body { padding-bottom: calc(115px + env(safe-area-inset-bottom)) !important; }
+.day-one-screen .feature-header .header-menu { width: 44px; height: 44px; right: 14px; top: max(12px, env(safe-area-inset-top)); }
+.day-one-screen .feature-header .header-back { min-height: 44px; }
+.nav-menu-sheet { z-index: 100; }
+.nav-menu-row, .nav-menu-cancel, .time-sheet header button, .timezone-option, .notification-time-row { transition: background-color .16s ease, transform .16s ease; }
+.nav-menu-row:focus-visible, .nav-menu-cancel:focus-visible, .time-sheet header button:focus-visible, .timezone-option:focus-visible, .notification-time-row:focus-visible, .time-wheel:focus-visible { outline: 3px solid #a91e29 !important; outline-offset: -3px; box-shadow: none; }
+.time-sheet header button { padding-inline: 10px; }
+.time-wheel-value.selected { color: #a52e46; font-weight: 700; }
+.time-wheel-value:active { color: #a52e46; transform: scale(.94); }
+.library-fluid-tabs { margin-top: 12px; }
+.library-card-row, .favorite-card-row { position: relative; }
+.library-card-row .library-content-card { width: 100%; padding-right: 88px; }
+.library-card-row .library-card-actions { width: 22px; }
+.library-row-favorite { position: absolute; right: 39px; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; }
+.library-row-favorite:active { transform: translateY(-50%) scale(.92); }
+.library-row-favorite:focus-visible, .favorite-card-row .remove-favorite:focus-visible { outline: 3px solid #a91e29; outline-offset: 2px; }
+.favorite-card-row .favorite-content-card { grid-template-columns: 48px minmax(0, 1fr); padding-right: 63px; }
+.favorite-card-row .remove-favorite { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; }
+.favorite-card-row .remove-favorite:active { transform: translateY(-50%) scale(.92); }
+.settings-group-label { margin: 3px 0 9px !important; color: #a52e46 !important; font-size: 12px !important; font-weight: 750 !important; letter-spacing: .1em; }
+.settings-explanation { margin-top: 12px !important; font-size: 14px !important; line-height: 1.5 !important; }
+.ios-row:disabled { cursor: default; opacity: .58; }
+.day-one-card.is-unavailable .day-one-open { cursor: default; }
+.day-one-card.is-unavailable .day-one-caption::after { content: 'PRÓXIMAMENTE'; display: inline-block; margin-top: 8px; padding: 5px 9px; border-radius: 999px; background: #ffffffd9; color: #a52e46; font-size: 10px; font-weight: 800; letter-spacing: .07em; }
+@media (max-width: 365px) { .main-navigation-dock button { font-size: 9px; } .home-quick-access button { font-size: 10px; padding-inline: 6px; } }
+@media (prefers-reduced-motion: reduce) { .main-navigation-dock button, .home-quick-access button, .ios-row, .nav-menu-row, .nav-menu-cancel, .time-sheet header button, .timezone-option, .notification-time-row { transition: none; } }

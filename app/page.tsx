@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, Download } from 'lucide-react';
+import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, Download, House, LayoutGrid, CalendarDays, Menu, Compass } from 'lucide-react';
 import content from './content.generated.json';
 import { supabase } from './lib/supabase';
 import { subscribeToPush, ensurePushSubscription, reconcilePushSubscription, disablePushSubscription, disableCurrentBrowserPushSubscription, getPushSubscriptionActive, getCurrentBrowserPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
@@ -16,13 +17,18 @@ import './components/day-one-carousel.css';
 import { DayOneCarousel } from './components/day-one-carousel';
 import { TimePicker } from './components/time-picker';
 import { TimezonePicker } from './components/timezone-picker';
+import FluidTabs from './components/sona/fluid-tabs';
+import { AnimatedDialog, AnimatedDialogContent, AnimatedDialogTitle, AnimatedDialogDescription, AnimatedDialogClose } from './components/sona/animated-dialog';
+import AnimatedSwitch from './components/sona/animated-switch';
+import './components/sona/sona.css';
+import './premium-mobile.css';
 import { hasActiveAccess, type Entitlement } from './lib/payments';
 import { LoginGate } from './components/login-gate';
 import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, type TallerDeliveryType } from './lib/taller-delivery';
 
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'consultas' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string; audios?: { label: string; url: string }[] };
-type DeckItem = { icon: string; title: string; detail: string; tone: string; image?: string; imageSize?: 'compact'; children?: DeckItem[]; reader?: ReaderContent; notificationPanel?: boolean; accountPanel?: boolean; workshopPanel?: boolean; action?: 'logout' };
+type DeckItem = { icon: string; title: string; detail: string; tone: string; image?: string; imageSize?: 'compact'; disabled?: boolean; children?: DeckItem[]; reader?: ReaderContent; notificationPanel?: boolean; accountPanel?: boolean; workshopPanel?: boolean; action?: 'logout' };
 type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string };
 type FavoriteRecord = { id: string; title: string; detail: string; icon: string; tone: string; reader?: ReaderContent };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
@@ -76,7 +82,7 @@ const momentNodes: DeckItem[] = content.moments.map((moment, index) => ({
 const screens: Record<Tab, Screen> = {
   talleres: { eyebrow: 'PRÁCTICAS GUIADAS', title: 'Elegí una práctica', subtitle: 'Recorridos preparados para acompañarte paso a paso.', items: [
     { icon: '🌱', title: 'Prácticas de 7 días', detail: 'Amor, salud y dinero.', tone: palette[0], children: planNodes },
-    { icon: '🌿', title: 'Prácticas de 15 días', detail: 'Amor, salud y dinero.', tone: palette[1] },
+    { icon: '🌿', title: 'Prácticas de 15 días', detail: 'Próximamente.', tone: palette[1], disabled: true },
     { icon: '🌳', title: 'Prácticas de 40 días', detail: 'Autoconcepto y control de la imaginación.', tone: palette[2], workshopPanel: true },
   ] },
   // "Tu propia práctica" ya no es un deck navegable: es un formulario único
@@ -89,15 +95,15 @@ const screens: Record<Tab, Screen> = {
     { icon: '🎙️', title: 'Conferencias', detail: 'Contenido pendiente de conectar.', tone: palette[2] },
   ] },
   consultas: { eyebrow: 'CONSULTAS', title: 'Hablemos de lo que te pasa', subtitle: 'Consultas para leer, escuchar y guardar.', items: [
-    { icon: '💬', title: 'Preguntar', detail: 'Escribí una pregunta con tus palabras.', tone: palette[0] },
-    { icon: '🔊', title: 'Escuchar', detail: 'Escuchá las respuestas disponibles.', tone: palette[1] },
-    { icon: '🔖', title: 'Guardadas', detail: 'Volvé a las consultas que elegiste guardar.', tone: palette[2] },
+    { icon: '💬', title: 'Preguntar', detail: 'Próximamente.', tone: palette[0], disabled: true },
+    { icon: '🔊', title: 'Escuchar', detail: 'Próximamente.', tone: palette[1], disabled: true },
+    { icon: '🔖', title: 'Guardadas', detail: 'Próximamente.', tone: palette[2], disabled: true },
   ] },
   espacio: { eyebrow: 'MI PERFIL', title: 'Tu espacio', subtitle: 'Tu cuenta y tus elecciones.', items: [
     { icon: '👤', title: 'Mi cuenta', detail: 'Nombre, mail, suscripción y acceso.', tone: palette[0], accountPanel: true },
     { icon: '⭐', title: 'Favoritos', detail: 'Prácticas, audios y lecturas guardadas.', tone: palette[1] },
-    { icon: '📈', title: 'Mi avance', detail: 'Progreso real de tus prácticas.', tone: palette[2] },
-    { icon: '⚙️', title: 'Configuración', detail: 'Horarios, zona y apariencia.', tone: palette[3] },
+    { icon: '📈', title: 'Mi avance', detail: 'Próximamente.', tone: palette[2], disabled: true },
+    { icon: '⚙️', title: 'Configuración', detail: 'Notificaciones y horarios locales.', tone: palette[3] },
   ] },
 };
 
@@ -147,15 +153,19 @@ function Deck({ items, onSelect, favorites, onToggleFavorite }: { items: DeckIte
   return <div className="feature-list">{items.map((entry, index) => <DeckCard key={entry.title} item={entry} index={index} last={index === items.length - 1} onClick={() => onSelect(entry)} favorite={entry.reader ? favorites.some((favorite) => favorite.id === deckFavorite(entry).id) : undefined} onFavorite={entry.reader ? () => onToggleFavorite(deckFavorite(entry)) : undefined} />)}<div className="deck-end-space" aria-hidden="true" /></div>;
 }
 
-type NavTarget = 'home' | 'favorites' | 'biblioteca' | 'meditaciones' | 'talleres' | 'reunion' | 'espacio';
-const navMenuItems: { target: NavTarget; icon: string; label: string }[] = [
-  { target: 'home', icon: '🏠', label: 'Inicio' },
-  { target: 'favorites', icon: '❤️', label: 'Favoritos' },
-  { target: 'biblioteca', icon: '📚', label: 'Biblioteca' },
-  { target: 'meditaciones', icon: '🧘', label: 'Meditaciones' },
-  { target: 'talleres', icon: '✨', label: 'Prácticas guiadas' },
-  { target: 'reunion', icon: '📅', label: 'Talleres en vivo' },
-  { target: 'espacio', icon: '👤', label: 'Mi perfil' },
+type NavTarget = 'home' | 'favorites' | 'biblioteca' | 'meditaciones' | 'talleres' | 'propia' | 'consultas' | 'reunion' | 'espacio' | 'configuracion' | 'notificaciones';
+const navMenuItems: { target: NavTarget; icon: ReactNode; label: string }[] = [
+  { target: 'home', icon: <House size={21} />, label: 'Inicio' },
+  { target: 'talleres', icon: <Route size={21} />, label: 'Prácticas guiadas' },
+  { target: 'propia', icon: <SlidersHorizontal size={21} />, label: 'Tu propia práctica' },
+  { target: 'meditaciones', icon: <Flower2 size={21} />, label: 'Meditaciones' },
+  { target: 'biblioteca', icon: <BookOpen size={21} />, label: 'Biblioteca' },
+  { target: 'consultas', icon: <MessageCircle size={21} />, label: 'Consultas' },
+  { target: 'reunion', icon: <CalendarDays size={21} />, label: 'Talleres en vivo' },
+  { target: 'espacio', icon: <UserRound size={21} />, label: 'Mi perfil' },
+  { target: 'favorites', icon: <Heart size={21} />, label: 'Favoritos' },
+  { target: 'configuracion', icon: <Settings2 size={21} />, label: 'Configuración' },
+  { target: 'notificaciones', icon: <Bell size={21} />, label: 'Notificaciones' },
 ];
 
 function NavMenuSheet({ onSelect, onCancel }: { onSelect: (target: NavTarget) => void; onCancel: () => void }) {
@@ -177,6 +187,34 @@ function NavMenuSheet({ onSelect, onCancel }: { onSelect: (target: NavTarget) =>
   </dialog>;
 }
 
+function MainNavigationDock({ current, onSelect }: { current: NavTarget; onSelect: (target: NavTarget) => void }) {
+  const [moreOpen, setMoreOpen] = useState(false);
+  const dockItems: { target: NavTarget; icon: ReactNode; label: string }[] = [
+    { target: 'home', icon: <House size={21} />, label: 'Inicio' },
+    { target: 'talleres', icon: <Route size={21} />, label: 'Prácticas' },
+    { target: 'meditaciones', icon: <Flower2 size={21} />, label: 'Meditar' },
+    { target: 'biblioteca', icon: <BookOpen size={21} />, label: 'Biblioteca' },
+    { target: 'espacio', icon: <UserRound size={21} />, label: 'Perfil' },
+  ];
+  return <>
+    <nav className="main-navigation-dock" aria-label="Navegación principal">
+      {dockItems.map((item) => <button key={item.target} type="button" aria-current={current === item.target ? 'page' : undefined} className={current === item.target ? 'is-current' : ''} onClick={() => onSelect(item.target)}>{item.icon}<span>{item.label}</span></button>)}
+      <button type="button" aria-label="Todas las secciones" aria-haspopup="dialog" onClick={() => setMoreOpen(true)}><Menu size={21} /><span>Más</span></button>
+    </nav>
+    {moreOpen && <NavMenuSheet onSelect={(target) => { setMoreOpen(false); onSelect(target); }} onCancel={() => setMoreOpen(false)} />}
+  </>;
+}
+
+function HomeQuickAccess({ onSelect }: { onSelect: (target: NavTarget) => void }) {
+  const targets: NavTarget[] = ['talleres', 'propia', 'meditaciones', 'biblioteca', 'consultas', 'espacio'];
+  return <nav className="home-quick-access" aria-label="Accesos rápidos">
+    {targets.map((target) => {
+      const item = navMenuItems.find((entry) => entry.target === target)!;
+      return <button key={target} type="button" onClick={() => onSelect(target)}>{item.icon}<span>{target === 'propia' ? 'Mi práctica' : target === 'talleres' ? 'Guiadas' : item.label}</span></button>;
+    })}
+  </nav>;
+}
+
 function FixedHeader({ eyebrow, title, subtitle, onBack, onNavigate }: { eyebrow: string; title: string; subtitle: string; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   const [menuOpen, setMenuOpen] = useState(false);
   return <header className="feature-header">
@@ -190,9 +228,7 @@ function FixedHeader({ eyebrow, title, subtitle, onBack, onNavigate }: { eyebrow
 }
 
 function ToggleSwitch({ checked, onChange, disabled, label }: { checked: boolean; onChange: () => void; disabled?: boolean; label: string }) {
-  return <button type="button" role="switch" aria-checked={checked} aria-label={label} className={`ios-toggle${checked ? ' is-on' : ''}`} onClick={onChange} disabled={disabled}>
-    <span className="ios-toggle-thumb" />
-  </button>;
+  return <AnimatedSwitch checked={checked} onCheckedChange={onChange} disabled={disabled} aria-label={label} enableDrag={false} />;
 }
 
 function useNotificationsToggle(user: User) {
@@ -290,7 +326,7 @@ function NotificationsPanel({ user, onBack, onNavigate }: { user: User; onBack: 
     if (result.error) setPermissionMessage(result.error);
   };
   return <section className="reader-section">
-    <FixedHeader eyebrow="NOTIFICACIONES" title="Tus horarios" subtitle="Los horarios quedan guardados en este dispositivo." onBack={onBack} onNavigate={onNavigate} />
+    <FixedHeader eyebrow="NOTIFICACIONES" title="Horarios locales" subtitle="Esta preferencia se guarda en este dispositivo." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body notification-settings">
       {permission !== 'unsupported' && <ShimmerButton className="notification-permission" onClick={requestPermission} disabled={permissionBusy || permission === 'denied'}><Bell size={18} />{permissionBusy ? 'Activando…' : permission === 'granted' ? 'Notificaciones activadas' : permission === 'denied' ? 'Permiso bloqueado en el navegador' : 'Activar notificaciones'}</ShimmerButton>}
       {permission === 'denied' && <p className="notification-help">Para activarlas, habilitá las notificaciones de Germán desde los Ajustes de tu teléfono y volvé a abrir la app.</p>}
@@ -307,9 +343,9 @@ function ProfileScreen({ user, items, showInstall, onInstall, onSelect, onBack, 
     <FixedHeader eyebrow="MI PERFIL" title="Tu espacio" subtitle="Tu cuenta y tus elecciones." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body">
       <div className="ios-card">
-        {items.map((item) => <button key={item.title} className="ios-row" onClick={() => onSelect(item)}>
+        {items.map((item) => <button key={item.title} className="ios-row" onClick={() => onSelect(item)} disabled={item.title === 'Mi avance'}>
           <span className="ios-row-label">{item.title}</span>
-          <span className="ios-row-value ios-row-value--muted"><ChevronRight size={17} /></span>
+          <span className="ios-row-value ios-row-value--muted">{item.title === 'Mi avance' ? 'Próximamente' : <ChevronRight size={17} />}</span>
         </button>)}
         {showInstall && <button type="button" className="ios-row" onClick={onInstall}>
           <span className="ios-row-label install-profile-label"><Download size={18} />Instalar Asistente Germán</span>
@@ -321,6 +357,22 @@ function ProfileScreen({ user, items, showInstall, onInstall, onSelect, onBack, 
         </div>
       </div>
       {notifications.error && <p className="account-message">{notifications.error}</p>}
+    </div>
+  </section>;
+}
+
+function ConfigurationPanel({ user, onBack, onNavigate, onOpenNotifications }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void; onOpenNotifications: () => void }) {
+  const notifications = useNotificationsToggle(user);
+  return <section className="reader-section">
+    <FixedHeader eyebrow="MI PERFIL" title="Configuración" subtitle="Avisos y horarios en tu dispositivo." onBack={onBack} onNavigate={onNavigate} />
+    <div className="reader-body configuration-settings">
+      <p className="settings-group-label">AVISOS</p>
+      <div className="ios-card">
+        <div className="ios-row"><span className="ios-row-label">Notificaciones push</span>{notifications.loading ? <span className="ios-toggle-placeholder" aria-hidden="true" /> : <ToggleSwitch checked={notifications.active} onChange={notifications.toggle} disabled={notifications.busy} label="Notificaciones push" />}</div>
+        <button type="button" className="ios-row" onClick={onOpenNotifications}><span className="ios-row-label">Horarios locales</span><span className="ios-row-value ios-row-value--muted"><ChevronRight size={17} /></span></button>
+      </div>
+      {notifications.error && <p className="account-message" role="alert">{notifications.error}</p>}
+      <p className="settings-explanation">Esta preferencia se guarda en este dispositivo. Las entregas de un programa siguen los horarios que elegiste al comenzarlo.</p>
     </div>
   </section>;
 }
@@ -457,10 +509,10 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
             )}
           </div>
         </div>
-        <div className="library-filters">{filters.map((item) => <button key={item} className={filter === item ? 'active' : ''} onClick={() => setFilter(item)}>{item}</button>)}</div>
+        <FluidTabs tabs={filters.map((item) => ({ value: item, title: item, ariaControls: 'library-results' }))} value={filter} onValueChange={setFilter} ariaLabel="Filtrar la biblioteca" className="library-fluid-tabs" />
       </section>
       <p className="library-count">{visible.length} {visible.length === 1 ? 'resultado' : 'resultados'}</p>
-      <div className="library-content-list">{visible.map((entry, index) => {
+      <div id="library-results" className="library-content-list" role="tabpanel" aria-label={`Resultados: ${filter}`}>{visible.map((entry, index) => {
         const saved = favorites.some((favorite) => favorite.id === libraryFavorite(entry).id);
         let preview: React.ReactNode = entry.excerpt || 'Abrí para leer o escuchar.';
         if (q) {
@@ -474,19 +526,16 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
             preview = entry.excerpt || 'Abrí para leer o escuchar.';
           }
         }
-        return <MagicCard key={entry.id} delay={Math.min(index * .025, .2)} className="library-content-card" onClick={() => onRead(entry)}>
+        return <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index * .025, .2)} className="library-content-card" onClick={() => onRead(entry)}>
           <div>
             <p>{entry.type || 'Contenido'}</p>
             <b className="card-title">{q ? highlightText(entry.title, q) : entry.title}</b>
             <em className="card-subtitle">{preview}</em>
           </div>
           <span className="library-card-actions">
-            <span role="button" tabIndex={0} className={`favorite-button${saved ? ' is-favorite' : ''}`} onClick={(event) => { event.stopPropagation(); onToggleFavorite(libraryFavorite(entry)); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onToggleFavorite(libraryFavorite(entry)); } }} aria-label={saved ? `Quitar ${entry.title} de favoritos` : `Guardar ${entry.title} en favoritos`}>
-              <Heart size={18} fill={saved ? 'currentColor' : 'none'} />
-            </span>
             <i><ChevronRight size={19} /></i>
           </span>
-        </MagicCard>;
+        </MagicCard><button type="button" className={`favorite-button library-row-favorite${saved ? ' is-favorite' : ''}`} onClick={() => onToggleFavorite(libraryFavorite(entry))} aria-label={saved ? `Quitar ${entry.title} de favoritos` : `Guardar ${entry.title} en favoritos`}><Heart size={18} fill={saved ? 'currentColor' : 'none'} /></button></div>;
       })}</div>
       {!visible.length && <p className="library-empty">No se encontraron resultados</p>}
     </div>
@@ -494,22 +543,16 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
 }
 
 function ConfirmDialog({ title = '¿Eliminar?', description, confirmLabel = 'Eliminar', cancelLabel = 'Cancelar', onConfirm, onCancel }: { title?: string; description: string; confirmLabel?: string; cancelLabel?: string; onConfirm: () => void; onCancel: () => void }) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    const element = dialog.current;
-    element?.showModal();
-    return () => { element?.close(); previous?.focus(); };
-  }, []);
-  return <dialog ref={dialog} className="confirm-sheet" aria-labelledby="confirm-sheet-title" onCancel={(event) => { event.preventDefault(); onCancel(); }} onClick={(event) => { if (event.target === event.currentTarget) onCancel(); }}>
-    <div className="confirm-sheet-content">
-      <div className="time-sheet-handle" aria-hidden="true" />
-      <h2 id="confirm-sheet-title">{title}</h2>
-      <p>{description}</p>
-      <button type="button" className="confirm-sheet-danger" onClick={onConfirm}>{confirmLabel}</button>
-      <button type="button" className="confirm-sheet-cancel" onClick={onCancel}>{cancelLabel}</button>
-    </div>
-  </dialog>;
+  return <AnimatedDialog open onOpenChange={(open) => { if (!open) onCancel(); }}>
+    <AnimatedDialogContent from="bottom">
+      <AnimatedDialogTitle>{title}</AnimatedDialogTitle>
+      <AnimatedDialogDescription>{description}</AnimatedDialogDescription>
+      <div className="sona-dialog-actions">
+        <button type="button" className="sona-dialog-danger" onClick={onConfirm}>{confirmLabel}</button>
+        <AnimatedDialogClose type="button">{cancelLabel}</AnimatedDialogClose>
+      </div>
+    </AnimatedDialogContent>
+  </AnimatedDialog>;
 }
 
 function FavoritesPanel({ favorites, onBack, onNavigate, onOpen, onRemove }: { favorites: FavoriteRecord[]; onBack: () => void; onNavigate: (target: NavTarget) => void; onOpen: (favorite: FavoriteRecord) => void; onRemove: (favorite: FavoriteRecord) => void }) {
@@ -518,7 +561,7 @@ function FavoritesPanel({ favorites, onBack, onNavigate, onOpen, onRemove }: { f
     <FixedHeader eyebrow="MI PERFIL" title="Favoritos" subtitle="Todo lo que guardaste, reunido en un solo lugar." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body favorites-browser">
       {!favorites.length && <div className="favorites-empty"><Heart size={30} /><b>Todavía no guardaste nada</b><p>Tocá el corazón de cualquier tarjeta para encontrarla después acá.</p></div>}
-      {favorites.map((favorite, index) => <MagicCard key={favorite.id} delay={index * .04} className="favorite-content-card" onClick={() => onOpen(favorite)} style={{ '--category-tone': favorite.tone } as React.CSSProperties}><span className="card-image">{favorite.icon}</span><div><small className="card-subtitle">FAVORITO</small><b className="card-title">{favorite.title}</b><em className="card-subtitle">{favorite.detail}</em></div><span role="button" tabIndex={0} className="remove-favorite" onClick={(event) => { event.stopPropagation(); setPendingRemoval(favorite); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); setPendingRemoval(favorite); } }} aria-label={`Quitar ${favorite.title} de favoritos`}><Trash2 size={18} /></span></MagicCard>)}
+      {favorites.map((favorite, index) => <div key={favorite.id} className="favorite-card-row"><MagicCard delay={index * .04} className="favorite-content-card" onClick={() => onOpen(favorite)} style={{ '--category-tone': favorite.tone } as React.CSSProperties}><span className="card-image"><CategoryIcon item={{ icon: favorite.icon, title: favorite.title, detail: favorite.detail, tone: favorite.tone }} /></span><div><small className="card-subtitle">FAVORITO</small><b className="card-title">{favorite.title}</b><em className="card-subtitle">{favorite.detail}</em></div></MagicCard><button type="button" className="remove-favorite" onClick={() => setPendingRemoval(favorite)} aria-label={`Quitar ${favorite.title} de favoritos`}><Trash2 size={18} /></button></div>)}
     </div>
     {pendingRemoval && <ConfirmDialog description={`Se va a quitar "${pendingRemoval.title}" de tus favoritos.`} onCancel={() => setPendingRemoval(null)} onConfirm={() => { onRemove(pendingRemoval); setPendingRemoval(null); }} />}
   </section>;
@@ -1106,6 +1149,7 @@ export default function App() {
   const [trail, setTrail] = useState<DeckItem[]>([]);
   const [reader, setReader] = useState<ReaderContent | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [configurationOpen, setConfigurationOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [favoritesOpen, setFavoritesOpen] = useState(false);
   const [workshopOpen, setWorkshopOpen] = useState(false);
@@ -1128,6 +1172,7 @@ export default function App() {
   const back = () => {
     if (reader) return setReader(null);
     if (notificationsOpen) return setNotificationsOpen(false);
+    if (configurationOpen) return setConfigurationOpen(false);
     if (accountOpen) return setAccountOpen(false);
     if (favoritesOpen) return setFavoritesOpen(false);
     if (workshopOpen) return setWorkshopOpen(false);
@@ -1139,6 +1184,7 @@ export default function App() {
   const navigateTo = (target: NavTarget) => {
     setReader(null);
     setNotificationsOpen(false);
+    setConfigurationOpen(false);
     setAccountOpen(false);
     setFavoritesOpen(false);
     setWorkshopOpen(false);
@@ -1148,6 +1194,8 @@ export default function App() {
     setMainMenu(false);
     if (target === 'favorites') { setFavoritesOpen(true); return; }
     if (target === 'reunion') { setMeetingOpen(true); return; }
+    if (target === 'configuracion') { setConfigurationOpen(true); setTab('espacio'); return; }
+    if (target === 'notificaciones') { setConfigurationOpen(true); setNotificationsOpen(true); setTab('espacio'); return; }
     setTab(target);
   };
 
@@ -1167,6 +1215,7 @@ export default function App() {
       setTrail([]);
       setAccountOpen(false);
       setNotificationsOpen(false);
+      setConfigurationOpen(false);
       setFavoritesOpen(false);
       setWorkshopOpen(false);
       setMeetingOpen(false);
@@ -1185,6 +1234,7 @@ export default function App() {
     if (selected.accountPanel) return setAccountOpen(true);
     if (selected.workshopPanel) return setWorkshopOpen(true);
     if (selected.title === 'Favoritos') return setFavoritesOpen(true);
+    if (selected.title === 'Configuración') return setConfigurationOpen(true);
     if (selected.children) setTrail((value) => [...value, selected]);
   };
 
@@ -1434,26 +1484,28 @@ export default function App() {
   if (!sessionChecked) return null;
   if (showVideo && !getDeliveryIdFromUrl() && !pendingDeliveryId) return <VideoIntro onFinish={() => setShowVideo(false)} />;
   if (!session) return <LoginGate />;
+  const dock = <MainNavigationDock current={mainMenu ? "home" : configurationOpen ? "configuracion" : tab} onSelect={navigateTo} />;
 
   if (mainMenu) {
     const meetingCard = { target: 'reunion' as const, title: 'Talleres en vivo', detail: 'Reuniones de lunes a viernes.', image: '/images/german-reunion.webp' };
     const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/german-perfil.png' : target === 'biblioteca' ? '/images/german-biblioteca.png' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
     const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
     const items = [...welcomeItems.slice(0, meditIndex + 1), meetingCard, ...welcomeItems.slice(meditIndex + 1)];
-    return <><main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'reunion') { setMeetingOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section></main>{installOpen && !standalone && !pendingDeliveryId && <InstallOnboarding suggestedPlatform={installPlatform} nativePromptAvailable={installPromptAvailable} onClose={() => { setInstallOpen(false); setInstallDismissed(true); }} onInstallAndroid={promptNativeInstallation} onRecheckInstallation={() => { const installed = isRunningStandalone(); setStandalone(installed); return installed; }} />}</>;
+    return <><main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><HomeQuickAccess onSelect={navigateTo} /><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'reunion') { setMeetingOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section>{dock}</main>{installOpen && !standalone && !pendingDeliveryId && <InstallOnboarding suggestedPlatform={installPlatform} nativePromptAvailable={installPromptAvailable} onClose={() => { setInstallOpen(false); setInstallDismissed(true); }} onInstallAndroid={promptNativeInstallation} onRecheckInstallation={() => { const installed = isRunningStandalone(); setStandalone(installed); return installed; }} />}</>;
   }
-  if (meetingOpen) return <main className="app-shell app-main section-app"><WeeklyMeetingPanel onBack={back} onNavigate={navigateTo} /></main>;
-  if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} onBack={back} onNavigate={navigateTo} onNameSaved={setFullName} onLogout={logout} /></main>;
-  if (reader) { const favorite = deckFavorite({ icon: '📖', title: reader.title, detail: reader.detail, tone: palette[0], reader }); return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} onNavigate={navigateTo} favorite={favorites.some((item) => item.title === reader.title)} onFavorite={() => { const exact = favorites.find((item) => item.title === reader.title); toggleFavorite(exact || favorite); }} /></main>; }
-  if (favoritesOpen) return <main className="app-shell app-main section-app"><FavoritesPanel favorites={favorites} onBack={back} onNavigate={navigateTo} onOpen={(favorite) => { if (favorite.reader) setReader(favorite.reader); }} onRemove={toggleFavorite} /></main>;
-  if (workshopOpen) return <main className="app-shell app-main section-app"><WorkshopPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} /></main>;
-  if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} /></main>;
-  if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} showInstall={!standalone} onInstall={() => { setInstallDismissed(false); setInstallOpen(true); }} onSelect={select} onBack={back} onNavigate={navigateTo} /></main>;
-  if (tab === 'propia' && !trail.length) return <main className="app-shell app-main section-app"><PropiaPracticaPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} /></main>;
-  if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel user={session.user} onBack={back} onNavigate={navigateTo} /></main>;
+  if (meetingOpen) return <main className="app-shell app-main section-app"><WeeklyMeetingPanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
+  if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} onBack={back} onNavigate={navigateTo} onNameSaved={setFullName} onLogout={logout} />{dock}</main>;
+  if (reader) { const favorite = deckFavorite({ icon: '📖', title: reader.title, detail: reader.detail, tone: palette[0], reader }); return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} onNavigate={navigateTo} favorite={favorites.some((item) => item.title === reader.title)} onFavorite={() => { const exact = favorites.find((item) => item.title === reader.title); toggleFavorite(exact || favorite); }} />{dock}</main>; }
+  if (favoritesOpen) return <main className="app-shell app-main section-app"><FavoritesPanel favorites={favorites} onBack={back} onNavigate={navigateTo} onOpen={(favorite) => { if (favorite.reader) setReader(favorite.reader); }} onRemove={toggleFavorite} />{dock}</main>;
+  if (workshopOpen) return <main className="app-shell app-main section-app"><WorkshopPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} />{dock}</main>;
+  if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
+  if (configurationOpen) return <main className="app-shell app-main section-app"><ConfigurationPanel user={session.user} onBack={back} onNavigate={navigateTo} onOpenNotifications={() => setNotificationsOpen(true)} />{dock}</main>;
+  if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} />{dock}</main>;
+  if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} showInstall={!standalone} onInstall={() => { setInstallDismissed(false); setInstallOpen(true); }} onSelect={select} onBack={back} onNavigate={navigateTo} />{dock}</main>;
+  if (tab === 'propia' && !trail.length) return <main className="app-shell app-main section-app"><PropiaPracticaPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} />{dock}</main>;
   if (current?.title === 'Día 1') {
     const carouselKey = `${tab}-${trail.map((item) => item.title).join('/')}-dia1`;
-    return <main className="app-shell app-main section-app day-one-screen"><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><DayOneCarousel key={carouselKey} items={screen.items} initialIndex={carouselIndicesRef.current[carouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[carouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[carouselKey] = index; select(item); }} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section></main>;
+    return <main className="app-shell app-main section-app day-one-screen"><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><DayOneCarousel key={carouselKey} items={screen.items} initialIndex={carouselIndicesRef.current[carouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[carouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[carouselKey] = index; select(item); }} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section>{dock}</main>;
   }
   const carouselKey = `${tab}-${trail.map((item) => item.title).join('/')}`;
   // Estas pantallas tienen fotos reales de fondo (a diferencia del resto de
@@ -1466,5 +1518,5 @@ export default function App() {
   // "Meditaciones para ahora" ya trae su propia imagen en cada DeckItem
   // (momentNodes, asignada por posición 1..15), así que no se pisa acá.
   const meditacionesPhotoScreen = tab === 'meditaciones' && trail.length === 0;
-  return <main className={`app-shell app-main section-app day-one-screen${photoCardsScreen ? ' photo-cards-screen' : ''}${meditacionesPhotoScreen ? ' meditaciones-photo-screen' : ''}`}><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><DayOneCarousel key={carouselKey} label={screen.title} items={screen.items.map((item) => item.accountPanel ? { ...item, image: '/images/mi-cuenta-acceso.webp' } : item.title === 'Favoritos' ? { ...item, image: '/images/favoritos-guardados.webp' } : item.title === 'Mi avance' ? { ...item, image: '/images/mi-avance-progreso.webp' } : item.title === 'Configuración' ? { ...item, image: '/images/configuracion-horarios-zona.webp' } : item.title === 'Activar notificaciones' ? { ...item, image: '/images/activar-notificaciones.webp' } : item.title === 'Horarios de práctica' ? { ...item, image: '/images/horarios-practica.webp' } : item.title === 'Preferencias' ? { ...item, image: '/images/preferencias-avisos.webp' } : item.title === 'Prácticas de 7 días' ? { ...item, image: '/images/interno-7dias.webp' } : item.title === 'Prácticas de 15 días' ? { ...item, image: '/images/interno-15dias.webp' } : item.title === 'Prácticas de 40 días' ? { ...item, image: '/images/interno-40dias.webp' } : item.title === 'Amor y relaciones' ? { ...item, image: '/images/interno-amor.webp' } : item.title === 'Dinero y trabajo' ? { ...item, image: '/images/interno-dinero.webp' } : item.title === 'Salud y bienestar' ? { ...item, image: '/images/interno-salud.webp' } : item.title === 'Preguntar' ? { ...item, image: '/images/interno-preguntar.webp' } : item.title === 'Escuchar' ? { ...item, image: '/images/interno-escuchar.webp' } : item.title === 'Guardadas' ? { ...item, image: '/images/interno-guardadas.webp' } : item)} initialIndex={carouselIndicesRef.current[carouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[carouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[carouselKey] = index; select(item); }} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section></main>;
+  return <main className={`app-shell app-main section-app day-one-screen${photoCardsScreen ? ' photo-cards-screen' : ''}${meditacionesPhotoScreen ? ' meditaciones-photo-screen' : ''}`}><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><DayOneCarousel key={carouselKey} label={screen.title} items={screen.items.map((item) => item.accountPanel ? { ...item, image: '/images/mi-cuenta-acceso.webp' } : item.title === 'Favoritos' ? { ...item, image: '/images/favoritos-guardados.webp' } : item.title === 'Mi avance' ? { ...item, image: '/images/mi-avance-progreso.webp' } : item.title === 'Configuración' ? { ...item, image: '/images/configuracion-horarios-zona.webp' } : item.title === 'Activar notificaciones' ? { ...item, image: '/images/activar-notificaciones.webp' } : item.title === 'Horarios de práctica' ? { ...item, image: '/images/horarios-practica.webp' } : item.title === 'Preferencias' ? { ...item, image: '/images/preferencias-avisos.webp' } : item.title === 'Prácticas de 7 días' ? { ...item, image: '/images/interno-7dias.webp' } : item.title === 'Prácticas de 15 días' ? { ...item, image: '/images/interno-15dias.webp' } : item.title === 'Prácticas de 40 días' ? { ...item, image: '/images/interno-40dias.webp' } : item.title === 'Amor y relaciones' ? { ...item, image: '/images/interno-amor.webp' } : item.title === 'Dinero y trabajo' ? { ...item, image: '/images/interno-dinero.webp' } : item.title === 'Salud y bienestar' ? { ...item, image: '/images/interno-salud.webp' } : item.title === 'Preguntar' ? { ...item, image: '/images/interno-preguntar.webp' } : item.title === 'Escuchar' ? { ...item, image: '/images/interno-escuchar.webp' } : item.title === 'Guardadas' ? { ...item, image: '/images/interno-guardadas.webp' } : item)} initialIndex={carouselIndicesRef.current[carouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[carouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[carouselKey] = index; select(item); }} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section>{dock}</main>;
 }

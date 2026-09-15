@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Heart, Video } from 'lucide-react';
 
-type Item = { title: string; detail: string; image?: string; imageSize?: 'compact'; placeholder?: boolean };
+type Item = { title: string; detail: string; image?: string; imageSize?: 'compact'; placeholder?: boolean; disabled?: boolean };
 export function DayOneCarousel<T extends Item>({
   items,
   onSelect,
@@ -11,6 +11,7 @@ export function DayOneCarousel<T extends Item>({
   label = 'Prácticas del Día 1',
   initialIndex = 0,
   onIndexChange,
+  autoPlay = true,
 }: {
   label?: string;
   items: T[];
@@ -19,6 +20,7 @@ export function DayOneCarousel<T extends Item>({
   onFavorite?: (item: T) => void;
   initialIndex?: number;
   onIndexChange?: (index: number) => void;
+  autoPlay?: boolean;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLDivElement>(null);
@@ -74,7 +76,7 @@ export function DayOneCarousel<T extends Item>({
 
   useEffect(() => {
     reduced.current = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    setPlaying(!reduced.current && initialIndex === 0);
+    setPlaying(autoPlay && !reduced.current && initialIndex === 0);
     const measure = () => {
       const el = root.current;
       if (!el) return;
@@ -90,7 +92,7 @@ export function DayOneCarousel<T extends Item>({
     const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: .5 });
     if (root.current) observer.observe(root.current);
     return () => { resize.disconnect(); observer.disconnect(); };
-  }, [initialIndex]);
+  }, [initialIndex, autoPlay]);
 
   useEffect(() => {
     if (!playing || !inView) return;
@@ -176,8 +178,8 @@ export function DayOneCarousel<T extends Item>({
       }}
       onScroll={handleScroll}
     >
-      <div className="day-one-track">{items.map((item, index) => <article key={item.title} className={`day-one-card${visibleCards.has(index) ? ' is-visible' : ''}`} id={`day-one-slide-${index}`} aria-label={`${index + 1} de ${items.length}: ${item.title}`}>
-        <button className="day-one-open" onClick={() => { interrupt(); onSelect(item, index); }} tabIndex={active === index ? 0 : -1}>
+      <div className="day-one-track">{items.map((item, index) => <article key={item.title} className={`day-one-card${visibleCards.has(index) ? ' is-visible' : ''}${item.disabled ? ' is-unavailable' : ''}`} id={`day-one-slide-${index}`} aria-label={`${index + 1} de ${items.length}: ${item.title}`}>
+        <button className="day-one-open" disabled={item.disabled} onClick={() => { interrupt(); onSelect(item, index); }} tabIndex={active === index && !item.disabled ? 0 : -1}>
           <span className="day-one-caption">
             <strong className="day-one-title">{item.title}</strong>
             {item.detail && <span className="day-one-subtitle">{item.detail}</span>}
