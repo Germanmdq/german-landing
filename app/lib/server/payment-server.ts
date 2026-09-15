@@ -65,6 +65,7 @@ export function paymentProviderAvailability() {
   return {
     mercadopago: Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN && process.env.MERCADOPAGO_WEBHOOK_SECRET && mercadoPagoPricingReady && serviceRoleKey),
     paypal: Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET && process.env.PAYPAL_WEBHOOK_ID && serviceRoleKey),
+    stripe: Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET && serviceRoleKey),
   };
 }
 

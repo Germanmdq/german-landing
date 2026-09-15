@@ -1,5 +1,5 @@
 export type PaymentPlan = '30_days' | 'annual' | 'lifetime';
-export type PaymentProvider = 'mercadopago' | 'paypal';
+export type PaymentProvider = 'mercadopago' | 'paypal' | 'stripe';
 
 export const PAYMENT_PLANS: Record<PaymentPlan, { name: string; amount: string; currency: 'USD'; days: number | null }> = {
   '30_days': { name: '30 días', amount: '35.00', currency: 'USD', days: 30 },
@@ -21,6 +21,14 @@ export function hasActiveAccess(entitlement: Entitlement, now = new Date()): boo
   if (entitlement.lifetime) return true;
   if (!entitlement.access_until) return false;
   return new Date(entitlement.access_until).getTime() > now.getTime();
+}
+
+/** Server-authoritative access rule for the initial account window. */
+export function hasAccess(entitlement: Entitlement, userCreatedAt: string | null | undefined, now = new Date()): boolean {
+  if (hasActiveAccess(entitlement, now)) return true;
+  if (!userCreatedAt) return false;
+  const created = new Date(userCreatedAt).getTime();
+  return Number.isFinite(created) && now.getTime() < created + 48 * 60 * 60 * 1000;
 }
 
 export function extendEntitlement(entitlement: Entitlement, plan: PaymentPlan, now = new Date()): Entitlement {

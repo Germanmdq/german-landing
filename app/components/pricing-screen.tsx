@@ -66,6 +66,7 @@ export function PricingScreen() {
 
     <section className="payment-providers"><h2>Continuar con {duration[plan]}</h2><p className="payment-selected-price">{ars[plan]} ARS <span>· o US${Number(PAYMENT_PLANS[plan].amount)}</span></p>
       <button className="payment-provider payment-provider--mp" disabled={!config?.providers.mercadopago || busy !== null} onClick={() => void pay('mercadopago')}>{busy === 'mercadopago' ? 'Abriendo Mercado Pago…' : 'Pagar con Mercado Pago'}</button>{config && !config.providers.mercadopago && <p className="payment-provider-note">Mercado Pago · Próximamente disponible</p>}
+      <button className="payment-provider payment-provider--stripe" disabled={!config?.providers.stripe || busy !== null} onClick={() => void pay('stripe')}>{busy === 'stripe' ? 'Abriendo pago…' : 'Pagar con tarjeta'}</button>{config && !config.providers.stripe && <p className="payment-provider-note">Pago con tarjeta · Próximamente disponible</p>}
       <button className="payment-provider payment-provider--paypal" disabled={!config?.providers.paypal || busy !== null} onClick={() => void pay('paypal')}>{busy === 'paypal' ? 'Abriendo PayPal…' : 'Pagar con PayPal'}</button>{config && !config.providers.paypal && <p className="payment-provider-note">PayPal · Próximamente disponible</p>}
       {message && <p className="payment-feedback" role="alert">{message}</p>}<p className="payment-fineprint">Un solo pago. Sin renovación automática. Tu acceso se activa cuando el proveedor confirma el pago.</p>
     </section><a className="payment-back" href="/">Ahora no</a>

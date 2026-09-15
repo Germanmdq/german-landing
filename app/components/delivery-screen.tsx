@@ -19,6 +19,8 @@ type DeliveryView = {
 export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
   const [session, setSession] = useState<Session | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [accessChecked, setAccessChecked] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false);
   const [delivery, setDelivery] = useState<DeliveryView | null>(null);
   const [error, setError] = useState('');
 
@@ -38,7 +40,19 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
   }, []);
 
   useEffect(() => {
-    if (!session?.user) return;
+    if (!session?.access_token) { setAccessChecked(false); setHasAccess(false); return; }
+    let active = true;
+    void fetch('/api/access', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' }).then(async (response) => {
+      const data = await response.json().catch(() => ({})) as { active?: boolean };
+      if (!active) return;
+      setHasAccess(response.ok && data.active === true);
+      setAccessChecked(true);
+    }).catch(() => { if (active) setAccessChecked(true); });
+    return () => { active = false; };
+  }, [session?.access_token]);
+
+  useEffect(() => {
+    if (!session?.user || !accessChecked || !hasAccess) return;
     let active = true;
     setError('');
     void (async () => {
@@ -80,10 +94,12 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
       if (active) setError(reason instanceof Error ? reason.message : 'Ocurrió un error inesperado al abrir la entrega.');
     });
     return () => { active = false; };
-  }, [deliveryId, session?.user]);
+  }, [deliveryId, session?.user, accessChecked, hasAccess]);
 
   if (!sessionChecked) return <main className="delivery-screen"><p className="delivery-loading">Abriendo tu entrega…</p></main>;
   if (!session) return <LoginGate redirectPath={`/delivery/${encodeURIComponent(deliveryId)}`} />;
+  if (!accessChecked) return <main className="delivery-screen"><p className="delivery-loading">Comprobando tu acceso…</p></main>;
+  if (!hasAccess) { if (typeof window !== 'undefined') window.location.assign('/access'); return <main className="delivery-screen"><p className="delivery-loading">Abriendo tu espacio…</p></main>; }
   if (error) return <main className="delivery-screen"><section className="delivery-state" role="alert"><AlertCircle size={30}/><h1>No pudimos abrir esta entrega</h1><p>{error}</p><small>Referencia: {deliveryId}</small><a href="/">Volver al Asistente</a></section></main>;
   if (!delivery) return <main className="delivery-screen"><p className="delivery-loading">Buscando el contenido…</p></main>;
 

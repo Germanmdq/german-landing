@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, Download, House, LayoutGrid, CalendarDays, Menu, Compass } from 'lucide-react';
+import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, Download, House, CalendarDays, Menu } from 'lucide-react';
 import content from './content.generated.json';
 import { supabase } from './lib/supabase';
 import { subscribeToPush, ensurePushSubscription, reconcilePushSubscription, disablePushSubscription, disableCurrentBrowserPushSubscription, getPushSubscriptionActive, getCurrentBrowserPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
@@ -1104,6 +1104,8 @@ export default function App() {
     return !isOAuthCallback && !initialDeliveryId;
   });
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [accessState, setAccessState] = useState<'checking' | 'active' | 'inactive' | 'error'>('checking');
+  const [session, setSession] = useState<Session | null>(null);
   const [pendingDeliveryId, setPendingDeliveryId] = useState(initialDeliveryId);
 
   // iOS puede reutilizar una PWA ya abierta cuando se toca un push. En ese caso
@@ -1142,7 +1144,22 @@ export default function App() {
       navigator.serviceWorker?.removeEventListener('message', onSwMessage);
     };
   }, []);
-  const [session, setSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    if (!session?.access_token) { setAccessState('checking'); return; }
+    let cancelled = false;
+    setAccessState('checking');
+    fetch('/api/access', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({})) as { active?: boolean };
+        if (cancelled) return;
+        if (!response.ok) return setAccessState('error');
+        if (data.active) setAccessState('active');
+        else { setAccessState('inactive'); window.location.assign('/access'); }
+      })
+      .catch(() => { if (!cancelled) setAccessState('error'); });
+    return () => { cancelled = true; };
+  }, [session?.access_token]);
   const [fullName, setFullName] = useState<string | null>(null);
   const [mainMenu, setMainMenu] = useState(true);
   const [tab, setTab] = useState<Tab>('biblioteca');
@@ -1409,7 +1426,7 @@ export default function App() {
   // cuanto haya sesión, buscamos esa entrega puntual y vamos directo al
   // Reader, saltando el carrusel de bienvenida.
   useEffect(() => {
-    if (!session?.user || !pendingDeliveryId) return;
+    if (!session?.user || accessState !== 'active' || !pendingDeliveryId) return;
     let cancelled = false;
     (async () => {
       const deliveryId = pendingDeliveryId;
@@ -1475,7 +1492,7 @@ export default function App() {
       }
     })();
     return () => { cancelled = true; };
-  }, [session?.user, pendingDeliveryId]);
+  }, [session?.user, accessState, pendingDeliveryId]);
 
   // Esperamos a saber si hay sesión antes de decidir la siguiente pantalla
   // (para no mostrar LoginGate de arranque si en realidad hay sesión) —
@@ -1484,6 +1501,9 @@ export default function App() {
   if (!sessionChecked) return null;
   if (showVideo && !getDeliveryIdFromUrl() && !pendingDeliveryId) return <VideoIntro onFinish={() => setShowVideo(false)} />;
   if (!session) return <LoginGate />;
+  if (accessState === 'checking') return <main className="app-shell app-main section-app"><div className="access-loading" role="status" aria-live="polite">Cargando tu espacio…</div></main>;
+  if (accessState === 'error') return <main className="app-shell app-main section-app"><div className="access-loading"><p>No pudimos comprobar tu acceso.</p><button type="button" onClick={() => window.location.reload()}>Reintentar</button></div></main>;
+  if (accessState === 'inactive') return null;
   const dock = <MainNavigationDock current={mainMenu ? "home" : configurationOpen ? "configuracion" : tab} onSelect={navigateTo} />;
 
   if (mainMenu) {

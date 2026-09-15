@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { extendEntitlement, hasActiveAccess, validateVerifiedPayment } from '../app/lib/payments.ts';
+import { extendEntitlement, hasAccess, hasActiveAccess, validateVerifiedPayment } from '../app/lib/payments.ts';
 
 const now = new Date('2026-09-14T12:00:00.000Z');
 
@@ -30,6 +30,13 @@ test('el control central reconoce acceso vigente, vencido y de por vida', () => 
 test('una vuelta exitosa no concede acceso sin verificación del proveedor', () => {
   assert.equal(hasActiveAccess(null, now), false);
   assert.deepEqual(validateVerifiedPayment({ plan: '30_days', amount: '35.00', currency: 'USD', status: 'pending', userExists: true, referenceMatches: true }, '35.00', 'USD'), { ok: false, reason: 'not_approved' });
+});
+
+test('la ventana inicial server-side dura 48 horas y no usa el cliente', () => {
+  const created = '2026-09-13T12:00:00.000Z';
+  assert.equal(hasAccess(null, created, new Date('2026-09-15T11:59:00.000Z')), true);
+  assert.equal(hasAccess(null, created, new Date('2026-09-15T12:01:00.000Z')), false);
+  assert.equal(hasAccess({ access_until: null, lifetime: true }, created, new Date('2026-09-20T00:00:00.000Z')), true);
 });
 
 test('rechaza importe, moneda, plan, usuario y referencia incorrectos', () => {
