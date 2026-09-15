@@ -89,7 +89,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
 
   return <main className="delivery-screen"><article className="delivery-article">
     <a className="delivery-back" href="/" aria-label="Volver al Asistente"><ArrowLeft size={20}/></a>
-    <header><p>TALLER 40 DÍAS</p><h1>Día {delivery.dayNumber}</h1><h2>{delivery.title}</h2><span>{deliveryTypeLabels[delivery.deliveryType]} · {formatDeliveredAt(delivery.deliveredAt)}</span></header>
+    <header><p>TALLER 40 DÍAS</p><h1>Día {delivery.dayNumber}</h1><span>{deliveryTypeLabels[delivery.deliveryType]} · {formatDeliveredAt(delivery.deliveredAt)}</span></header>
     {delivery.audioUrl && <section className="delivery-audio"><Headphones size={24}/><div><b>Escuchá tu práctica</b><span>Audio de esta entrega</span></div><audio src={delivery.audioUrl} controls preload="metadata" playsInline /></section>}
     {delivery.paragraphs.length > 0 && <div className="delivery-copy">{delivery.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div>}
   </article></main>;

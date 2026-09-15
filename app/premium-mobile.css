@@ -13,7 +13,8 @@
 .day-one-screen .feature-header .header-back { min-height: 44px; }
 .nav-menu-sheet { z-index: 100; }
 .nav-menu-row, .nav-menu-cancel, .time-sheet header button, .timezone-option, .notification-time-row { transition: background-color .16s ease, transform .16s ease; }
-.nav-menu-row:focus-visible, .nav-menu-cancel:focus-visible, .time-sheet header button:focus-visible, .timezone-option:focus-visible, .notification-time-row:focus-visible, .time-wheel:focus-visible { outline: 3px solid #a91e29 !important; outline-offset: -3px; box-shadow: none; }
+.nav-menu-row:focus-visible, .nav-menu-cancel:focus-visible, .timezone-option:focus-visible, .notification-time-row:focus-visible, .time-wheel:focus-visible { outline: 3px solid #a91e29 !important; outline-offset: -3px; box-shadow: none; }
+.time-sheet header button:focus-visible { outline: 0 !important; outline-offset: 0 !important; box-shadow: none !important; }
 .time-sheet header button { padding-inline: 10px; }
 .time-wheel-value.selected { color: #a52e46; font-weight: 700; }
 .time-wheel-value:active { color: #a52e46; transform: scale(.94); }
