@@ -416,9 +416,6 @@ async function retrySingleDelivery(subscriptionId: string, deliveryId: string) {
   const content = delivery.content_items as unknown as { title: string; body: string } | null;
   const deliveryType = delivery.delivery_type as DeliveryType;
   const moment = (Object.entries(momentToDeliveryType).find(([, value]) => value === deliveryType)?.[0] ?? null) as MeditationMoment | null;
-  const body = deliveryType === 'intermediate_message' && delivery.message_index != null
-    ? findNumberedMessageText(content?.body || '', delivery.message_index) || 'Tenés una práctica pendiente.'
-    : `Tu práctica del Día ${delivery.day_number} está lista.`;
   const payload = {
     title: 'Mensaje de Germán',
     body: '',
