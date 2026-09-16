@@ -12,7 +12,7 @@ async function paypalFetch(path: string, options: RequestInit = {}) {
   });
 }
 
-export async function createPayPalOrder(input: { paymentId: string; plan: PaymentPlan }) {
+export async function createPayPalOrder(input: { paymentId: string; plan: PaymentPlan; buyerUserAgent?: string }) {
   const plan = PAYMENT_PLANS[input.plan];
   const response = await paypalFetch('/v2/checkout/orders', {
     method: 'POST',
@@ -30,12 +30,10 @@ export async function createPayPalOrder(input: { paymentId: string; plan: Paymen
       payment_source: { paypal: { experience_context: {
         user_action: 'PAY_NOW',
         shipping_preference: 'NO_SHIPPING',
-        // Prefer the installed PayPal consumer app on eligible mobile devices.
-        // PayPal falls back to its normal web checkout when App Switch is unavailable.
-        app_switch_preference: { launch_paypal_app: true },
         return_url: `${appUrl()}/payment/success?provider=paypal&payment=${input.paymentId}`,
         cancel_url: `${appUrl()}/payment/cancelled?provider=paypal&payment=${input.paymentId}`,
       } } },
+      ...(input.buyerUserAgent ? { app_switch_context: { mobile_web: { buyer_user_agent: input.buyerUserAgent.slice(0, 512), return_flow: 'AUTO' } } } : {}),
     }),
   });
   const data = await response.json() as { id?: string; links?: { rel: string; href: string }[]; message?: string };

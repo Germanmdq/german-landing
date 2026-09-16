@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   try {
     const pricing = PAYMENT_PLANS[body.plan];
     const payment = await createPaymentAttempt({ userId: user.id, provider: 'paypal', plan: body.plan, amount: pricing.amount, currency: pricing.currency });
-    const checkout = await createPayPalOrder({ paymentId: payment.id, plan: body.plan });
+    const checkout = await createPayPalOrder({ paymentId: payment.id, plan: body.plan, buyerUserAgent: request.headers.get('user-agent') || undefined });
     await updatePayment(payment.id, { provider_order_id: checkout.orderId });
     return NextResponse.json({ checkoutUrl: checkout.checkoutUrl });
   } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : 'No pudimos iniciar el pago.' }, { status: 502 }); }

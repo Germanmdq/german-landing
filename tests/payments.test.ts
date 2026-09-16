@@ -27,6 +27,13 @@ test('el control central reconoce acceso vigente, vencido y de por vida', () => 
   assert.equal(hasActiveAccess(null, now), false);
 });
 
+test('la ventana inicial server-side dura 48 horas y no usa el cliente', () => {
+  const created = '2026-09-13T12:00:00.000Z';
+  assert.equal(hasAccess(null, created, new Date('2026-09-15T11:59:00.000Z')), true);
+  assert.equal(hasAccess(null, created, new Date('2026-09-15T12:01:00.000Z')), false);
+  assert.equal(hasAccess({ access_until: null, lifetime: true }, created, new Date('2026-09-20T00:00:00.000Z')), true);
+});
+
 test('una vuelta exitosa no concede acceso sin verificación del proveedor', () => {
   assert.equal(hasActiveAccess(null, now), false);
   assert.deepEqual(validateVerifiedPayment({ plan: '30_days', amount: '35.00', currency: 'USD', status: 'pending', userExists: true, referenceMatches: true }, '35.00', 'USD'), { ok: false, reason: 'not_approved' });
@@ -55,9 +62,9 @@ test('la migración impide procesar dos veces el mismo pago', () => {
   assert.match(sql, /payments_apply_entitlement/i);
 });
 
-test('los precios vigentes son US$35, US$250 y US$350', async () => {
+test('los precios vigentes son US$35, US$300 y US$350', async () => {
   const { PAYMENT_PLANS } = await import('../app/lib/payments.ts');
   assert.equal(PAYMENT_PLANS['30_days'].amount, '35.00');
-  assert.equal(PAYMENT_PLANS.annual.amount, '250.00');
+  assert.equal(PAYMENT_PLANS.annual.amount, '300.00');
   assert.equal(PAYMENT_PLANS.lifetime.amount, '350.00');
 });
