@@ -45,7 +45,7 @@ export function PricingScreen() {
   return <main className="payment-screen"><div className="payment-shell">
     <header className="payment-hero">
       <a className="payment-close" href="/" aria-label="Cerrar"><X size={22} /></a>
-      <img className="payment-tree" src="/images/paywall-tree-eye.png" alt="El Club de la Imaginación" />
+      <img className="payment-tree" src="/images/paywall-tree-eye.png" alt="Asistente Germán" />
       <div className="payment-hero-copy">
         <h1>Tu Asistente Germán.<br/><em>Siempre con vos.</em></h1>
         <p className="payment-intro">Todo lo que necesitás para trabajar con tu imaginación, en un solo lugar.</p>
@@ -55,7 +55,6 @@ export function PricingScreen() {
           <li><strong>Tu Asistente Germán</strong><span>Preguntá cuando quieras y encontrá una respuesta cuando aparece una duda.</span></li>
           <li><strong>Biblioteca completa</strong><span>Más de 800 textos, libros y conferencias para leer y consultar.</span></li>
           <li><strong>Acompañamiento diario</strong><span>Un mail cada día para ayudarte a sostener la práctica.</span></li>
-          <li><strong>El Club de la Imaginación</strong><span>Acceso completo, talleres y reuniones en vivo de lunes a viernes.</span></li>
         </ul>
       </div>
     </header>

@@ -28,7 +28,8 @@ import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, type 
 
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'consultas' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string; audios?: { label: string; url: string }[] };
-type DeckItem = { icon: string; title: string; detail: string; tone: string; image?: string; imageSize?: 'compact'; disabled?: boolean; children?: DeckItem[]; reader?: ReaderContent; notificationPanel?: boolean; accountPanel?: boolean; workshopPanel?: boolean; action?: 'logout' };
+type ProgramPanelConfig = { slug: string; title: string; subtitle: string };
+type DeckItem = { icon: string; title: string; detail: string; tone: string; image?: string; imageSize?: 'compact'; disabled?: boolean; children?: DeckItem[]; reader?: ReaderContent; notificationPanel?: boolean; accountPanel?: boolean; workshopPanel?: boolean; programPanel?: ProgramPanelConfig; action?: 'logout' };
 type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string };
 type FavoriteRecord = { id: string; title: string; detail: string; icon: string; tone: string; reader?: ReaderContent };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
@@ -41,33 +42,22 @@ const firstText = (record: Record<string, unknown>, keys: string[]) => keys.map(
 const deckFavorite = (item: DeckItem): FavoriteRecord => ({ id: `deck:${item.title}`, title: item.title, detail: item.detail, icon: item.icon, tone: item.tone, reader: item.reader });
 const libraryFavorite = (entry: LibraryEntry): FavoriteRecord => ({ id: `library:${entry.id}`, title: entry.title, detail: entry.excerpt || 'Biblioteca', icon: entry.audioUrl ? '🎙️' : '📖', tone: palette[0], reader: { title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration } });
 
+const guidedProgramSlugs: Record<string, string> = {
+  amor: 'practica-7-dias-amor',
+  dinero: 'practica-7-dias-dinero',
+  salud: 'practica-7-dias-salud',
+};
+
 const planNodes: DeckItem[] = content.plans.map((plan, planIndex) => ({
   icon: ['💞', '💫', '🌿'][planIndex],
   title: plan.title,
   detail: 'Recorrido completo de 7 días.',
   tone: palette[planIndex],
-  children: plan.days.map((day) => ({
-    icon: String(day.day),
-    title: `Día ${day.day}`,
-    detail: day.title.charAt(0) + day.title.slice(1).toLowerCase(),
-    tone: palette[(day.day - 1) % palette.length],
-    children: [
-      ...Object.entries(day.meditations).map(([moment, text], index) => ({
-        icon: ['☀️', '◐', '🌤️', '🌙'][index],
-        title: `Práctica de la ${moment}`,
-        detail: 'Texto completo de la práctica.',
-        tone: palette[index],
-        reader: { title: `Día ${day.day} · ${moment}`, eyebrow: plan.title.toUpperCase(), detail: day.title, paragraphs: cleanParagraphs(text) },
-      })),
-      {
-        icon: '📖',
-        title: 'Frases del día',
-        detail: 'Lecturas breves para acompañar la práctica.',
-        tone: palette[0],
-        reader: { title: `Frases del día ${day.day}`, eyebrow: plan.title.toUpperCase(), detail: day.title, paragraphs: day.quotes },
-      },
-    ],
-  })),
+  programPanel: {
+    slug: guidedProgramSlugs[plan.id],
+    title: plan.title,
+    subtitle: '7 días con meditaciones y mensajes intermedios.',
+  },
 }));
 
 const momentNodes: DeckItem[] = content.moments.map((moment, index) => ({
@@ -83,7 +73,7 @@ const screens: Record<Tab, Screen> = {
   talleres: { eyebrow: 'PRÁCTICAS GUIADAS', title: 'Elegí una práctica', subtitle: 'Recorridos preparados para acompañarte paso a paso.', items: [
     { icon: '🌱', title: 'Prácticas de 7 días', detail: 'Amor, salud y dinero.', tone: palette[0], children: planNodes },
     { icon: '🌿', title: 'Prácticas de 15 días', detail: 'Próximamente.', tone: palette[1], disabled: true },
-    { icon: '🌳', title: 'Prácticas de 40 días', detail: 'Autoconcepto y control de la imaginación.', tone: palette[2], workshopPanel: true },
+    { icon: '🌳', title: 'Prácticas de 40 días', detail: 'Autoconcepto y control de la imaginación.', tone: palette[2], programPanel: { slug: 'taller-40-dias', title: 'Taller de 40 días', subtitle: 'Autoconcepto y control de la imaginación.' } },
   ] },
   // "Tu propia práctica" ya no es un deck navegable: es un formulario único
   // (PropiaPracticaPanel) que intercepta la pestaña 'propia' directamente.
@@ -140,7 +130,7 @@ function DeckCard({ item, index, last, onClick, favorite, onFavorite }: { item: 
   return <div className={`category-row${last ? ' is-last' : ''}`}>
     <MagicCard className="category-card" delay={Math.min(index * .045, .24)} style={{ '--category-index': index, '--category-tone': item.tone } as React.CSSProperties} onClick={onClick}>
       <span className="category-icon card-image"><CategoryIcon item={item} /></span>
-      <p><small className="card-subtitle">{item.children || item.reader || item.notificationPanel || item.accountPanel || item.workshopPanel || item.action ? 'ABRIR' : 'OPCIÓN'}</small><b className="card-title">{item.title}</b>{item.detail && <em className="card-subtitle">{item.detail}</em>}</p>
+      <p><small className="card-subtitle">{item.children || item.reader || item.notificationPanel || item.accountPanel || item.workshopPanel || item.programPanel || item.action ? 'ABRIR' : 'OPCIÓN'}</small><b className="card-title">{item.title}</b>{item.detail && <em className="card-subtitle">{item.detail}</em>}</p>
       <span className="category-actions">
         {onFavorite && <span role="button" tabIndex={0} className={`favorite-button${favorite ? ' is-favorite' : ''}`} onClick={(event) => { event.stopPropagation(); onFavorite(); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onFavorite(); } }} aria-label={favorite ? `Quitar ${item.title} de favoritos` : `Guardar ${item.title} en favoritos`}><Heart size={19} fill={favorite ? 'currentColor' : 'none'} /></span>}
         <i className="category-arrow"><ChevronRight size={21} strokeWidth={2.2} /></i>
@@ -153,7 +143,7 @@ function Deck({ items, onSelect, favorites, onToggleFavorite }: { items: DeckIte
   return <div className="feature-list">{items.map((entry, index) => <DeckCard key={entry.title} item={entry} index={index} last={index === items.length - 1} onClick={() => onSelect(entry)} favorite={entry.reader ? favorites.some((favorite) => favorite.id === deckFavorite(entry).id) : undefined} onFavorite={entry.reader ? () => onToggleFavorite(deckFavorite(entry)) : undefined} />)}<div className="deck-end-space" aria-hidden="true" /></div>;
 }
 
-type NavTarget = 'home' | 'favorites' | 'biblioteca' | 'meditaciones' | 'talleres' | 'propia' | 'consultas' | 'reunion' | 'espacio' | 'configuracion' | 'notificaciones';
+type NavTarget = 'home' | 'favorites' | 'biblioteca' | 'meditaciones' | 'talleres' | 'propia' | 'consultas' | 'curso' | 'espacio' | 'configuracion' | 'notificaciones';
 const navMenuItems: { target: NavTarget; icon: ReactNode; label: string }[] = [
   { target: 'home', icon: <House size={21} />, label: 'Inicio' },
   { target: 'talleres', icon: <Route size={21} />, label: 'Prácticas guiadas' },
@@ -161,7 +151,7 @@ const navMenuItems: { target: NavTarget; icon: ReactNode; label: string }[] = [
   { target: 'meditaciones', icon: <Flower2 size={21} />, label: 'Meditaciones' },
   { target: 'biblioteca', icon: <BookOpen size={21} />, label: 'Biblioteca' },
   { target: 'consultas', icon: <MessageCircle size={21} />, label: 'Consultas' },
-  { target: 'reunion', icon: <CalendarDays size={21} />, label: 'Talleres en vivo' },
+  { target: 'curso', icon: <BookOpen size={21} />, label: 'Curso sobre la Ley' },
   { target: 'espacio', icon: <UserRound size={21} />, label: 'Mi perfil' },
   { target: 'favorites', icon: <Heart size={21} />, label: 'Favoritos' },
   { target: 'configuracion', icon: <Settings2 size={21} />, label: 'Configuración' },
@@ -272,28 +262,13 @@ function useNotificationsToggle(user: User) {
   return { active, loading, busy, error, toggle };
 }
 
-function WeeklyMeetingPanel({ onBack, onNavigate }: { onBack: () => void; onNavigate: (target: NavTarget) => void }) {
-  const [joining, setJoining] = useState(false);
-  const [message, setMessage] = useState('');
-  const openWorkshops = async () => {
-    setJoining(true); setMessage('');
-    try {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) { setMessage('Necesitás iniciar sesión.'); return; }
-      const response = await fetch('/api/workshops/telegram', { headers: { Authorization: `Bearer ${data.session.access_token}` }, cache: 'no-store' });
-      const result = await response.json() as { url?: string; error?: string };
-      if (!response.ok || !result.url) { setMessage(result.error || 'No pudimos abrir los talleres.'); return; }
-      window.open(result.url, '_blank', 'noopener,noreferrer');
-    } catch { setMessage('No pudimos abrir los talleres. Probá de nuevo.'); }
-    finally { setJoining(false); }
-  };
+function LawCoursePanel({ onBack, onNavigate }: { onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   return <section className="reader-section">
-    <FixedHeader eyebrow="EN VIVO" title="Talleres en vivo" subtitle="Un espacio para encontrarnos de lunes a viernes." onBack={onBack} onNavigate={onNavigate} />
+    <FixedHeader eyebrow="CURSO" title="Curso sobre la Ley" subtitle="Una formación clara para entenderla y aplicarla." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body meeting-panel">
-      <div className="meeting-schedule"><Clock3 size={20} /><span>Reuniones en vivo de lunes a viernes</span></div>
-      <p className="workshop-hint">Incluidas con tu acceso al Club de la Imaginación.</p>
-      <button className="meeting-join" type="button" onClick={() => void openWorkshops()} disabled={joining}>{joining ? 'Abriendo…' : 'Ingresar a los talleres'}</button>
-      {message && <p className="account-message" role="alert">{message}</p>}
+      <div className="meeting-schedule"><BookOpen size={20} /><span>Curso sobre la Ley</span></div>
+      <p className="workshop-hint">Estamos preparando las lecciones y el recorrido completo.</p>
+      <p>Muy pronto vas a encontrar acá el curso organizado paso a paso.</p>
     </div>
   </section>;
 }
@@ -583,7 +558,7 @@ type WorkshopStage = 'loading' | 'onboarding' | 'conflict' | 'confirmed' | 'days
 type WorkshopOnboardingStep = 'intro' | 'schedule' | 'frequency' | 'summary';
 type ActiveProgramEnrollment = { id: string; collection_id: string; current_day: number; morning: string; noon: string; afternoon: string; night: string; timezone: string; message_interval_minutes: number; collections: { title: string } | null };
 
-function WorkshopPanel({ user, onBack, onNavigate, onRead }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (reader: ReaderContent) => void }) {
+function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: User; program: ProgramPanelConfig; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (reader: ReaderContent) => void }) {
   const [deliveries, setDeliveries] = useState<TallerDelivery[]>([]);
   const [collectionId, setCollectionId] = useState<string | null>(null);
   const [enrollmentId, setEnrollmentId] = useState<string | null>(null);
@@ -606,15 +581,15 @@ function WorkshopPanel({ user, onBack, onNavigate, onRead }: { user: User; onBac
     let cancelled = false;
     (async () => {
       try {
-        console.log('[workshop] buscando collection taller-40-dias…');
+        console.log('[workshop] buscando collection', program.slug);
         const { data: collection, error: collectionError } = await supabase
           .from('collections')
           .select('id')
-          .eq('slug', 'taller-40-dias')
+          .eq('slug', program.slug)
           .maybeSingle();
         if (cancelled) return;
         if (collectionError) { console.error('[workshop] error buscando collection:', collectionError); setLoadError(collectionError.message); setStage('error'); return; }
-        if (!collection) { console.error('[workshop] no existe la collection taller-40-dias'); setLoadError('No encontramos el taller.'); setStage('error'); return; }
+        if (!collection) { console.error('[workshop] no existe la collection', program.slug); setLoadError('No encontramos el programa.'); setStage('error'); return; }
         setCollectionId(collection.id);
 
         console.log('[workshop] buscando programa activo para', user.id);
@@ -673,7 +648,7 @@ function WorkshopPanel({ user, onBack, onNavigate, onRead }: { user: User; onBac
       }
     })();
     return () => { cancelled = true; };
-  }, [user.id]);
+  }, [user.id, program.slug]);
 
   const enrollmentParams = () => ({
     p_collection_id: collectionId,
@@ -746,7 +721,7 @@ function WorkshopPanel({ user, onBack, onNavigate, onRead }: { user: User; onBac
   };
 
   const openDelivery = (delivery: TallerDelivery) => {
-    onRead({ title: `Día ${delivery.dayNumber} · ${deliveryTypeLabels[delivery.deliveryType]}`, eyebrow: 'TALLER DE 40 DÍAS', detail: `Recibido ${formatDeliveredAt(delivery.deliveredAt)}.`, paragraphs: delivery.paragraphs, audioUrl: delivery.audioUrl });
+    onRead({ title: `Día ${delivery.dayNumber} · ${deliveryTypeLabels[delivery.deliveryType]}`, eyebrow: 'PRÁCTICA GUIADA', detail: `Recibido ${formatDeliveredAt(delivery.deliveredAt)}.`, paragraphs: delivery.paragraphs, audioUrl: delivery.audioUrl });
     if (!delivery.seenAt) {
       const seenAt = new Date().toISOString();
       setDeliveries((current) => current.map((item) => item.id === delivery.id ? { ...item, seenAt } : item));
@@ -754,16 +729,16 @@ function WorkshopPanel({ user, onBack, onNavigate, onRead }: { user: User; onBac
     }
   };
 
-  if (stage === 'loading') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} onNavigate={onNavigate} /><div className="reader-body workshop-browser"><p className="library-empty">Cargando el taller…</p></div></section>;
+  if (stage === 'loading') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title={program.title} subtitle={program.subtitle} onBack={onBack} onNavigate={onNavigate} /><div className="reader-body workshop-browser"><p className="library-empty">Cargando el taller…</p></div></section>;
 
-  if (stage === 'error') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle="Autoconcepto y control de la imaginación." onBack={onBack} onNavigate={onNavigate} /><div className="reader-body workshop-browser"><p className="library-empty">No pudimos cargar el taller. Probá de nuevo más tarde.{loadError ? ` (${loadError})` : ''}</p></div></section>;
+  if (stage === 'error') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title={program.title} subtitle={program.subtitle} onBack={onBack} onNavigate={onNavigate} /><div className="reader-body workshop-browser"><p className="library-empty">No pudimos cargar el taller. Probá de nuevo más tarde.{loadError ? ` (${loadError})` : ''}</p></div></section>;
 
   if (stage === 'conflict' && activeProgram) {
     const activeTitle = activeProgram.collections?.title || 'otro programa';
     return <section className="reader-section workshop-section">
       <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Ya tenés un programa activo" subtitle={`Estás realizando ${activeTitle}.`} onBack={onBack} onNavigate={onNavigate} />
       <div className="reader-body">
-        <p>Para comenzar Taller de 40 días, primero tenés que abandonar tu programa actual.</p>
+        <p>Para comenzar {program.title}, primero tenés que abandonar tu programa actual.</p>
         {saveError && <p className="account-message" role="alert">{saveError}</p>}
         <ShimmerButton type="button" className="account-save" onClick={onBack}>Continuar mi programa</ShimmerButton>
         <button type="button" className="workshop-abandon" onClick={() => setConfirmingAbandon(true)}>Abandonar y empezar el nuevo</button>
@@ -1170,7 +1145,8 @@ export default function App() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [favoritesOpen, setFavoritesOpen] = useState(false);
   const [workshopOpen, setWorkshopOpen] = useState(false);
-  const [meetingOpen, setMeetingOpen] = useState(false);
+  const [programConfig, setProgramConfig] = useState<ProgramPanelConfig>({ slug: 'taller-40-dias', title: 'Taller de 40 días', subtitle: 'Autoconcepto y control de la imaginación.' });
+  const [courseOpen, setCourseOpen] = useState(false);
   const [installOpen, setInstallOpen] = useState(false);
   const [installDismissed, setInstallDismissed] = useState(false);
   const [installPlatform, setInstallPlatform] = useState<ReturnType<typeof detectInstallPlatform>>('other');
@@ -1193,7 +1169,7 @@ export default function App() {
     if (accountOpen) return setAccountOpen(false);
     if (favoritesOpen) return setFavoritesOpen(false);
     if (workshopOpen) return setWorkshopOpen(false);
-    if (meetingOpen) { setMeetingOpen(false); return setMainMenu(true); }
+    if (courseOpen) { setCourseOpen(false); return setMainMenu(true); }
     if (trail.length) return setTrail((value) => value.slice(0, -1));
     setMainMenu(true);
   };
@@ -1205,12 +1181,12 @@ export default function App() {
     setAccountOpen(false);
     setFavoritesOpen(false);
     setWorkshopOpen(false);
-    setMeetingOpen(false);
+    setCourseOpen(false);
     setTrail([]);
     if (target === 'home') { setMainMenu(true); return; }
     setMainMenu(false);
     if (target === 'favorites') { setFavoritesOpen(true); return; }
-    if (target === 'reunion') { setMeetingOpen(true); return; }
+    if (target === 'curso') { setCourseOpen(true); return; }
     if (target === 'configuracion') { setConfigurationOpen(true); setTab('espacio'); return; }
     if (target === 'notificaciones') { setConfigurationOpen(true); setNotificationsOpen(true); setTab('espacio'); return; }
     setTab(target);
@@ -1235,7 +1211,7 @@ export default function App() {
       setConfigurationOpen(false);
       setFavoritesOpen(false);
       setWorkshopOpen(false);
-      setMeetingOpen(false);
+      setCourseOpen(false);
       setReader(null);
       setMainMenu(true);
     });
@@ -1249,6 +1225,7 @@ export default function App() {
     if (selected.reader) return setReader(selected.reader);
     if (selected.notificationPanel) return setNotificationsOpen(true);
     if (selected.accountPanel) return setAccountOpen(true);
+    if (selected.programPanel) { setProgramConfig(selected.programPanel); setWorkshopOpen(true); return; }
     if (selected.workshopPanel) return setWorkshopOpen(true);
     if (selected.title === 'Favoritos') return setFavoritesOpen(true);
     if (selected.title === 'Configuración') return setConfigurationOpen(true);
@@ -1436,7 +1413,7 @@ export default function App() {
         setMainMenu(false);
         setReader({
           title: 'No pudimos abrir este mensaje',
-          eyebrow: 'TALLER DE 40 DÍAS',
+          eyebrow: 'PRÁCTICA GUIADA',
           detail: 'La entrega quedó identificada para que podamos revisarla.',
           paragraphs: [reason, `Referencia de entrega: ${deliveryId}`],
         });
@@ -1472,7 +1449,7 @@ export default function App() {
         setMainMenu(false);
         setReader({
           title: `Día ${row.day_number} · ${deliveryTypeLabels[deliveryType]}`,
-          eyebrow: 'TALLER DE 40 DÍAS',
+          eyebrow: 'PRÁCTICA GUIADA',
           detail: `Recibido ${formatDeliveredAt(row.delivered_at)}.`,
           paragraphs,
           audioUrl: asset?.source_url,
@@ -1507,17 +1484,17 @@ export default function App() {
   const dock = <MainNavigationDock current={mainMenu ? "home" : configurationOpen ? "configuracion" : tab} onSelect={navigateTo} />;
 
   if (mainMenu) {
-    const meetingCard = { target: 'reunion' as const, title: 'Talleres en vivo', detail: 'Reuniones de lunes a viernes.', image: '/images/german-reunion.webp' };
+    const courseCard = { target: 'curso' as const, title: 'Curso sobre la Ley', detail: 'Entenderla y aplicarla paso a paso.', image: '/images/german-reunion.webp' };
     const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/german-perfil.png' : target === 'biblioteca' ? '/images/german-biblioteca.png' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
     const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
-    const items = [...welcomeItems.slice(0, meditIndex + 1), meetingCard, ...welcomeItems.slice(meditIndex + 1)];
-    return <><main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><HomeQuickAccess onSelect={navigateTo} /><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'reunion') { setMeetingOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section>{dock}</main>{installOpen && !standalone && !pendingDeliveryId && <InstallOnboarding suggestedPlatform={installPlatform} nativePromptAvailable={installPromptAvailable} onClose={() => { setInstallOpen(false); setInstallDismissed(true); }} onInstallAndroid={promptNativeInstallation} onRecheckInstallation={() => { const installed = isRunningStandalone(); setStandalone(installed); return installed; }} />}</>;
+    const items = [...welcomeItems.slice(0, meditIndex + 1), courseCard, ...welcomeItems.slice(meditIndex + 1)];
+    return <><main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><HomeQuickAccess onSelect={navigateTo} /><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'curso') { setCourseOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section>{dock}</main>{installOpen && !standalone && !pendingDeliveryId && <InstallOnboarding suggestedPlatform={installPlatform} nativePromptAvailable={installPromptAvailable} onClose={() => { setInstallOpen(false); setInstallDismissed(true); }} onInstallAndroid={promptNativeInstallation} onRecheckInstallation={() => { const installed = isRunningStandalone(); setStandalone(installed); return installed; }} />}</>;
   }
-  if (meetingOpen) return <main className="app-shell app-main section-app"><WeeklyMeetingPanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
+  if (courseOpen) return <main className="app-shell app-main section-app"><LawCoursePanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} onBack={back} onNavigate={navigateTo} onNameSaved={setFullName} onLogout={logout} />{dock}</main>;
   if (reader) { const favorite = deckFavorite({ icon: '📖', title: reader.title, detail: reader.detail, tone: palette[0], reader }); return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} onNavigate={navigateTo} favorite={favorites.some((item) => item.title === reader.title)} onFavorite={() => { const exact = favorites.find((item) => item.title === reader.title); toggleFavorite(exact || favorite); }} />{dock}</main>; }
   if (favoritesOpen) return <main className="app-shell app-main section-app"><FavoritesPanel favorites={favorites} onBack={back} onNavigate={navigateTo} onOpen={(favorite) => { if (favorite.reader) setReader(favorite.reader); }} onRemove={toggleFavorite} />{dock}</main>;
-  if (workshopOpen) return <main className="app-shell app-main section-app"><WorkshopPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} />{dock}</main>;
+  if (workshopOpen) return <main className="app-shell app-main section-app"><WorkshopPanel user={session.user} program={programConfig} onBack={back} onNavigate={navigateTo} onRead={setReader} />{dock}</main>;
   if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (configurationOpen) return <main className="app-shell app-main section-app"><ConfigurationPanel user={session.user} onBack={back} onNavigate={navigateTo} onOpenNotifications={() => setNotificationsOpen(true)} />{dock}</main>;
   if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} />{dock}</main>;
