@@ -48,7 +48,15 @@ export function PricingScreen() {
       <img className="payment-tree" src="/images/paywall-tree-eye.png" alt="El Club de la Imaginación" />
       <div className="payment-hero-copy">
         <h1>Tu Asistente Germán.<br/><em>Siempre con vos.</em></h1>
-        <p>Accedé a más de 500 meditaciones y prácticas guiadas con mi voz, prácticas adaptadas a lo que querés cambiar, un asistente para consultar cuando lo necesites y una biblioteca con más de 800 textos, libros y conferencias. Además, recibís un mail diario y acceso completo a El Club de la Imaginación, con reuniones en vivo de lunes a viernes, talleres y todo el material de la plataforma.</p>
+        <p className="payment-intro">Todo lo que necesitás para trabajar con tu imaginación, en un solo lugar.</p>
+        <ul className="payment-product-list">
+          <li><strong>Más de 500 meditaciones y prácticas guiadas</strong><span>Con mi voz, para amor, dinero, salud, autoconcepto y situaciones concretas.</span></li>
+          <li><strong>Prácticas adaptadas a vos</strong><span>Elegí qué querés cambiar y armá una práctica para lo que estás viviendo.</span></li>
+          <li><strong>Tu Asistente Germán</strong><span>Preguntá cuando quieras y encontrá una respuesta cuando aparece una duda.</span></li>
+          <li><strong>Biblioteca completa</strong><span>Más de 800 textos, libros y conferencias para leer y consultar.</span></li>
+          <li><strong>Acompañamiento diario</strong><span>Un mail cada día para ayudarte a sostener la práctica.</span></li>
+          <li><strong>El Club de la Imaginación</strong><span>Acceso completo, talleres y reuniones en vivo de lunes a viernes.</span></li>
+        </ul>
       </div>
     </header>
 

@@ -52,3 +52,20 @@
 .payment-hero-copy>p:last-child{max-width:390px;font-size:12px;line-height:1.5}
 .payment-hero{min-height:500px}
 .payment-benefit-tile span{font-size:7.5px;line-height:1.15}
+
+/* Full-screen product presentation: the offer is the main thing being sold. */
+.payment-hero{min-height:100dvh!important;margin:0 -14px!important;background:#000!important;display:flex;align-items:flex-end;overflow:hidden}
+.payment-tree{opacity:.22!important;filter:grayscale(.15) contrast(1.08)!important}
+.payment-hero:after{background:linear-gradient(180deg,rgba(0,0,0,.32) 0%,rgba(0,0,0,.72) 32%,#000 72%)!important}
+.payment-hero-copy{position:relative!important;left:auto!important;right:auto!important;bottom:auto!important;width:100%;padding:110px 24px 42px;z-index:3}
+.payment-hero h1{max-width:390px!important;font-size:clamp(44px,12.5vw,58px)!important;line-height:.94!important;margin-bottom:22px!important}
+.payment-intro{max-width:390px!important;margin:0 0 26px!important;color:#fff!important;font-size:19px!important;line-height:1.35!important;font-weight:750!important}
+.payment-product-list{list-style:none;margin:0;padding:0;display:grid;gap:20px}
+.payment-product-list li{position:relative;padding-left:25px;display:grid;gap:5px}
+.payment-product-list li:before{content:"✓";position:absolute;left:0;top:0;color:#ef2636;font-size:18px;font-weight:950}
+.payment-product-list strong{color:#fff;font-size:19px;line-height:1.12;font-weight:900;letter-spacing:-.025em}
+.payment-product-list span{color:#d0cfd4;font-size:14px;line-height:1.35;font-weight:550}
+.payment-benefit-strip{display:none!important}
+.payment-plans{padding-top:26px!important}
+.payment-membership-title{font-size:25px!important;line-height:1.05!important;margin:0 0 10px!important;font-weight:900!important}
+@media(max-width:370px){.payment-hero-copy{padding-left:20px;padding-right:20px}.payment-product-list{gap:16px}.payment-product-list strong{font-size:17px}.payment-product-list span{font-size:13px}.payment-intro{font-size:17px!important}}
