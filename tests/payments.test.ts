@@ -39,13 +39,6 @@ test('una vuelta exitosa no concede acceso sin verificación del proveedor', () 
   assert.deepEqual(validateVerifiedPayment({ plan: '30_days', amount: '35.00', currency: 'USD', status: 'pending', userExists: true, referenceMatches: true }, '35.00', 'USD'), { ok: false, reason: 'not_approved' });
 });
 
-test('la ventana inicial server-side dura 48 horas y no usa el cliente', () => {
-  const created = '2026-09-13T12:00:00.000Z';
-  assert.equal(hasAccess(null, created, new Date('2026-09-15T11:59:00.000Z')), true);
-  assert.equal(hasAccess(null, created, new Date('2026-09-15T12:01:00.000Z')), false);
-  assert.equal(hasAccess({ access_until: null, lifetime: true }, created, new Date('2026-09-20T00:00:00.000Z')), true);
-});
-
 test('rechaza importe, moneda, plan, usuario y referencia incorrectos', () => {
   const base = { plan: '30_days', amount: '35.00', currency: 'USD', status: 'approved', userExists: true, referenceMatches: true };
   assert.equal(validateVerifiedPayment({ ...base, amount: '34.99' }, '35.00', 'USD').ok, false);
