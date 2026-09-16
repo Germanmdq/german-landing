@@ -10,14 +10,14 @@ import './payments.css';
 type ProviderConfig = { providers: Record<PaymentProvider, boolean>; mercadoPagoPrices: Partial<Record<PaymentPlan, { amount: string; currency: string }>>; paypalClientId?: string | null };
 
 const benefits = [
-  { icon: Headphones, top: '500+', bottom: 'Meditaciones' },
-  { icon: BookOpen, top: '800+', bottom: 'Textos y libros' },
-  { icon: MessageCircle, top: 'Asistente', bottom: 'todo el día' },
-  { icon: Users, top: 'Talleres', bottom: 'Lun a Vie' },
-  { icon: Mail, top: 'Un mail', bottom: 'cada día' },
+  { icon: Headphones, top: '500+', bottom: 'Meditaciones y prácticas' },
+  { icon: BookOpen, top: '800+', bottom: 'Textos, libros y conferencias' },
+  { icon: MessageCircle, top: 'Asistente', bottom: 'Preguntá cuando quieras' },
+  { icon: Users, top: 'Club en vivo', bottom: 'Lunes a viernes' },
+  { icon: Mail, top: 'Mail diario', bottom: 'Acompañamiento' },
 ];
 
-const ars: Record<PaymentPlan, string> = { '30_days': '$35.000', annual: '$300.000', lifetime: '$350.000' };
+const ars: Record<PaymentPlan, string> = { '30_days': '$35.000', annual: '$200.000', lifetime: '$250.000' };
 const duration: Record<PaymentPlan, string> = { '30_days': '1 mes', annual: '1 año', lifetime: 'De por vida' };
 
 export function PricingScreen() {
@@ -47,8 +47,8 @@ export function PricingScreen() {
       <a className="payment-close" href="/" aria-label="Cerrar"><X size={22} /></a>
       <img className="payment-tree" src="/images/paywall-tree-eye.png" alt="El Club de la Imaginación" />
       <div className="payment-hero-copy">
-        <h1>Todo el Club.<br/><em>Todos los días.</em></h1>
-        <p>Tu asistente, talleres en vivo, biblioteca, meditaciones y acompañamiento diario.</p>
+        <h1>Tu Asistente Germán.<br/><em>Siempre con vos.</em></h1>
+        <p>Accedé a más de 500 meditaciones y prácticas guiadas con mi voz, prácticas adaptadas a lo que querés cambiar, un asistente para consultar cuando lo necesites y una biblioteca con más de 800 textos, libros y conferencias. Además, recibís un mail diario y acceso completo a El Club de la Imaginación, con reuniones en vivo de lunes a viernes, talleres y todo el material de la plataforma.</p>
       </div>
     </header>
 
@@ -56,7 +56,7 @@ export function PricingScreen() {
       {benefits.map(({ icon: Icon, top, bottom }) => <div className="payment-benefit-tile" key={top + bottom}><Icon size={19}/><b>{top}</b><span>{bottom}</span></div>)}
     </section>
 
-    <section className="payment-plans" aria-label="Opciones de acceso">
+    <section className="payment-plans" aria-label="Opciones de acceso"><h2 className="payment-membership-title">Hacete socio · Accedé a tu membresía</h2>
       {(Object.keys(PAYMENT_PLANS) as PaymentPlan[]).map((key) => { const item = PAYMENT_PLANS[key]; const selected = plan === key; return <button key={key} type="button" className={`payment-plan${selected ? ' is-selected' : ''}${key === 'lifetime' ? ' is-featured' : ''}`} onClick={() => setPlan(key)}>
         {key === 'lifetime' && <span className="payment-plan-badge">MEJOR OPCIÓN</span>}
         <span className="payment-plan-check">{selected && <Check size={15} />}</span>

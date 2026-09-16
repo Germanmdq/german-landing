@@ -42,3 +42,13 @@
 /* Official PayPal JS SDK button: required for mobile App Switch eligibility. */
 .paypal-app-switch-button{min-height:58px;position:relative;z-index:1;overflow:hidden;border-radius:17px}
 .paypal-app-switch-button iframe{min-height:55px!important}
+
+.payment-membership-title{margin:3px 2px 2px;text-align:center;font-size:18px;letter-spacing:-.025em;color:#fff}
+.payment-hero-copy>p:last-child{max-width:390px;font-size:12px;line-height:1.5}
+.payment-hero{min-height:500px}
+.payment-benefit-tile span{font-size:7.5px;line-height:1.15}
+
+.payment-membership-title{margin:3px 2px 2px;text-align:center;font-size:18px;letter-spacing:-.025em;color:#fff}
+.payment-hero-copy>p:last-child{max-width:390px;font-size:12px;line-height:1.5}
+.payment-hero{min-height:500px}
+.payment-benefit-tile span{font-size:7.5px;line-height:1.15}

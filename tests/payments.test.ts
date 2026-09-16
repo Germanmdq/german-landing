@@ -55,9 +55,9 @@ test('la migración impide procesar dos veces el mismo pago', () => {
   assert.match(sql, /payments_apply_entitlement/i);
 });
 
-test('los precios vigentes son US$35, US$300 y US$350', async () => {
+test('los precios vigentes son US$35, US$200 y US$250', async () => {
   const { PAYMENT_PLANS } = await import('../app/lib/payments.ts');
   assert.equal(PAYMENT_PLANS['30_days'].amount, '35.00');
-  assert.equal(PAYMENT_PLANS.annual.amount, '300.00');
-  assert.equal(PAYMENT_PLANS.lifetime.amount, '350.00');
+  assert.equal(PAYMENT_PLANS.annual.amount, '200.00');
+  assert.equal(PAYMENT_PLANS.lifetime.amount, '250.00');
 });
