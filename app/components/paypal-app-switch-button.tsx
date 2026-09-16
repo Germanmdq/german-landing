@@ -27,7 +27,7 @@ function loadPayPalSdk(clientId: string) {
 export function PayPalAppSwitchButton({ clientId, plan, disabled, onBusy, onError }: { clientId: string; plan: PaymentPlan; disabled: boolean; onBusy: (busy: boolean) => void; onError: (message: string) => void }) {
   const paymentId = useRef<string | null>(null);
   useEffect(() => {
-    if (!clientId || disabled) return;
+    if (!clientId) return;
     let disposed = false;
     let buttons: PayPalButtons | null = null;
     const setup = async () => {
@@ -68,6 +68,6 @@ export function PayPalAppSwitchButton({ clientId, plan, disabled, onBusy, onErro
     };
     void setup();
     return () => { disposed = true; void buttons?.close?.(); };
-  }, [clientId, disabled, plan, onBusy, onError]);
-  return <div id="paypal-app-switch-button" className="paypal-app-switch-button" aria-label="Pagar con PayPal" />;
+  }, [clientId, plan, onBusy, onError]);
+  return <div id="paypal-app-switch-button" className={`paypal-app-switch-button${disabled ? ' is-disabled' : ''}`} aria-label="Pagar con PayPal" aria-disabled={disabled} />;
 }

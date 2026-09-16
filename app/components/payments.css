@@ -69,3 +69,6 @@
 .payment-plans{padding-top:26px!important}
 .payment-membership-title{font-size:25px!important;line-height:1.05!important;margin:0 0 10px!important;font-weight:900!important}
 @media(max-width:370px){.payment-hero-copy{padding-left:20px;padding-right:20px}.payment-product-list{gap:16px}.payment-product-list strong{font-size:17px}.payment-product-list span{font-size:13px}.payment-intro{font-size:17px!important}}
+
+/* Keep the PayPal SDK mounted while another provider is opening. Unmounting it made the button disappear. */
+.paypal-app-switch-button.is-disabled{opacity:.55;pointer-events:none}
