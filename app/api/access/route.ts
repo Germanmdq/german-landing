@@ -1,20 +1,12 @@
 import { NextResponse } from 'next/server';
-import { hasAccess } from '../../lib/payments';
-import { authenticateRequest, getEntitlement } from '../../lib/server/payment-server';
+import { authenticateRequest } from '../../lib/server/payment-server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   const user = await authenticateRequest(request);
   if (!user) return NextResponse.json({ error: 'Necesitás iniciar sesión.' }, { status: 401 });
-  try {
-    const entitlement = await getEntitlement(user.id);
-    return NextResponse.json({ active: hasAccess(entitlement, user.created_at) }, { headers: { 'Cache-Control': 'no-store' } });
-  } catch (error) {
-    console.error('[api/access] entitlement lookup failed', {
-      userId: user.id,
-      message: error instanceof Error ? error.message : String(error),
-    });
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'No pudimos consultar tu acceso.' }, { status: 503 });
-  }
+  // TEMPORARY QA MODE: authenticated users have unrestricted access while Germán tests the app.
+  // Restore the entitlement/initial-window check here when the paywall is re-enabled.
+  return NextResponse.json({ active: true }, { headers: { 'Cache-Control': 'no-store' } });
 }
