@@ -11,6 +11,10 @@ export async function GET(request: Request) {
     const entitlement = await getEntitlement(user.id);
     return NextResponse.json({ active: hasAccess(entitlement, user.created_at) }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
+    console.error('[api/access] entitlement lookup failed', {
+      userId: user.id,
+      message: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: error instanceof Error ? error.message : 'No pudimos consultar tu acceso.' }, { status: 503 });
   }
 }
