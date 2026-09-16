@@ -27,7 +27,15 @@ export async function createPayPalOrder(input: { paymentId: string; plan: Paymen
         amount: { currency_code: plan.currency, value: plan.amount, breakdown: { item_total: { currency_code: plan.currency, value: plan.amount } } },
         items: [{ name: `Germán Asistente · ${plan.name}`, unit_amount: { currency_code: plan.currency, value: plan.amount }, quantity: '1', category: 'DIGITAL_GOODS', sku: input.plan }],
       }],
-      payment_source: { paypal: { experience_context: { user_action: 'PAY_NOW', shipping_preference: 'NO_SHIPPING', return_url: `${appUrl()}/payment/success?provider=paypal&payment=${input.paymentId}`, cancel_url: `${appUrl()}/payment/cancelled?provider=paypal&payment=${input.paymentId}` } } },
+      payment_source: { paypal: { experience_context: {
+        user_action: 'PAY_NOW',
+        shipping_preference: 'NO_SHIPPING',
+        // Prefer the installed PayPal consumer app on eligible mobile devices.
+        // PayPal falls back to its normal web checkout when App Switch is unavailable.
+        app_switch_preference: { launch_paypal_app: true },
+        return_url: `${appUrl()}/payment/success?provider=paypal&payment=${input.paymentId}`,
+        cancel_url: `${appUrl()}/payment/cancelled?provider=paypal&payment=${input.paymentId}`,
+      } } },
     }),
   });
   const data = await response.json() as { id?: string; links?: { rel: string; href: string }[]; message?: string };
