@@ -3,7 +3,7 @@ export type PaymentProvider = 'mercadopago' | 'paypal' | 'stripe';
 
 export const PAYMENT_PLANS: Record<PaymentPlan, { name: string; amount: string; currency: 'USD'; days: number | null }> = {
   '30_days': { name: '30 días', amount: '35.00', currency: 'USD', days: 30 },
-  annual: { name: '1 año', amount: '250.00', currency: 'USD', days: 365 },
+  annual: { name: '1 año', amount: '300.00', currency: 'USD', days: 365 },
   lifetime: { name: 'De por vida', amount: '350.00', currency: 'USD', days: null },
 };
 

@@ -26,3 +26,15 @@
 
 /* Keep payment CTAs visibly red even while provider configuration is pending. */
 .payment-provider,.payment-provider:disabled,.payment-provider--mp,.payment-provider--paypal{background:#ef2636!important;color:#fff!important;border:0!important;opacity:1;box-shadow:0 8px 20px rgba(239,38,54,.24),0 5px 14px rgba(0,0,0,.30)!important}
+
+/* Provider identity and uniform CTA rhythm. */
+.payment-providers{gap:12px}
+.payment-provider{min-height:58px;margin:0!important;padding:0 20px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:11px!important;border-radius:18px!important}
+.payment-provider--mp,.payment-provider--mp:disabled{background:#009ee3!important;color:#fff!important;box-shadow:0 8px 20px rgba(0,158,227,.22),0 5px 14px rgba(0,0,0,.28)!important}
+.payment-provider--paypal,.payment-provider--paypal:disabled{background:#0070ba!important;color:#fff!important;box-shadow:0 8px 20px rgba(0,112,186,.22),0 5px 14px rgba(0,0,0,.28)!important}
+.payment-provider--stripe,.payment-provider--stripe:disabled{background:#635bff!important;color:#fff!important;box-shadow:0 8px 20px rgba(99,91,255,.22),0 5px 14px rgba(0,0,0,.28)!important}
+.provider-mark{width:30px;height:30px;flex:0 0 30px;display:grid;place-items:center;border-radius:9px;background:#fff;font-weight:900;font-size:13px}
+.provider-mark--mp{color:#009ee3}.provider-mark--paypal{color:#003087}.provider-mark--stripe{color:#635bff}
+.payment-provider-note{margin:-6px 0 0!important}
+.payment-provider-logo{width:30px;height:30px;flex:0 0 30px;display:grid;place-items:center;border-radius:9px;background:#fff;font-weight:900;font-size:13px}
+.payment-provider-logo--mp{color:#009ee3}.payment-provider-logo--paypal{color:#003087}.payment-provider-logo--stripe{color:#635bff}
