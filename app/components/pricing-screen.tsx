@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { BookOpen, Check, Headphones, Mail, MessageCircle, Users, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { PAYMENT_PLANS, type PaymentPlan, type PaymentProvider } from '../lib/payments';
+import { PayPalAppSwitchButton } from './paypal-app-switch-button';
 import './payments.css';
 
-type ProviderConfig = { providers: Record<PaymentProvider, boolean>; mercadoPagoPrices: Partial<Record<PaymentPlan, { amount: string; currency: string }>> };
+type ProviderConfig = { providers: Record<PaymentProvider, boolean>; mercadoPagoPrices: Partial<Record<PaymentPlan, { amount: string; currency: string }>>; paypalClientId?: string | null };
 
 const benefits = [
   { icon: Headphones, top: '500+', bottom: 'Meditaciones' },
@@ -24,6 +25,8 @@ export function PricingScreen() {
   const [config, setConfig] = useState<ProviderConfig | null>(null);
   const [busy, setBusy] = useState<PaymentProvider | null>(null);
   const [message, setMessage] = useState('');
+  const setPayPalBusy = useCallback((value: boolean) => setBusy(value ? 'paypal' : null), []);
+  const setPayPalError = useCallback((value: string) => setMessage(value), []);
 
   useEffect(() => { void fetch('/api/payments/config', { cache: 'no-store' }).then((response) => response.json()).then(setConfig).catch(() => setMessage('No pudimos cargar las opciones de pago.')); }, []);
 
@@ -66,7 +69,7 @@ export function PricingScreen() {
 
     <section className="payment-providers"><h2>Continuar con {duration[plan]}</h2><p className="payment-selected-price">{ars[plan]} ARS <span>· o US${Number(PAYMENT_PLANS[plan].amount)}</span></p>
       <button className="payment-provider payment-provider--mp" disabled={!config?.providers.mercadopago || busy !== null} onClick={() => void pay('mercadopago')}><span className="provider-mark provider-mark--mp">MP</span><span>{busy === 'mercadopago' ? 'Abriendo Mercado Pago…' : 'Mercado Pago'}</span></button>{config && !config.providers.mercadopago && <p className="payment-provider-note">Mercado Pago · Próximamente disponible</p>}
-      <button className="payment-provider payment-provider--paypal" disabled={!config?.providers.paypal || busy !== null} onClick={() => void pay('paypal')}><span className="provider-mark provider-mark--paypal">P</span><span>{busy === 'paypal' ? 'Abriendo PayPal…' : 'PayPal'}</span></button>{config && !config.providers.paypal && <p className="payment-provider-note">PayPal · Próximamente disponible</p>}
+      {config?.providers.paypal && config.paypalClientId ? <PayPalAppSwitchButton clientId={config.paypalClientId} plan={plan} disabled={busy !== null && busy !== 'paypal'} onBusy={setPayPalBusy} onError={setPayPalError} /> : <button className="payment-provider payment-provider--paypal" disabled><span className="provider-mark provider-mark--paypal">P</span><span>PayPal</span></button>}{config && !config.providers.paypal && <p className="payment-provider-note">PayPal · Próximamente disponible</p>}
       <button className="payment-provider payment-provider--stripe" disabled={!config?.providers.stripe || busy !== null} onClick={() => void pay('stripe')}><span className="provider-mark provider-mark--stripe">S</span><span>{busy === 'stripe' ? 'Abriendo Stripe…' : 'Stripe'}</span></button>{config && !config.providers.stripe && <p className="payment-provider-note">Stripe · Próximamente disponible</p>}
       {message && <p className="payment-feedback" role="alert">{message}</p>}<p className="payment-fineprint">Un solo pago. Sin renovación automática. Tu acceso se activa cuando el proveedor confirma el pago.</p>
     </section><a className="payment-back" href="/">Ahora no</a>

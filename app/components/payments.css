@@ -38,3 +38,7 @@
 .payment-provider-note{margin:-6px 0 0!important}
 .payment-provider-logo{width:30px;height:30px;flex:0 0 30px;display:grid;place-items:center;border-radius:9px;background:#fff;font-weight:900;font-size:13px}
 .payment-provider-logo--mp{color:#009ee3}.payment-provider-logo--paypal{color:#003087}.payment-provider-logo--stripe{color:#635bff}
+
+/* Official PayPal JS SDK button: required for mobile App Switch eligibility. */
+.paypal-app-switch-button{min-height:58px;position:relative;z-index:1;overflow:hidden;border-radius:17px}
+.paypal-app-switch-button iframe{min-height:55px!important}

@@ -9,5 +9,5 @@ export function GET() {
     const price = mercadoPagoPricing(plan);
     return price ? [[plan, price]] : [];
   }));
-  return NextResponse.json({ providers: paymentProviderAvailability(), mercadoPagoPrices }, { headers: { 'Cache-Control': 'no-store' } });
+  return NextResponse.json({ providers: paymentProviderAvailability(), mercadoPagoPrices, paypalClientId: process.env.PAYPAL_CLIENT_ID || null }, { headers: { 'Cache-Control': 'no-store' } });
 }

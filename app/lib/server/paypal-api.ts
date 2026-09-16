@@ -30,10 +30,10 @@ export async function createPayPalOrder(input: { paymentId: string; plan: Paymen
       payment_source: { paypal: { experience_context: {
         user_action: 'PAY_NOW',
         shipping_preference: 'NO_SHIPPING',
-        return_url: `${appUrl()}/payment/success?provider=paypal&payment=${input.paymentId}`,
-        cancel_url: `${appUrl()}/payment/cancelled?provider=paypal&payment=${input.paymentId}`,
+        return_url: `${appUrl()}/access?paypal_app_switch=${encodeURIComponent(input.paymentId)}`,
+        cancel_url: `${appUrl()}/access?paypal_app_switch=${encodeURIComponent(input.paymentId)}`,
+        app_switch_preference: { launch_paypal_app: true },
       } } },
-      ...(input.buyerUserAgent ? { app_switch_context: { mobile_web: { buyer_user_agent: input.buyerUserAgent.slice(0, 512), return_flow: 'AUTO' } } } : {}),
     }),
   });
   const data = await response.json() as { id?: string; links?: { rel: string; href: string }[]; message?: string };
