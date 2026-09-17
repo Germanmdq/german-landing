@@ -592,3 +592,5 @@ button, input { font-family: inherit !important; }
 .law-course-content-card > p { margin: 0 0 16px; color: #5f6065; font-size: 16px; line-height: 1.55; white-space: pre-line; }
 .law-course-content-card > p:last-child { margin-bottom: 0; }
 .law-course-source { margin: 2px 4px 0 !important; color: var(--ui-muted) !important; font-size: 12px !important; line-height: 1.4 !important; }
+
+.law-course-native-audio { width: 100%; display: block; }

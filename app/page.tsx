@@ -4,8 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, ChevronDown, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, Download, House, Menu } from 'lucide-react';
-import content from './content.generated.json';
-import course365 from './course365.generated.json';
 import { supabase } from './lib/supabase';
 import { subscribeToPush, ensurePushSubscription, reconcilePushSubscription, disablePushSubscription, disableCurrentBrowserPushSubscription, getPushSubscriptionActive, getCurrentBrowserPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
 import { detectInstallPlatform, hasNativeInstallPrompt, isRunningStandalone, listenForPwaInstallation, promptNativeInstallation } from './lib/pwa';
@@ -35,7 +33,6 @@ type LibraryEntry = { id: string; title: string; excerpt: string; body: string; 
 type FavoriteRecord = { id: string; title: string; detail: string; icon: string; tone: string; reader?: ReaderContent };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
 type TallerDelivery = { id: string; dayNumber: number; deliveryType: TallerDeliveryType; deliveredAt: string; seenAt: string | null; title: string; paragraphs: string[]; audioUrl?: string };
-type LawCourseDay = { day: number; title: string; source: string; audio: string; foundation: string; psychology: string; exercise: string };
 
 const palette = ['#D92D35', '#E5484D', '#F2555A', '#FF6B6F'];
 const cleanParagraphs = (text: string) => text.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
@@ -44,34 +41,15 @@ const firstText = (record: Record<string, unknown>, keys: string[]) => keys.map(
 const deckFavorite = (item: DeckItem): FavoriteRecord => ({ id: `deck:${item.title}`, title: item.title, detail: item.detail, icon: item.icon, tone: item.tone, reader: item.reader });
 const libraryFavorite = (entry: LibraryEntry): FavoriteRecord => ({ id: `library:${entry.id}`, title: entry.title, detail: entry.excerpt || 'Biblioteca', icon: entry.audioUrl ? '🎙️' : '📖', tone: palette[0], reader: { title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration } });
 
-const guidedProgramSlugs: Record<string, string> = {
-  amor: 'practica-7-dias-amor',
-  dinero: 'practica-7-dias-dinero',
-  salud: 'practica-7-dias-salud',
-};
+const planNodes: DeckItem[] = [
+  { icon: '💞', title: 'Amor y relaciones', detail: 'Recorrido completo de 7 días.', tone: palette[0], programPanel: { slug: 'practica-7-dias-amor', title: 'Amor y relaciones', subtitle: '7 días con meditaciones y mensajes intermedios.' } },
+  { icon: '💫', title: 'Dinero y trabajo', detail: 'Recorrido completo de 7 días.', tone: palette[1], programPanel: { slug: 'practica-7-dias-dinero', title: 'Dinero y trabajo', subtitle: '7 días con meditaciones y mensajes intermedios.' } },
+  { icon: '🌿', title: 'Salud y bienestar', detail: 'Recorrido completo de 7 días.', tone: palette[2], programPanel: { slug: 'practica-7-dias-salud', title: 'Salud y bienestar', subtitle: '7 días con meditaciones y mensajes intermedios.' } },
+];
 
-const planNodes: DeckItem[] = content.plans.map((plan, planIndex) => ({
-  icon: ['💞', '💫', '🌿'][planIndex],
-  title: plan.title,
-  detail: 'Recorrido completo de 7 días.',
-  tone: palette[planIndex],
-  programPanel: {
-    slug: guidedProgramSlugs[plan.id],
-    title: plan.title,
-    subtitle: '7 días con meditaciones y mensajes intermedios.',
-  },
-}));
+const momentIcons = ['🎯', '🌬️', '🌙', '💬', '📰', '🧭', '🤍', '🌧️', '🎤', '🫶', '☀️', '🌆', '🛡️', '🙏', '✨'] as const;
 
-const momentNodes: DeckItem[] = content.moments.map((moment, index) => ({
-  icon: ['🎯', '🌬️', '🌙', '💬', '📰', '🧭', '🤍', '🌧️', '🎤', '🫶', '☀️', '🌆', '🛡️', '🙏', '✨'][index],
-  title: moment.title,
-  detail: 'Meditación para este momento.',
-  tone: palette[index % palette.length],
-  image: `/images/meditacion-${String(index + 1).padStart(2, '0')}.webp`,
-  reader: { title: moment.title, eyebrow: 'MEDITACIÓN PARA AHORA', detail: 'Leé la práctica a tu ritmo.', paragraphs: cleanParagraphs(moment.text) },
-}));
-
-const screens: Record<Tab, Screen> = {
+const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
   talleres: { eyebrow: 'PRÁCTICAS GUIADAS', title: 'Elegí una práctica', subtitle: 'Recorridos preparados para acompañarte paso a paso.', items: [
     { icon: '🌱', title: 'Prácticas de 7 días', detail: 'Amor, salud y dinero.', tone: palette[0], children: planNodes },
     { icon: '🌿', title: 'Prácticas de 15 días', detail: 'Próximamente.', tone: palette[1], disabled: true },
@@ -97,7 +75,7 @@ const screens: Record<Tab, Screen> = {
     { icon: '📈', title: 'Mi avance', detail: 'Próximamente.', tone: palette[2], disabled: true },
     { icon: '⚙️', title: 'Configuración', detail: 'Notificaciones y horarios locales.', tone: palette[3] },
   ] },
-};
+});
 
 const mainCategories: Array<[Tab, string, string, string, string]> = [
   ['espacio', '👋', 'Mi perfil', 'Tu cuenta, favoritos y configuración.', palette[0]],
@@ -280,21 +258,38 @@ const lawCourseChapters = [
 ] as const;
 
 const formatCourseDay = (day: number) => String(day).padStart(3, '0');
-const lawCourseDays = course365 as LawCourseDay[];
-
 function LawCoursePanel({ onBack, onNavigate }: { onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   const [openChapter, setOpenChapter] = useState<number | null>(1);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const dayContent = selectedDay === null ? null : lawCourseDays.find((entry) => entry.day === selectedDay) ?? null;
+  const [audioUrl, setAudioUrl] = useState<string | undefined>();
 
-  if (selectedDay !== null && dayContent) {
+  useEffect(() => {
+    if (selectedDay === null) { setAudioUrl(undefined); return; }
+    let cancelled = false;
+    supabase
+      .from('content_items')
+      .select('content_assets(asset_type,source_url,storage_path,sort_order)')
+      .eq('slug', `taller-365-dia-${formatCourseDay(selectedDay)}`)
+      .eq('is_published', true)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) { console.error('[365] error cargando audio:', error); setAudioUrl(undefined); return; }
+        const assets = Array.isArray(data?.content_assets) ? data.content_assets as Array<{ asset_type?: string; source_url?: string; storage_path?: string; sort_order?: number }> : [];
+        const asset = assets.filter((item) => item.asset_type === 'audio').sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))[0];
+        setAudioUrl(asset?.source_url || (asset?.storage_path ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/${asset.storage_path}` : undefined));
+      });
+    return () => { cancelled = true; };
+  }, [selectedDay]);
+
+  if (selectedDay !== null) {
     return <section className="reader-section law-course-section">
       <FixedHeader eyebrow="TALLER DE 365 DÍAS" title={`Día ${formatCourseDay(selectedDay)}`} subtitle="Ley de Asunción" onBack={() => setSelectedDay(null)} onNavigate={onNavigate} />
       <article className="reader-body law-course-day">
-        <section className="law-course-audio-player" aria-label={`Audio del Día ${formatCourseDay(selectedDay)}`}>
+        {audioUrl ? <audio className="law-course-native-audio" controls preload="metadata" src={audioUrl} aria-label={`Audio del Día ${formatCourseDay(selectedDay)}`} /> : <section className="law-course-audio-player" aria-label={`Audio del Día ${formatCourseDay(selectedDay)}`}>
           <button type="button" disabled aria-label={`Audio del Día ${formatCourseDay(selectedDay)}`}><Play size={18} fill="currentColor" aria-hidden="true" /></button>
           <div className="law-course-audio-track" aria-hidden="true"><span /></div>
-        </section>
+        </section>}
       </article>
     </section>;
   }
@@ -1200,6 +1195,8 @@ export default function App() {
   const [standalone, setStandalone] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteRecord[]>([]);
   const [libraryItems, setLibraryItems] = useState<LibraryEntry[]>([]);
+  const [momentNodes, setMomentNodes] = useState<DeckItem[]>([]);
+  const screens = useMemo(() => buildScreens(momentNodes), [momentNodes]);
   const mainCardIndexRef = useRef(0);
   const carouselIndicesRef = useRef<Record<string, number>>({});
   const current = trail.at(-1);
@@ -1408,6 +1405,31 @@ export default function App() {
     );
     document.querySelectorAll('.magic-card').forEach((card) => observer.observe(card));
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    supabase
+      .from('content_items')
+      .select('id,title,body,metadata,content_assets(asset_type,source_url,storage_path,duration_seconds,sort_order)')
+      .eq('is_published', true)
+      .eq('content_type', 'moment')
+      .then(({ data, error }) => {
+        if (error) { console.error('[moments] error cargando content_items:', error); return; }
+        const rows = [...(data || [])].sort((a, b) => Number((a.metadata as Record<string, unknown> | null)?.sort_order || 0) - Number((b.metadata as Record<string, unknown> | null)?.sort_order || 0));
+        setMomentNodes(rows.map((row, index) => {
+          const assets = Array.isArray(row.content_assets) ? row.content_assets as Array<{ asset_type?: string; source_url?: string; storage_path?: string; duration_seconds?: number; sort_order?: number }> : [];
+          const asset = assets.filter((item) => item.asset_type === 'audio').sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))[0];
+          const audioUrl = asset?.source_url || (asset?.storage_path ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/${asset.storage_path}` : undefined);
+          return {
+            icon: momentIcons[index] || '✨',
+            title: row.title || 'Meditación',
+            detail: 'Meditación para este momento.',
+            tone: palette[index % palette.length],
+            image: `/images/meditacion-${String(index + 1).padStart(2, '0')}.webp`,
+            reader: { title: row.title || 'Meditación', eyebrow: 'MEDITACIÓN PARA AHORA', detail: 'Leé la práctica a tu ritmo.', paragraphs: cleanParagraphs(row.body || ''), audioUrl, duration: asset?.duration_seconds ? `${Math.round(asset.duration_seconds / 60)} min` : undefined },
+          } as DeckItem;
+        }));
+      });
   }, []);
 
   useEffect(() => {

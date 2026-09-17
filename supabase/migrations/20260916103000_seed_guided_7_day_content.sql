@@ -1,3 +1,6 @@
+-- Allow extensible content types; the app now stores guided days, moments and 365-day entries here.
+alter table public.content_items drop constraint if exists content_items_content_type_check;
+
 -- Full seed for guided 7-day programs: Amor, Dinero, Salud
 
 -- 4 meditations + 26 intermediate messages per day.

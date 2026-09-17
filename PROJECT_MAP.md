@@ -41,7 +41,7 @@ flowchart TD
 ## Archivos principales
 
 - `app/page.tsx`: mapa de pantallas, tarjetas, menús y navegación.
-- `app/content.generated.json`: contenido real de los tres planes de 7 días y las 15 meditaciones por momento.
+- El contenido editable vive en Supabase (`collections`, `content_items`, `collection_items`, `content_assets`).
 - `app/magic-ui.css`: sistema visual completo, tarjetas, montaje, biblioteca, reproductor, formularios y responsive móvil.
 - `app/components/magic-ui.tsx`: componentes reutilizables Magic Card, Shimmer Button y Border Beam.
 - `public/videos/video-german.webm`: video de presentación con canal alpha, pantalla de intro.
