@@ -559,7 +559,7 @@ function AudiobookReader({ book, onBack, onNavigate }: { book: AudiobookEntry; o
   return <section className="reader-section audiobook-reader-section">
     <FixedHeader eyebrow="AUDIOLIBRO" title={book.title} subtitle={book.author} onBack={onBack} onNavigate={onNavigate} />
     <article className="reader-body audiobook-reader">
-      {book.audioUrl ? <AudiobookPlayer title={book.title} author={book.author} audioUrl={book.audioUrl} durationSeconds={book.durationSeconds} /> : <p className="library-empty">El audio no está disponible en este momento.</p>}
+      {book.audioUrl ? <AudiobookPlayer title={book.title} author={book.author} audioUrl={book.audioUrl} durationSeconds={book.durationSeconds} /> : null}
       <section className="audiobook-index" aria-labelledby="audiobook-chapters-title">
         <div className="audiobook-section-title"><small>ÍNDICE</small><h2 id="audiobook-chapters-title">Capítulos</h2><span>{book.chapters.length} secciones</span></div>
         <nav aria-label="Capítulos de Sinfonía de susurros">
