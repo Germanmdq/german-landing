@@ -56,3 +56,7 @@
 .library-year-group.is-open .library-year-toggle svg { transform:rotate(180deg); }
 .library-year-group + .library-year-group { margin-top:18px; }
 .search-highlight { background:#ffe66b; color:inherit; padding:0 .08em; border-radius:4px; font-weight:800; }
+
+/* La vida se ensaya por dentro */
+.interactive-book-intro { display:flex; justify-content:center; padding-top:18px; }
+.interactive-book-cover { display:block; width:100%; max-width:430px; height:auto; border-radius:28px; box-shadow:0 16px 40px rgba(0,0,0,.10); }

@@ -359,6 +359,15 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
   </section>;
 }
 
+function InteractiveBookIntro({ onBack, onNavigate }: { onBack: () => void; onNavigate: (target: NavTarget) => void }) {
+  return <section className="reader-section interactive-book-section">
+    <FixedHeader eyebrow="LIBRO INTERACTIVO" title="La vida se ensaya por dentro" subtitle="Una experiencia para practicar la imaginación." onBack={onBack} onNavigate={onNavigate} />
+    <div className="reader-body interactive-book-intro">
+      <img className="interactive-book-cover" src="/images/la-vida-se-ensaya-card.png" alt="La vida se ensaya por dentro" />
+    </div>
+  </section>;
+}
+
 function NotificationsPanel({ user, onBack, onNavigate }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [permissionMessage, setPermissionMessage] = useState('');
@@ -1385,6 +1394,7 @@ export default function App() {
   const [workshopOpen, setWorkshopOpen] = useState(false);
   const [programConfig, setProgramConfig] = useState<ProgramPanelConfig>({ slug: 'taller-40-dias', title: 'Taller de 40 días', subtitle: 'Autoconcepto y control de la imaginación.' });
   const [courseOpen, setCourseOpen] = useState(false);
+  const [interactiveBookOpen, setInteractiveBookOpen] = useState(false);
   const [installOpen, setInstallOpen] = useState(false);
   const [installDismissed, setInstallDismissed] = useState(false);
   const [installPlatform, setInstallPlatform] = useState<ReturnType<typeof detectInstallPlatform>>('other');
@@ -1414,6 +1424,7 @@ export default function App() {
     if (accountOpen) return setAccountOpen(false);
     if (favoritesOpen) return setFavoritesOpen(false);
     if (workshopOpen) return setWorkshopOpen(false);
+    if (interactiveBookOpen) { setInteractiveBookOpen(false); return setMainMenu(true); }
     if (courseOpen) { setCourseOpen(false); return setMainMenu(true); }
     if (trail.length) return setTrail((value) => value.slice(0, -1));
     setMainMenu(true);
@@ -1428,6 +1439,7 @@ export default function App() {
     setFavoritesOpen(false);
     setWorkshopOpen(false);
     setCourseOpen(false);
+    setInteractiveBookOpen(false);
     setTrail([]);
     if (target === 'home') { setMainMenu(true); return; }
     setMainMenu(false);
@@ -1458,6 +1470,7 @@ export default function App() {
       setFavoritesOpen(false);
       setWorkshopOpen(false);
       setCourseOpen(false);
+      setInteractiveBookOpen(false);
       setSelectedAudiobook(null);
       setReader(null);
       setMainMenu(true);
@@ -1815,11 +1828,15 @@ export default function App() {
 
   if (mainMenu) {
     const courseCard = { target: 'curso' as const, title: 'Taller de 365 días', detail: 'Ley de Asunción · recorrido completo.', image: '/images/german-reunion.webp' };
+    const interactiveBookCard = { target: 'libro-interactivo' as const, title: 'La vida se ensaya por dentro', detail: 'Libro interactivo.', image: '/images/la-vida-se-ensaya-card.png' };
     const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/german-perfil.png' : target === 'biblioteca' ? '/images/german-biblioteca.png' : target === 'audiolibros' ? '/images/german-audiolibros.webp' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
-    const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
-    const items = [...welcomeItems.slice(0, meditIndex + 1), courseCard, ...welcomeItems.slice(meditIndex + 1)];
-    return <><main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'curso') { setCourseOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section>{dock}</main>{installOpen && !standalone && !pendingDeliveryId && <InstallOnboarding suggestedPlatform={installPlatform} nativePromptAvailable={installPromptAvailable} onClose={() => { setInstallOpen(false); setInstallDismissed(true); }} onInstallAndroid={promptNativeInstallation} onRecheckInstallation={() => { const installed = isRunningStandalone(); setStandalone(installed); return installed; }} />}</>;
+    const audiobooksIndex = welcomeItems.findIndex((item) => item.target === 'audiolibros');
+    const withBook = [...welcomeItems.slice(0, audiobooksIndex + 1), interactiveBookCard, ...welcomeItems.slice(audiobooksIndex + 1)];
+    const meditIndex = withBook.findIndex((item) => item.target === 'meditaciones');
+    const items = [...withBook.slice(0, meditIndex + 1), courseCard, ...withBook.slice(meditIndex + 1)];
+    return <><main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'curso') { setCourseOpen(true); setMainMenu(false); return; } if (item.target === 'libro-interactivo') { setInteractiveBookOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section>{dock}</main>{installOpen && !standalone && !pendingDeliveryId && <InstallOnboarding suggestedPlatform={installPlatform} nativePromptAvailable={installPromptAvailable} onClose={() => { setInstallOpen(false); setInstallDismissed(true); }} onInstallAndroid={promptNativeInstallation} onRecheckInstallation={() => { const installed = isRunningStandalone(); setStandalone(installed); return installed; }} />}</>;
   }
+  if (interactiveBookOpen) return <main className="app-shell app-main section-app"><InteractiveBookIntro onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (courseOpen) return <main className="app-shell app-main section-app"><LawCoursePanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} onBack={back} onNavigate={navigateTo} onNameSaved={setFullName} onLogout={logout} />{dock}</main>;
   if (selectedAudiobook) return <main className="app-shell app-main section-app"><AudiobookReader book={selectedAudiobook} onBack={back} onNavigate={navigateTo} />{dock}</main>;
