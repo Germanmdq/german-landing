@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, ChevronDown, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, Download, House, Menu } from 'lucide-react';
+import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, ChevronDown, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, Download, House, Menu, Lock } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { subscribeToPush, ensurePushSubscription, reconcilePushSubscription, disablePushSubscription, disableCurrentBrowserPushSubscription, getPushSubscriptionActive, getCurrentBrowserPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
 import { detectInstallPlatform, hasNativeInstallPrompt, isRunningStandalone, listenForPwaInstallation, promptNativeInstallation } from './lib/pwa';
@@ -26,10 +26,10 @@ import { LoginGate } from './components/login-gate';
 import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, type TallerDeliveryType } from './lib/taller-delivery';
 
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'audiolibros' | 'consultas' | 'espacio';
-type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string; audios?: { label: string; url: string }[] };
+type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string; audios?: { label: string; url: string }[]; highlightQuery?: string };
 type ProgramPanelConfig = { slug: string; title: string; subtitle: string };
 type DeckItem = { icon: string; title: string; detail: string; tone: string; image?: string; imageSize?: 'compact'; disabled?: boolean; children?: DeckItem[]; reader?: ReaderContent; notificationPanel?: boolean; accountPanel?: boolean; workshopPanel?: boolean; programPanel?: ProgramPanelConfig; action?: 'logout' };
-type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string };
+type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string; year?: number };
 type AudiobookChapter = { title: string; anchor: string; order: number; page?: number };
 type AudiobookEntry = { id: string; slug: string; title: string; author: string; excerpt: string; body: string; chapters: AudiobookChapter[]; audioUrl?: string; pdfUrl?: string; durationSeconds?: number };
 type FavoriteRecord = { id: string; title: string; detail: string; icon: string; tone: string; reader?: ReaderContent };
@@ -262,24 +262,61 @@ const lawCourseChapters = [
   { number: 12, title: 'La Promesa, la Resurrección y la Libertad Eterna', start: 331, end: 365 },
 ] as const;
 
-const formatCourseDay = (day: number) => String(day).padStart(3, '0');
-function LawCoursePanel({ onBack, onNavigate }: { onBack: () => void; onNavigate: (target: NavTarget) => void }) {
+const formatCourseDaySlug = (day: number) => String(day).padStart(3, '0');
+const formatCourseDayLabel = (day: number) => String(day);
+type LawCourseDay = { title?: string; foundation?: string; psychology?: string; exercise?: string };
+function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   const [openChapter, setOpenChapter] = useState<number | null>(1);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | undefined>();
+  const [dayContent, setDayContent] = useState<LawCourseDay>({});
+  const [unlockedDay, setUnlockedDay] = useState(1);
+  const [progressLoading, setProgressLoading] = useState(true);
 
   useEffect(() => {
-    if (selectedDay === null) { setAudioUrl(undefined); return; }
+    let cancelled = false;
+    (async () => {
+      const { data: existing, error: readError } = await supabase.from('law_course_progress').select('started_at').eq('user_id', user.id).maybeSingle();
+      if (cancelled) return;
+      if (readError) { console.error('[365] error leyendo progreso:', readError); setProgressLoading(false); return; }
+      let startedAt = existing?.started_at as string | undefined;
+      if (!startedAt) {
+        const { data: created, error: insertError } = await supabase.from('law_course_progress').insert({ user_id: user.id }).select('started_at').single();
+        if (cancelled) return;
+        if (insertError) { console.error('[365] error iniciando progreso:', insertError); setProgressLoading(false); return; }
+        startedAt = created.started_at;
+      }
+      if (!startedAt) { setProgressLoading(false); return; }
+      const started = new Date(startedAt);
+      const now = new Date();
+      const startDay = new Date(started.getFullYear(), started.getMonth(), started.getDate()).getTime();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const day = Math.min(365, Math.max(1, Math.floor((today - startDay) / 86400000) + 1));
+      setUnlockedDay(day);
+      setProgressLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [user.id]);
+
+  useEffect(() => {
+    if (selectedDay === null) { setAudioUrl(undefined); setDayContent({}); return; }
     let cancelled = false;
     supabase
       .from('content_items')
-      .select('content_assets(asset_type,source_url,storage_path,sort_order)')
-      .eq('slug', `taller-365-dia-${formatCourseDay(selectedDay)}`)
+      .select('metadata,content_assets(asset_type,source_url,storage_path,sort_order)')
+      .eq('slug', `taller-365-dia-${formatCourseDaySlug(selectedDay)}`)
       .eq('is_published', true)
       .maybeSingle()
       .then(({ data, error }) => {
         if (cancelled) return;
-        if (error) { console.error('[365] error cargando audio:', error); setAudioUrl(undefined); return; }
+        if (error) { console.error('[365] error cargando día:', error); setAudioUrl(undefined); setDayContent({}); return; }
+        const metadata = data?.metadata && typeof data.metadata === 'object' && !Array.isArray(data.metadata) ? data.metadata as Record<string, unknown> : {};
+        setDayContent({
+          title: typeof metadata.title === 'string' ? metadata.title : undefined,
+          foundation: typeof metadata.foundation === 'string' ? metadata.foundation : undefined,
+          psychology: typeof metadata.psychology === 'string' ? metadata.psychology : undefined,
+          exercise: typeof metadata.exercise === 'string' ? metadata.exercise : undefined,
+        });
         const assets = Array.isArray(data?.content_assets) ? data.content_assets as Array<{ asset_type?: string; source_url?: string; storage_path?: string; sort_order?: number }> : [];
         const asset = assets.filter((item) => item.asset_type === 'audio').sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))[0];
         setAudioUrl(asset?.source_url || (asset?.storage_path ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/${asset.storage_path}` : undefined));
@@ -288,13 +325,13 @@ function LawCoursePanel({ onBack, onNavigate }: { onBack: () => void; onNavigate
   }, [selectedDay]);
 
   if (selectedDay !== null) {
+    const explanation = [dayContent.foundation, dayContent.psychology].filter(Boolean).join('\n\n');
     return <section className="reader-section law-course-section">
-      <FixedHeader eyebrow="TALLER DE 365 DÍAS" title={`Día ${formatCourseDay(selectedDay)}`} subtitle="Ley de Asunción" onBack={() => setSelectedDay(null)} onNavigate={onNavigate} />
+      <FixedHeader eyebrow="TALLER DE 365 DÍAS" title={`Día ${formatCourseDayLabel(selectedDay)}`} subtitle={dayContent.title || 'Ley de Asunción'} onBack={() => setSelectedDay(null)} onNavigate={onNavigate} />
       <article className="reader-body law-course-day">
-        {audioUrl ? <audio className="law-course-native-audio" controls preload="metadata" src={audioUrl} aria-label={`Audio del Día ${formatCourseDay(selectedDay)}`} /> : <section className="law-course-audio-player" aria-label={`Audio del Día ${formatCourseDay(selectedDay)}`}>
-          <button type="button" disabled aria-label={`Audio del Día ${formatCourseDay(selectedDay)}`}><Play size={18} fill="currentColor" aria-hidden="true" /></button>
-          <div className="law-course-audio-track" aria-hidden="true"><span /></div>
-        </section>}
+        {audioUrl ? <AudioPlayer title={`Día ${formatCourseDayLabel(selectedDay)}${dayContent.title ? ` · ${dayContent.title}` : ''}`} audioUrl={audioUrl} /> : <div className="law-course-audio-missing"><Headphones size={22} /><span>Audio pendiente para este día.</span></div>}
+        {explanation && <section className="law-course-support-card"><small>FUNDAMENTO Y EXPLICACIÓN</small>{cleanParagraphs(explanation).map((paragraph, index) => <p key={index}>{paragraph}</p>)}</section>}
+        {dayContent.exercise && <section className="law-course-support-card law-course-practice-card"><small>PRÁCTICA DE HOY</small>{cleanParagraphs(dayContent.exercise).map((paragraph, index) => <p key={index}>{paragraph}</p>)}</section>}
       </article>
     </section>;
   }
@@ -302,16 +339,19 @@ function LawCoursePanel({ onBack, onNavigate }: { onBack: () => void; onNavigate
   return <section className="reader-section law-course-section">
     <FixedHeader eyebrow="LEY DE ASUNCIÓN" title="Taller de 365 días" subtitle="365 días para entenderla, practicarla y vivirla." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body law-course-browser">
-      <div className="law-course-progress-card"><div><span>TALLER COMPLETO</span><b>365 días</b></div><BookOpen size={22} /></div>
+      <div className="law-course-progress-card"><div><span>TU RECORRIDO</span><b>{progressLoading ? 'Cargando…' : `Día ${unlockedDay} de 365`}</b></div><BookOpen size={22} /></div>
       <div className="law-course-chapters">
         {lawCourseChapters.map((chapter) => {
           const expanded = openChapter === chapter.number;
           return <section key={chapter.number} className={`law-course-chapter${expanded ? ' is-open' : ''}`}>
             <button type="button" className="law-course-chapter-toggle" aria-expanded={expanded} onClick={() => setOpenChapter(expanded ? null : chapter.number)}>
-              <div><small>CAPÍTULO {chapter.number}</small><b>{chapter.title}</b><span>Días {formatCourseDay(chapter.start)}–{formatCourseDay(chapter.end)}</span></div>
+              <div><small>CAPÍTULO {chapter.number}</small><b>{chapter.title}</b><span>Días {formatCourseDayLabel(chapter.start)}–{formatCourseDayLabel(chapter.end)}</span></div>
               <ChevronDown size={20} aria-hidden="true" />
             </button>
-            {expanded && <div className="law-course-days">{Array.from({ length: chapter.end - chapter.start + 1 }, (_, i) => chapter.start + i).map((day) => <button key={day} type="button" className="law-course-day-row" onClick={() => setSelectedDay(day)}><span>Día {formatCourseDay(day)}</span><ChevronRight size={18} aria-hidden="true" /></button>)}</div>}
+            {expanded && <div className="law-course-days">{Array.from({ length: chapter.end - chapter.start + 1 }, (_, i) => chapter.start + i).map((day) => {
+              const locked = progressLoading || day > unlockedDay;
+              return <button key={day} type="button" className={`law-course-day-row${locked ? ' is-locked' : ''}`} disabled={locked} onClick={() => { if (!locked) setSelectedDay(day); }}><span>Día {formatCourseDayLabel(day)}</span>{locked ? <span className="law-course-lock"><Lock size={15} aria-hidden="true" />Bloqueado</span> : <ChevronRight size={18} aria-hidden="true" />}</button>;
+            })}</div>}
           </section>;
         })}
       </div>
@@ -399,7 +439,7 @@ function ConfigurationPanel({ user, onBack, onNavigate, onOpenNotifications }: {
 }
 
 function Reader({ content: reader, onBack, onNavigate, favorite, onFavorite }: { content: ReaderContent; onBack: () => void; onNavigate: (target: NavTarget) => void; favorite: boolean; onFavorite: () => void }) {
-  return <section className="reader-section"><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} onNavigate={onNavigate} /><article className="reader-body"><button className={`reader-favorite${favorite ? ' is-favorite' : ''}`} onClick={onFavorite}><Heart size={18} fill={favorite ? 'currentColor' : 'none'} />{favorite ? 'Guardado en favoritos' : 'Guardar en favoritos'}</button>{reader.audioUrl && <AudioPlayer title={reader.title} audioUrl={reader.audioUrl} durationLabel={reader.duration} />}{reader.audios?.map((audio) => <AudioPlayer key={audio.label} title={audio.label} audioUrl={audio.url} />)}{reader.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</article></section>;
+  return <section className="reader-section"><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} onNavigate={onNavigate} /><article className="reader-body"><button className={`reader-favorite${favorite ? ' is-favorite' : ''}`} onClick={onFavorite}><Heart size={18} fill={favorite ? 'currentColor' : 'none'} />{favorite ? 'Guardado en favoritos' : 'Guardar en favoritos'}</button>{reader.audioUrl && <AudioPlayer title={reader.title} audioUrl={reader.audioUrl} durationLabel={reader.duration} />}{reader.audios?.map((audio) => <AudioPlayer key={audio.label} title={audio.label} audioUrl={audio.url} />)}{reader.paragraphs.map((paragraph, index) => <p key={index}>{reader.highlightQuery ? highlightText(paragraph, reader.highlightQuery) : paragraph}</p>)}</article></section>;
 }
 
 function AccountPanel({ user, fullName, onBack, onNavigate, onNameSaved, onLogout }: { user: User; fullName: string | null; onBack: () => void; onNavigate: (target: NavTarget) => void; onNameSaved: (name: string) => void; onLogout: () => void }) {
@@ -580,9 +620,10 @@ function AudiobookReader({ book, onBack, onNavigate }: { book: AudiobookEntry; o
 
 function highlightText(text: string, q: string): React.ReactNode {
   if (!q || !text) return text;
-  const idx = text.toLocaleLowerCase().indexOf(q.toLocaleLowerCase());
-  if (idx === -1) return text;
-  return <>{text.slice(0, idx)}<mark style={{ background: '#FFF3CD', padding: 0, borderRadius: 2 }}>{text.slice(idx, idx + q.length)}</mark>{text.slice(idx + q.length)}</>;
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+  if (parts.length === 1) return text;
+  return <>{parts.map((part, index) => part.toLocaleLowerCase() === q.toLocaleLowerCase() ? <mark key={index} className="search-highlight">{part}</mark> : part)}</>;
 }
 
 function snippetAround(text: string, q: string, radius = 60): string {
@@ -595,7 +636,20 @@ function snippetAround(text: string, q: string, radius = 60): string {
   return (start > 0 ? '...' : '') + text.slice(start, end).trim() + (end < text.length ? '...' : '');
 }
 
-function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggleFavorite }: { entries: LibraryEntry[]; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (entry: LibraryEntry) => void; favorites: FavoriteRecord[]; onToggleFavorite: (favorite: FavoriteRecord) => void }) {
+function extractConferenceYear(item: Record<string, unknown>): number | undefined {
+  const metadata = item.metadata && typeof item.metadata === 'object' && !Array.isArray(item.metadata) ? item.metadata as Record<string, unknown> : {};
+  const candidates = [metadata.year, metadata.conference_year, metadata.original_year, metadata.date, metadata.conference_date, metadata.original_date, item.title, item.excerpt];
+  for (const value of candidates) {
+    if (typeof value === 'number' && value >= 1900 && value <= 2099) return Math.trunc(value);
+    if (typeof value === 'string') {
+      const match = value.match(/\b(19\d{2}|20\d{2})\b/);
+      if (match) return Number(match[1]);
+    }
+  }
+  return undefined;
+}
+
+function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggleFavorite }: { entries: LibraryEntry[]; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (entry: LibraryEntry, query?: string) => void; favorites: FavoriteRecord[]; onToggleFavorite: (favorite: FavoriteRecord) => void }) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('Conferencias');
   const filters = ['Conferencias', 'Audios'];
@@ -610,6 +664,15 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
     return matchesQuery && matchesFilter;
   });
   const q = query.trim();
+  const ordered = [...visible].sort((a, b) => {
+    const ay = a.year ?? 9999;
+    const by = b.year ?? 9999;
+    if (filter === 'Conferencias' && ay !== by) return ay - by;
+    return a.title.localeCompare(b.title, 'es', { sensitivity: 'base' });
+  });
+  const conferenceGroups = filter === 'Conferencias'
+    ? Array.from(new Set(ordered.map((entry) => entry.year ? String(entry.year) : 'Sin fecha'))).map((label) => ({ label, entries: ordered.filter((entry) => (entry.year ? String(entry.year) : 'Sin fecha') === label) }))
+    : [{ label: '', entries: ordered }];
   return <section className="reader-section library-section">
     <FixedHeader eyebrow="PARA ESCUCHAR Y LEER" title="Tu biblioteca" subtitle="Buscá por conferencia, tema o etiqueta." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body library-browser">
@@ -641,8 +704,8 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
         </div>
         <FluidTabs tabs={filters.map((item) => ({ value: item, title: item, ariaControls: 'library-results' }))} value={filter} onValueChange={setFilter} ariaLabel="Filtrar la biblioteca" className="library-fluid-tabs" />
       </section>
-      <p className="library-count">{visible.length} {visible.length === 1 ? 'resultado' : 'resultados'}</p>
-      <div id="library-results" className="library-content-list" role="tabpanel" aria-label={`Resultados: ${filter}`}>{visible.map((entry, index) => {
+      <p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p>
+      <div id="library-results" className="library-content-list" role="tabpanel" aria-label={`Resultados: ${filter}`}>{conferenceGroups.map((group) => <section key={group.label || 'all'} className="library-year-group">{group.label && <h2 className="library-year-heading">{group.label}</h2>}{group.entries.map((entry, index) => {
         const saved = favorites.some((favorite) => favorite.id === libraryFavorite(entry).id);
         let preview: React.ReactNode = entry.excerpt || 'Abrí para leer o escuchar.';
         if (q) {
@@ -656,7 +719,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
             preview = entry.excerpt || 'Abrí para leer o escuchar.';
           }
         }
-        return <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index * .025, .2)} className="library-content-card" onClick={() => onRead(entry)}>
+        return <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index * .025, .2)} className="library-content-card" onClick={() => onRead(entry, q)}>
           <div>
             <p>{entry.type || 'Contenido'}</p>
             <b className="card-title">{q ? highlightText(entry.title, q) : entry.title}</b>
@@ -666,8 +729,8 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
             <i><ChevronRight size={19} /></i>
           </span>
         </MagicCard><button type="button" className={`favorite-button library-row-favorite${saved ? ' is-favorite' : ''}`} onClick={() => onToggleFavorite(libraryFavorite(entry))} aria-label={saved ? `Quitar ${entry.title} de favoritos` : `Guardar ${entry.title} en favoritos`}><Heart size={18} fill={saved ? 'currentColor' : 'none'} /></button></div>;
-      })}</div>
-      {!visible.length && <p className="library-empty">No se encontraron resultados</p>}
+      })}</section>)}</div>
+      {!ordered.length && <p className="library-empty">No se encontraron resultados</p>}
     </div>
   </section>;
 }
@@ -1640,6 +1703,7 @@ export default function App() {
             tags: toTags(item.tags || item.tag_list || item.labels || item.topics),
             audioUrl,
             duration: durationSeconds ? `${Math.round(durationSeconds / 60)} min` : firstText(item, ['duration', 'audio_duration']),
+            year: extractConferenceYear(item),
           };
         }));
       }, (err: unknown) => console.error('[library] excepción cargando content_items:', err));
@@ -1736,7 +1800,7 @@ export default function App() {
     const items = [...welcomeItems.slice(0, meditIndex + 1), courseCard, ...welcomeItems.slice(meditIndex + 1)];
     return <><main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'curso') { setCourseOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section>{dock}</main>{installOpen && !standalone && !pendingDeliveryId && <InstallOnboarding suggestedPlatform={installPlatform} nativePromptAvailable={installPromptAvailable} onClose={() => { setInstallOpen(false); setInstallDismissed(true); }} onInstallAndroid={promptNativeInstallation} onRecheckInstallation={() => { const installed = isRunningStandalone(); setStandalone(installed); return installed; }} />}</>;
   }
-  if (courseOpen) return <main className="app-shell app-main section-app"><LawCoursePanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
+  if (courseOpen) return <main className="app-shell app-main section-app"><LawCoursePanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} onBack={back} onNavigate={navigateTo} onNameSaved={setFullName} onLogout={logout} />{dock}</main>;
   if (selectedAudiobook) return <main className="app-shell app-main section-app"><AudiobookReader book={selectedAudiobook} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (reader) { const favorite = deckFavorite({ icon: '📖', title: reader.title, detail: reader.detail, tone: palette[0], reader }); return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} onNavigate={navigateTo} favorite={favorites.some((item) => item.title === reader.title)} onFavorite={() => { const exact = favorites.find((item) => item.title === reader.title); toggleFavorite(exact || favorite); }} />{dock}</main>; }
@@ -1747,7 +1811,7 @@ export default function App() {
   if (tab === 'audiolibros' && !trail.length) {
     return <main className="app-shell app-main section-app"><AudiobookLibraryPanel entries={audiobookItems} loading={audiobooksLoading} error={audiobooksError} onBack={back} onNavigate={navigateTo} onOpen={setSelectedAudiobook} />{dock}</main>;
   }
-  if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} />{dock}</main>;
+  if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry, searchQuery) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration, highlightQuery: searchQuery })} />{dock}</main>;
   if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} showInstall={!standalone} onInstall={() => { setInstallDismissed(false); setInstallOpen(true); }} onSelect={select} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'propia' && !trail.length) return <main className="app-shell app-main section-app"><PropiaPracticaPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} />{dock}</main>;
   if (current?.title === 'Día 1') {
