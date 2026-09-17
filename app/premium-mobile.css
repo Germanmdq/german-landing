@@ -50,3 +50,9 @@
 .search-highlight { padding: 0 2px; border-radius: 3px; background: #fff0a8; color: inherit; }
 .library-year-group + .library-year-group { margin-top: 24px; }
 .library-year-heading { margin: 5px 2px 10px; font-size: 28px; line-height: 1; letter-spacing: -.035em; color: #1d1d1f; }
+
+.library-year-toggle { width:100%; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 4px 12px; border:0; background:transparent; color:#1d1d1f; font-size:34px; font-weight:800; line-height:1; text-align:left; }
+.library-year-toggle svg { transition:transform .18s ease; }
+.library-year-group.is-open .library-year-toggle svg { transform:rotate(180deg); }
+.library-year-group + .library-year-group { margin-top:18px; }
+.search-highlight { background:#ffe66b; color:inherit; padding:0 .08em; border-radius:4px; font-weight:800; }

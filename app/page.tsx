@@ -626,7 +626,7 @@ function highlightText(text: string, q: string): React.ReactNode {
   return <>{parts.map((part, index) => part.toLocaleLowerCase() === q.toLocaleLowerCase() ? <mark key={index} className="search-highlight">{part}</mark> : part)}</>;
 }
 
-function snippetAround(text: string, q: string, radius = 60): string {
+function snippetAround(text: string, q: string, radius = 26): string {
   if (!q || !text) return '';
   const lower = text.toLocaleLowerCase();
   const idx = lower.indexOf(q.toLocaleLowerCase());
@@ -673,6 +673,20 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
   const conferenceGroups = filter === 'Conferencias'
     ? Array.from(new Set(ordered.map((entry) => entry.year ? String(entry.year) : 'Sin fecha'))).map((label) => ({ label, entries: ordered.filter((entry) => (entry.year ? String(entry.year) : 'Sin fecha') === label) }))
     : [{ label: '', entries: ordered }];
+  const [openYears, setOpenYears] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (filter !== 'Conferencias') return;
+    if (q) {
+      setOpenYears(new Set(conferenceGroups.map((group) => group.label)));
+      return;
+    }
+    setOpenYears((current) => current.size ? current : new Set(conferenceGroups[0]?.label ? [conferenceGroups[0].label] : []));
+  }, [filter, q, conferenceGroups.map((group) => group.label).join('|')]);
+  const toggleYear = (label: string) => setOpenYears((current) => {
+    const next = new Set(current);
+    if (next.has(label)) next.delete(label); else next.add(label);
+    return next;
+  });
   return <section className="reader-section library-section">
     <FixedHeader eyebrow="PARA ESCUCHAR Y LEER" title="Tu biblioteca" subtitle="Buscá por conferencia, tema o etiqueta." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body library-browser">
@@ -705,7 +719,11 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
         <FluidTabs tabs={filters.map((item) => ({ value: item, title: item, ariaControls: 'library-results' }))} value={filter} onValueChange={setFilter} ariaLabel="Filtrar la biblioteca" className="library-fluid-tabs" />
       </section>
       <p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p>
-      <div id="library-results" className="library-content-list" role="tabpanel" aria-label={`Resultados: ${filter}`}>{conferenceGroups.map((group) => <section key={group.label || 'all'} className="library-year-group">{group.label && <h2 className="library-year-heading">{group.label}</h2>}{group.entries.map((entry, index) => {
+      <div id="library-results" className="library-content-list" role="tabpanel" aria-label={`Resultados: ${filter}`}>{conferenceGroups.map((group) => {
+        const open = !group.label || openYears.has(group.label);
+        return <section key={group.label || 'all'} className={`library-year-group${open ? ' is-open' : ''}`}>
+          {group.label && <button type="button" className="library-year-toggle" onClick={() => toggleYear(group.label)} aria-expanded={open}><span>{group.label}</span><ChevronDown size={22} aria-hidden="true" /></button>}
+          {open && group.entries.map((entry, index) => {
         const saved = favorites.some((favorite) => favorite.id === libraryFavorite(entry).id);
         let preview: React.ReactNode = entry.excerpt || 'Abrí para leer o escuchar.';
         if (q) {
@@ -729,7 +747,9 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
             <i><ChevronRight size={19} /></i>
           </span>
         </MagicCard><button type="button" className={`favorite-button library-row-favorite${saved ? ' is-favorite' : ''}`} onClick={() => onToggleFavorite(libraryFavorite(entry))} aria-label={saved ? `Quitar ${entry.title} de favoritos` : `Guardar ${entry.title} en favoritos`}><Heart size={18} fill={saved ? 'currentColor' : 'none'} /></button></div>;
-      })}</section>)}</div>
+      })}
+        </section>;
+      })}</div>
       {!ordered.length && <p className="library-empty">No se encontraron resultados</p>}
     </div>
   </section>;
