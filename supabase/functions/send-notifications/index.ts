@@ -115,8 +115,8 @@ function findNumberedMessageText(body: string, index: number): string | null {
 // intermedios corresponde, dado el horario mañana/noche y el intervalo
 // elegido por el usuario. Devuelve null si "ahora" no cae cerca de ningún slot.
 function matchIntermediateSlot(nowMinutes: number, morning: string, night: string, intervalMinutes: number): number | null {
-  const start = minutesOfDay(morning) + 60;
-  let end = minutesOfDay(night) - 60;
+  const start = minutesOfDay(morning);
+  let end = minutesOfDay(night);
   if (end <= start) end += 1440;
   let slot = start;
   let index = 1;

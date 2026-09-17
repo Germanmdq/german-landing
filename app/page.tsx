@@ -680,7 +680,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
       setOpenYears(new Set(conferenceGroups.map((group) => group.label)));
       return;
     }
-    setOpenYears((current) => current.size ? current : new Set(conferenceGroups[0]?.label ? [conferenceGroups[0].label] : []));
+    setOpenYears(new Set());
   }, [filter, q, conferenceGroups.map((group) => group.label).join('|')]);
   const toggleYear = (label: string) => setOpenYears((current) => {
     const next = new Set(current);
@@ -1021,7 +1021,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
       <div className="ios-card workshop-pills-card">
         <div className="workshop-pills">{workshopIntervalOptions.map((minutes) => <button key={minutes} type="button" className={`workshop-pill${messageInterval === minutes ? ' active' : ''}`} onClick={() => setMessageInterval(minutes)}>{workshopIntervalLabel(minutes)}</button>)}</div>
       </div>
-      <p className="workshop-hint">Los mensajes llegarían entre las {shiftHours(schedule.morning, 1)} y las {shiftHours(schedule.night, -1)}.</p>
+      <p className="workshop-hint">Los mensajes llegarían entre las {schedule.morning} y las {schedule.night}.</p>
       <ShimmerButton type="button" className="account-save" onClick={() => setStep('summary')}>Siguiente →</ShimmerButton>
     </div>
   </section>;
