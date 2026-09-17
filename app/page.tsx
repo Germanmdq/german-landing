@@ -291,20 +291,21 @@ function LawCoursePanel({ onBack, onNavigate }: { onBack: () => void; onNavigate
     return <section className="reader-section law-course-section">
       <FixedHeader eyebrow="TALLER DE 365 DÍAS" title={`Día ${formatCourseDay(selectedDay)}`} subtitle="Ley de Asunción" onBack={() => setSelectedDay(null)} onNavigate={onNavigate} />
       <article className="reader-body law-course-day">
-        <section className="law-course-content-card law-course-audio-script">
-          <div className="law-course-content-heading"><Headphones size={21} aria-hidden="true" /><div><small>CONTENIDO</small><h2>Guion de audio</h2></div></div>
-          <p>{dayContent.audio}</p>
+        <section className="law-course-audio-player" aria-label={`Audio del Día ${formatCourseDay(selectedDay)}`}>
+          <span className="law-course-audio-icon"><Headphones size={22} aria-hidden="true" /></span>
+          <div><small>AUDIO</small><h2>Escuchar el audio</h2><p>Disponible próximamente</p></div>
+          <button type="button" disabled aria-label="Audio disponible próximamente"><Play size={18} fill="currentColor" aria-hidden="true" /></button>
         </section>
         <section className="law-course-content-card">
-          <div className="law-course-content-heading"><BookOpen size={21} aria-hidden="true" /><div><small>BASE CONCEPTUAL</small><h2>Fundamento</h2></div></div>
+          <div className="law-course-content-heading"><BookOpen size={21} aria-hidden="true" /><div><small>BASE CONCEPTUAL</small><h2>El Fundamento de la Ley</h2></div></div>
           <p>{dayContent.foundation}</p>
         </section>
         <section className="law-course-content-card">
-          <div className="law-course-content-heading"><Sparkles size={21} aria-hidden="true" /><div><small>INTEGRACIÓN</small><h2>Comprensión psicológica</h2></div></div>
+          <div className="law-course-content-heading"><Sparkles size={21} aria-hidden="true" /><div><small>INTEGRACIÓN</small><h2>Comprensión Psicológica</h2></div></div>
           <p>{dayContent.psychology}</p>
         </section>
         <section className="law-course-content-card law-course-exercise">
-          <div className="law-course-content-heading"><Route size={21} aria-hidden="true" /><div><small>PRÁCTICA</small><h2>Ejercicio</h2></div></div>
+          <div className="law-course-content-heading"><Route size={21} aria-hidden="true" /><div><small>PRÁCTICA</small><h2>Ejercicio Práctico del Día</h2></div></div>
           <p>{dayContent.exercise}</p>
         </section>
         {dayContent.source && <p className="law-course-source">Fuente: {dayContent.source}</p>}
