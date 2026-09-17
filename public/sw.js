@@ -1,4 +1,4 @@
-const CACHE_NAME = 'german-app-v10';
+const CACHE_NAME = 'german-app-v11';
 const LAST_PUSH_CACHE = 'german-last-push-v1';
 
 self.addEventListener('install', () => self.skipWaiting());
