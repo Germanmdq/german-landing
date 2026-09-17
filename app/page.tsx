@@ -304,10 +304,6 @@ function LawCoursePanel({ onBack, onNavigate }: { onBack: () => void; onNavigate
           <div className="law-course-content-heading"><Sparkles size={21} aria-hidden="true" /><div><small>INTEGRACIÓN</small><h2>Comprensión Psicológica</h2></div></div>
           <p>{dayContent.psychology}</p>
         </section>
-        <section className="law-course-content-card law-course-exercise">
-          <div className="law-course-content-heading"><Route size={21} aria-hidden="true" /><div><small>PRÁCTICA</small><h2>Ejercicio Práctico del Día</h2></div></div>
-          <p>{dayContent.exercise}</p>
-        </section>
         {dayContent.source && <p className="law-course-source">Fuente: {dayContent.source}</p>}
       </article>
     </section>;
