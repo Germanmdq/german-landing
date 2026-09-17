@@ -30,6 +30,8 @@ type ReaderContent = { title: string; eyebrow: string; detail: string; paragraph
 type ProgramPanelConfig = { slug: string; title: string; subtitle: string };
 type DeckItem = { icon: string; title: string; detail: string; tone: string; image?: string; imageSize?: 'compact'; disabled?: boolean; children?: DeckItem[]; reader?: ReaderContent; notificationPanel?: boolean; accountPanel?: boolean; workshopPanel?: boolean; programPanel?: ProgramPanelConfig; action?: 'logout' };
 type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string };
+type AudiobookChapter = { title: string; anchor: string; order: number; page?: number };
+type AudiobookEntry = { id: string; slug: string; title: string; author: string; excerpt: string; body: string; chapters: AudiobookChapter[]; audioUrl?: string; pdfUrl?: string; durationSeconds?: number };
 type FavoriteRecord = { id: string; title: string; detail: string; icon: string; tone: string; reader?: ReaderContent };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
 type TallerDelivery = { id: string; dayNumber: number; deliveryType: TallerDeliveryType; deliveredAt: string; seenAt: string | null; title: string; paragraphs: string[]; audioUrl?: string };
@@ -38,6 +40,16 @@ const palette = ['#D92D35', '#E5484D', '#F2555A', '#FF6B6F'];
 const cleanParagraphs = (text: string) => text.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
 const toTags = (value: unknown): string[] => Array.isArray(value) ? value.filter((tag): tag is string => typeof tag === 'string') : typeof value === 'string' ? value.split(',').map((tag) => tag.trim()).filter(Boolean) : [];
 const firstText = (record: Record<string, unknown>, keys: string[]) => keys.map((key) => record[key]).find((value): value is string => typeof value === 'string' && value.length > 0);
+const formatMediaTime = (seconds: number) => {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+  const rounded = Math.floor(seconds);
+  const hours = Math.floor(rounded / 3600);
+  const minutes = Math.floor((rounded % 3600) / 60);
+  const remainingSeconds = rounded % 60;
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`
+    : `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
+};
 const deckFavorite = (item: DeckItem): FavoriteRecord => ({ id: `deck:${item.title}`, title: item.title, detail: item.detail, icon: item.icon, tone: item.tone, reader: item.reader });
 const libraryFavorite = (entry: LibraryEntry): FavoriteRecord => ({ id: `library:${entry.id}`, title: entry.title, detail: entry.excerpt || 'Biblioteca', icon: entry.audioUrl ? '🎙️' : '📖', tone: palette[0], reader: { title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration } });
 
@@ -454,6 +466,115 @@ function AudioPlayer({ title, audioUrl, durationLabel }: { title: string; audioU
     <button className="audio-play" onClick={toggle} aria-label={playing ? 'Pausar audio' : 'Escuchar audio'}>{playing ? <Pause size={21} fill="currentColor" /> : <Play size={21} fill="currentColor" />}</button>
     <div className="audio-player-copy"><p>ESCUCHÁ AHORA</p><b>{title}</b><span>{durationLabel || 'Audio disponible'}</span></div>
     <input className="audio-progress" type="range" min="0" max={duration || 1} step="0.1" value={progress} onChange={(event) => { const next = Number(event.target.value); if (audioRef.current) audioRef.current.currentTime = next; setProgress(next); }} aria-label="Progreso del audio" />
+  </section>;
+}
+
+function AudiobookPlayer({ title, author, audioUrl, durationSeconds }: { title: string; author: string; audioUrl: string; durationSeconds?: number }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(durationSeconds || 0);
+  const toggle = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) await audio.play().catch(() => undefined);
+    else audio.pause();
+  };
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.metadata = new MediaMetadata({ title, artist: author, album: 'Audiolibros de Germán' });
+  }, [author, title]);
+  return <section className="audiobook-player" aria-label={`Reproductor de ${title}`}>
+    <audio
+      ref={audioRef}
+      src={audioUrl}
+      preload="metadata"
+      playsInline
+      onPlay={() => setPlaying(true)}
+      onPause={() => setPlaying(false)}
+      onEnded={() => setPlaying(false)}
+      onLoadedMetadata={(event) => setDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : durationSeconds || 0)}
+      onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
+    />
+    <div className="audiobook-player-heading">
+      <button type="button" className="audiobook-play" onClick={toggle} aria-label={playing ? 'Pausar audiolibro' : 'Reproducir audiolibro'}>
+        {playing ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" />}
+      </button>
+      <div><small>AUDIOLIBRO COMPLETO</small><b>{playing ? 'Escuchando' : 'Listo para escuchar'}</b></div>
+    </div>
+    <input
+      className="audiobook-progress"
+      type="range"
+      min="0"
+      max={duration || 1}
+      step="0.1"
+      value={Math.min(currentTime, duration || 1)}
+      onChange={(event) => {
+        const next = Number(event.target.value);
+        if (audioRef.current) audioRef.current.currentTime = next;
+        setCurrentTime(next);
+      }}
+      aria-label="Progreso del audiolibro"
+    />
+    <div className="audiobook-time"><span>{formatMediaTime(currentTime)}</span><span>{formatMediaTime(duration)}</span></div>
+  </section>;
+}
+
+function splitAudiobookSections(body: string, chapters: AudiobookChapter[]) {
+  let cursor = 0;
+  const located = chapters.map((chapter) => {
+    const paragraphMarker = `\n\n${chapter.title}\n\n`;
+    const markerStart = body.indexOf(paragraphMarker, cursor);
+    const start = markerStart >= 0 ? markerStart + 2 : body.indexOf(chapter.title, cursor);
+    if (start >= 0) cursor = start + chapter.title.length;
+    return { ...chapter, start };
+  });
+  return located.map((chapter, index) => {
+    const contentStart = chapter.start < 0 ? -1 : chapter.start + chapter.title.length;
+    const nextStart = located[index + 1]?.start;
+    const end = typeof nextStart === 'number' && nextStart >= 0 ? nextStart : body.length;
+    return { ...chapter, paragraphs: contentStart < 0 ? [] : cleanParagraphs(body.slice(contentStart, end)) };
+  });
+}
+
+function AudiobookLibraryPanel({ entries, loading, error, onBack, onNavigate, onOpen }: { entries: AudiobookEntry[]; loading: boolean; error: string; onBack: () => void; onNavigate: (target: NavTarget) => void; onOpen: (entry: AudiobookEntry) => void }) {
+  return <section className="reader-section audiobook-library-section">
+    <FixedHeader eyebrow="AUDIOLIBROS DE GERMÁN" title="Libros para escuchar" subtitle="Libros completos narrados por Germán." onBack={onBack} onNavigate={onNavigate} />
+    <div className="reader-body audiobook-library">
+      {loading && <p className="library-empty">Cargando audiolibros…</p>}
+      {!loading && error && <p className="library-empty">No pudimos cargar los audiolibros. {error}</p>}
+      {!loading && !error && entries.map((entry, index) => <MagicCard key={entry.id} delay={Math.min(index * .04, .2)} className="audiobook-card" onClick={() => onOpen(entry)}>
+        <div className="audiobook-card-icon"><Headphones size={25} aria-hidden="true" /></div>
+        <div><small>AUDIOLIBRO</small><b>{entry.title}</b><span>{entry.author}</span><p>{entry.excerpt || 'Libro completo para escuchar y leer.'}</p></div>
+        <ChevronRight size={20} aria-hidden="true" />
+      </MagicCard>)}
+      {!loading && !error && !entries.length && <p className="library-empty">Todavía no hay audiolibros disponibles.</p>}
+    </div>
+  </section>;
+}
+
+function AudiobookReader({ book, onBack, onNavigate }: { book: AudiobookEntry; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
+  const sections = useMemo(() => splitAudiobookSections(book.body, book.chapters), [book.body, book.chapters]);
+  const goToChapter = (anchor: string) => document.getElementById(`chapter-${anchor}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  return <section className="reader-section audiobook-reader-section">
+    <FixedHeader eyebrow="AUDIOLIBRO" title={book.title} subtitle={book.author} onBack={onBack} onNavigate={onNavigate} />
+    <article className="reader-body audiobook-reader">
+      {book.audioUrl ? <AudiobookPlayer title={book.title} author={book.author} audioUrl={book.audioUrl} durationSeconds={book.durationSeconds} /> : <p className="library-empty">El audio no está disponible en este momento.</p>}
+      <section className="audiobook-index" aria-labelledby="audiobook-chapters-title">
+        <div className="audiobook-section-title"><small>ÍNDICE</small><h2 id="audiobook-chapters-title">Capítulos</h2><span>{book.chapters.length} secciones</span></div>
+        <nav aria-label="Capítulos de Sinfonía de susurros">
+          {book.chapters.map((chapter) => <button type="button" key={chapter.anchor} onClick={() => goToChapter(chapter.anchor)}><span>{String(chapter.order).padStart(2, '0')}</span><b>{chapter.title}</b><ChevronDown size={17} aria-hidden="true" /></button>)}
+        </nav>
+      </section>
+      <section className="audiobook-text" aria-label={`Texto completo de ${book.title}`}>
+        {sections.map((section) => <section key={section.anchor} id={`chapter-${section.anchor}`} className="audiobook-chapter">
+          <small>SECCIÓN {String(section.order).padStart(2, '0')}</small>
+          <h2>{section.title}</h2>
+          {section.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+        </section>)}
+      </section>
+      {book.pdfUrl && <a className="audiobook-pdf-link" href={book.pdfUrl} target="_blank" rel="noreferrer"><Download size={18} />Abrir PDF completo</a>}
+    </article>
   </section>;
 }
 
@@ -1188,6 +1309,10 @@ export default function App() {
   const [standalone, setStandalone] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteRecord[]>([]);
   const [libraryItems, setLibraryItems] = useState<LibraryEntry[]>([]);
+  const [audiobookItems, setAudiobookItems] = useState<AudiobookEntry[]>([]);
+  const [audiobooksLoading, setAudiobooksLoading] = useState(true);
+  const [audiobooksError, setAudiobooksError] = useState('');
+  const [selectedAudiobook, setSelectedAudiobook] = useState<AudiobookEntry | null>(null);
   const [momentNodes, setMomentNodes] = useState<DeckItem[]>([]);
   const screens = useMemo(() => buildScreens(momentNodes), [momentNodes]);
   const mainCardIndexRef = useRef(0);
@@ -1199,6 +1324,7 @@ export default function App() {
   }, [current, tab, trail]);
 
   const back = () => {
+    if (selectedAudiobook) return setSelectedAudiobook(null);
     if (reader) return setReader(null);
     if (notificationsOpen) return setNotificationsOpen(false);
     if (configurationOpen) return setConfigurationOpen(false);
@@ -1211,6 +1337,7 @@ export default function App() {
   };
 
   const navigateTo = (target: NavTarget) => {
+    setSelectedAudiobook(null);
     setReader(null);
     setNotificationsOpen(false);
     setConfigurationOpen(false);
@@ -1248,6 +1375,7 @@ export default function App() {
       setFavoritesOpen(false);
       setWorkshopOpen(false);
       setCourseOpen(false);
+      setSelectedAudiobook(null);
       setReader(null);
       setMainMenu(true);
     });
@@ -1426,6 +1554,63 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!session?.user || accessState !== 'active') return;
+    let cancelled = false;
+    setAudiobooksLoading(true);
+    setAudiobooksError('');
+    (async () => {
+      const { data, error } = await supabase
+        .from('content_items')
+        .select('id,slug,title,excerpt,body,metadata,content_assets(asset_type,source_url,storage_path,duration_seconds,sort_order)')
+        .eq('content_type', 'audiobook')
+        .eq('is_published', true)
+        .order('published_at', { ascending: false });
+      if (error) throw error;
+      const books = await Promise.all((data || []).map(async (row) => {
+        const metadata = row.metadata && typeof row.metadata === 'object' && !Array.isArray(row.metadata) ? row.metadata as Record<string, unknown> : {};
+        const chapters = Array.isArray(metadata.chapters)
+          ? metadata.chapters.filter((value): value is Record<string, unknown> => Boolean(value) && typeof value === 'object' && !Array.isArray(value)).map((chapter, index) => ({
+            title: typeof chapter.title === 'string' ? chapter.title : `Sección ${index + 1}`,
+            anchor: typeof chapter.anchor === 'string' ? chapter.anchor : `seccion-${index + 1}`,
+            order: typeof chapter.order === 'number' ? chapter.order : index + 1,
+            page: typeof chapter.page === 'number' ? chapter.page : undefined,
+          })).sort((a, b) => a.order - b.order)
+          : [];
+        const assets = Array.isArray(row.content_assets) ? row.content_assets as Array<{ asset_type?: string; source_url?: string; storage_path?: string; duration_seconds?: number; sort_order?: number }> : [];
+        const sortedAssets = [...assets].sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
+        const audioAsset = sortedAssets.find((asset) => asset.asset_type === 'audio');
+        const pdfAsset = sortedAssets.find((asset) => asset.asset_type === 'document/pdf');
+        const resolveAssetUrl = async (asset?: { source_url?: string; storage_path?: string }) => {
+          if (!asset) return undefined;
+          if (asset.storage_path) {
+            const { data: signed, error: signedError } = await supabase.storage.from('audiobooks').createSignedUrl(asset.storage_path, 60 * 60 * 6);
+            if (!signedError && signed?.signedUrl) return signed.signedUrl;
+          }
+          return asset.source_url && !asset.source_url.startsWith('storage://') ? asset.source_url : undefined;
+        };
+        const [audioUrl, pdfUrl] = await Promise.all([resolveAssetUrl(audioAsset), resolveAssetUrl(pdfAsset)]);
+        return {
+          id: row.id,
+          slug: row.slug || '',
+          title: row.title || 'Sin título',
+          author: typeof metadata.author === 'string' ? metadata.author : 'Germán González',
+          excerpt: row.excerpt || '',
+          body: row.body || '',
+          chapters,
+          audioUrl,
+          pdfUrl,
+          durationSeconds: audioAsset?.duration_seconds,
+        } satisfies AudiobookEntry;
+      }));
+      if (!cancelled) setAudiobookItems(books);
+    })().catch((error: unknown) => {
+      console.error('[audiobooks] error cargando contenido:', error);
+      if (!cancelled) setAudiobooksError(error instanceof Error ? error.message : 'Error inesperado.');
+    }).finally(() => { if (!cancelled) setAudiobooksLoading(false); });
+    return () => { cancelled = true; };
+  }, [accessState, session?.user]);
+
+  useEffect(() => {
     supabase
       .from('content_items')
       .select('*,content_assets(asset_type,source_url,storage_path,duration_seconds,sort_order)')
@@ -1546,21 +1731,21 @@ export default function App() {
 
   if (mainMenu) {
     const courseCard = { target: 'curso' as const, title: 'Taller de 365 días', detail: 'Ley de Asunción · recorrido completo.', image: '/images/german-reunion.webp' };
-    const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/german-perfil.png' : target === 'biblioteca' ? '/images/german-biblioteca.png' : target === 'audiolibros' ? '/images/german-biblioteca.png' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
+    const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/german-perfil.png' : target === 'biblioteca' ? '/images/german-biblioteca.png' : target === 'audiolibros' ? '/images/german-audiolibros.png' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
     const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
     const items = [...welcomeItems.slice(0, meditIndex + 1), courseCard, ...welcomeItems.slice(meditIndex + 1)];
     return <><main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'curso') { setCourseOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section>{dock}</main>{installOpen && !standalone && !pendingDeliveryId && <InstallOnboarding suggestedPlatform={installPlatform} nativePromptAvailable={installPromptAvailable} onClose={() => { setInstallOpen(false); setInstallDismissed(true); }} onInstallAndroid={promptNativeInstallation} onRecheckInstallation={() => { const installed = isRunningStandalone(); setStandalone(installed); return installed; }} />}</>;
   }
   if (courseOpen) return <main className="app-shell app-main section-app"><LawCoursePanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} onBack={back} onNavigate={navigateTo} onNameSaved={setFullName} onLogout={logout} />{dock}</main>;
+  if (selectedAudiobook) return <main className="app-shell app-main section-app"><AudiobookReader book={selectedAudiobook} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (reader) { const favorite = deckFavorite({ icon: '📖', title: reader.title, detail: reader.detail, tone: palette[0], reader }); return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} onNavigate={navigateTo} favorite={favorites.some((item) => item.title === reader.title)} onFavorite={() => { const exact = favorites.find((item) => item.title === reader.title); toggleFavorite(exact || favorite); }} />{dock}</main>; }
   if (favoritesOpen) return <main className="app-shell app-main section-app"><FavoritesPanel favorites={favorites} onBack={back} onNavigate={navigateTo} onOpen={(favorite) => { if (favorite.reader) setReader(favorite.reader); }} onRemove={toggleFavorite} />{dock}</main>;
   if (workshopOpen) return <main className="app-shell app-main section-app"><WorkshopPanel user={session.user} program={programConfig} onBack={back} onNavigate={navigateTo} onRead={setReader} />{dock}</main>;
   if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (configurationOpen) return <main className="app-shell app-main section-app"><ConfigurationPanel user={session.user} onBack={back} onNavigate={navigateTo} onOpenNotifications={() => setNotificationsOpen(true)} />{dock}</main>;
   if (tab === 'audiolibros' && !trail.length) {
-    const audiobookEntries = libraryItems.filter((entry) => entry.type.toLowerCase() === 'audiobook' || entry.tags.some((tag) => /audiolibro|audiobook/i.test(tag)));
-    return <main className="app-shell app-main section-app"><LibraryPanel entries={audiobookEntries} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: 'AUDIOLIBRO', detail: entry.excerpt || 'Audiolibro de Germán', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} />{dock}</main>;
+    return <main className="app-shell app-main section-app"><AudiobookLibraryPanel entries={audiobookItems} loading={audiobooksLoading} error={audiobooksError} onBack={back} onNavigate={navigateTo} onOpen={setSelectedAudiobook} />{dock}</main>;
   }
   if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} />{dock}</main>;
   if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} showInstall={!standalone} onInstall={() => { setInstallDismissed(false); setInstallOpen(true); }} onSelect={select} onBack={back} onNavigate={navigateTo} />{dock}</main>;
