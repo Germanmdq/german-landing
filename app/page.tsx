@@ -295,19 +295,6 @@ function LawCoursePanel({ onBack, onNavigate }: { onBack: () => void; onNavigate
           <button type="button" disabled aria-label={`Audio del Día ${formatCourseDay(selectedDay)}`}><Play size={18} fill="currentColor" aria-hidden="true" /></button>
           <div className="law-course-audio-track" aria-hidden="true"><span /></div>
         </section>
-        <section className="law-course-content-card">
-          <div className="law-course-content-heading"><BookOpen size={21} aria-hidden="true" /><div><small>BASE CONCEPTUAL</small><h2>El Fundamento de la Ley</h2></div></div>
-          <p>{dayContent.foundation}</p>
-        </section>
-        <section className="law-course-content-card">
-          <div className="law-course-content-heading"><Sparkles size={21} aria-hidden="true" /><div><small>INTEGRACIÓN</small><h2>Comprensión Psicológica</h2></div></div>
-          <p>{dayContent.psychology}</p>
-        </section>
-        <section className="law-course-content-card law-course-exercise">
-          <div className="law-course-content-heading"><Check size={21} aria-hidden="true" /><div><small>PRÁCTICA</small><h2>Ejercicio Práctico del Día</h2></div></div>
-          <p>{dayContent.exercise}</p>
-        </section>
-        {dayContent.source && <p className="law-course-source">Fuente: {dayContent.source}</p>}
       </article>
     </section>;
   }
