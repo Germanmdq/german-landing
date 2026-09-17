@@ -132,6 +132,7 @@ const navMenuItems: { target: NavTarget; icon: ReactNode; label: string }[] = [
   { target: 'propia', icon: <SlidersHorizontal size={21} />, label: 'Tu propia práctica' },
   { target: 'meditaciones', icon: <Flower2 size={21} />, label: 'Meditaciones' },
   { target: 'biblioteca', icon: <BookOpen size={21} />, label: 'Biblioteca' },
+  { target: 'audiolibros', icon: <Headphones size={21} />, label: 'Audiolibros de Germán' },
   { target: 'consultas', icon: <MessageCircle size={21} />, label: 'Consultas' },
   { target: 'curso', icon: <BookOpen size={21} />, label: 'Taller de 365 días' },
   { target: 'espacio', icon: <UserRound size={21} />, label: 'Mi perfil' },
@@ -175,16 +176,6 @@ function MainNavigationDock({ current, onSelect }: { current: NavTarget; onSelec
     </nav>
     {moreOpen && <NavMenuSheet onSelect={(target) => { setMoreOpen(false); onSelect(target); }} onCancel={() => setMoreOpen(false)} />}
   </>;
-}
-
-function HomeQuickAccess({ onSelect }: { onSelect: (target: NavTarget) => void }) {
-  const targets: NavTarget[] = ['talleres', 'propia', 'meditaciones', 'biblioteca', 'consultas', 'espacio'];
-  return <nav className="home-quick-access" aria-label="Accesos rápidos">
-    {targets.map((target) => {
-      const item = navMenuItems.find((entry) => entry.target === target)!;
-      return <button key={target} type="button" onClick={() => onSelect(target)}>{item.icon}<span>{target === 'propia' ? 'Mi práctica' : target === 'talleres' ? 'Guiadas' : item.label}</span></button>;
-    })}
-  </nav>;
 }
 
 function FixedHeader({ eyebrow, title, subtitle, onBack, onNavigate }: { eyebrow: string; title: string; subtitle: string; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
@@ -1558,7 +1549,7 @@ export default function App() {
     const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/german-perfil.png' : target === 'biblioteca' ? '/images/german-biblioteca.png' : target === 'audiolibros' ? '/images/german-biblioteca.png' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
     const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
     const items = [...welcomeItems.slice(0, meditIndex + 1), courseCard, ...welcomeItems.slice(meditIndex + 1)];
-    return <><main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><HomeQuickAccess onSelect={navigateTo} /><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'curso') { setCourseOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section>{dock}</main>{installOpen && !standalone && !pendingDeliveryId && <InstallOnboarding suggestedPlatform={installPlatform} nativePromptAvailable={installPromptAvailable} onClose={() => { setInstallOpen(false); setInstallDismissed(true); }} onInstallAndroid={promptNativeInstallation} onRecheckInstallation={() => { const installed = isRunningStandalone(); setStandalone(installed); return installed; }} />}</>;
+    return <><main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'curso') { setCourseOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section>{dock}</main>{installOpen && !standalone && !pendingDeliveryId && <InstallOnboarding suggestedPlatform={installPlatform} nativePromptAvailable={installPromptAvailable} onClose={() => { setInstallOpen(false); setInstallDismissed(true); }} onInstallAndroid={promptNativeInstallation} onRecheckInstallation={() => { const installed = isRunningStandalone(); setStandalone(installed); return installed; }} />}</>;
   }
   if (courseOpen) return <main className="app-shell app-main section-app"><LawCoursePanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} onBack={back} onNavigate={navigateTo} onNameSaved={setFullName} onLogout={logout} />{dock}</main>;
