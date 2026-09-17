@@ -25,7 +25,7 @@ import { hasActiveAccess, type Entitlement } from './lib/payments';
 import { LoginGate } from './components/login-gate';
 import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, type TallerDeliveryType } from './lib/taller-delivery';
 
-type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'consultas' | 'espacio';
+type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'audiolibros' | 'consultas' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string; audios?: { label: string; url: string }[] };
 type ProgramPanelConfig = { slug: string; title: string; subtitle: string };
 type DeckItem = { icon: string; title: string; detail: string; tone: string; image?: string; imageSize?: 'compact'; disabled?: boolean; children?: DeckItem[]; reader?: ReaderContent; notificationPanel?: boolean; accountPanel?: boolean; workshopPanel?: boolean; programPanel?: ProgramPanelConfig; action?: 'logout' };
@@ -64,6 +64,7 @@ const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
     { icon: '📖', title: 'Lecturas', detail: 'Frases organizadas dentro de cada recorrido.', tone: palette[1], children: planNodes },
     { icon: '🎙️', title: 'Conferencias', detail: 'Contenido pendiente de conectar.', tone: palette[2] },
   ] },
+  audiolibros: { eyebrow: 'AUDIOLIBROS DE GERMÁN', title: 'Libros para escuchar', subtitle: 'Audiolibros narrados por Germán.', items: [] },
   consultas: { eyebrow: 'CONSULTAS', title: 'Hablemos de lo que te pasa', subtitle: 'Consultas para leer, escuchar y guardar.', items: [
     { icon: '💬', title: 'Preguntar', detail: 'Próximamente.', tone: palette[0], disabled: true },
     { icon: '🔊', title: 'Escuchar', detail: 'Próximamente.', tone: palette[1], disabled: true },
@@ -80,6 +81,7 @@ const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
 const mainCategories: Array<[Tab, string, string, string, string]> = [
   ['espacio', '👋', 'Mi perfil', 'Tu cuenta, favoritos y configuración.', palette[0]],
   ['biblioteca', '📚', 'Biblioteca', 'Audios, lecturas y conferencias.', palette[1]],
+  ['audiolibros', '🎧', 'Audiolibros de Germán', 'Libros completos narrados por Germán.', palette[2]],
   ['talleres', '✨', 'Prácticas guiadas', 'Recorridos de 7, 15 y 40 días.', palette[2]],
   ['propia', '🧩', 'Tu propia práctica', 'Armá un camino para lo que hoy necesitás.', palette[3]],
   ['meditaciones', '🧘‍♂️', 'Meditaciones para ahora', 'Elegí una práctica según tu momento.', palette[0]],
@@ -123,7 +125,7 @@ function Deck({ items, onSelect, favorites, onToggleFavorite }: { items: DeckIte
   return <div className="feature-list">{items.map((entry, index) => <DeckCard key={entry.title} item={entry} index={index} last={index === items.length - 1} onClick={() => onSelect(entry)} favorite={entry.reader ? favorites.some((favorite) => favorite.id === deckFavorite(entry).id) : undefined} onFavorite={entry.reader ? () => onToggleFavorite(deckFavorite(entry)) : undefined} />)}<div className="deck-end-space" aria-hidden="true" /></div>;
 }
 
-type NavTarget = 'home' | 'favorites' | 'biblioteca' | 'meditaciones' | 'talleres' | 'propia' | 'consultas' | 'curso' | 'espacio' | 'configuracion' | 'notificaciones';
+type NavTarget = 'home' | 'favorites' | 'biblioteca' | 'audiolibros' | 'meditaciones' | 'talleres' | 'propia' | 'consultas' | 'curso' | 'espacio' | 'configuracion' | 'notificaciones';
 const navMenuItems: { target: NavTarget; icon: ReactNode; label: string }[] = [
   { target: 'home', icon: <House size={21} />, label: 'Inicio' },
   { target: 'talleres', icon: <Route size={21} />, label: 'Prácticas guiadas' },
@@ -1553,7 +1555,7 @@ export default function App() {
 
   if (mainMenu) {
     const courseCard = { target: 'curso' as const, title: 'Taller de 365 días', detail: 'Ley de Asunción · recorrido completo.', image: '/images/german-reunion.webp' };
-    const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/german-perfil.png' : target === 'biblioteca' ? '/images/german-biblioteca.png' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
+    const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/german-perfil.png' : target === 'biblioteca' ? '/images/german-biblioteca.png' : target === 'audiolibros' ? '/images/german-biblioteca.png' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
     const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
     const items = [...welcomeItems.slice(0, meditIndex + 1), courseCard, ...welcomeItems.slice(meditIndex + 1)];
     return <><main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><HomeQuickAccess onSelect={navigateTo} /><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'curso') { setCourseOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section>{dock}</main>{installOpen && !standalone && !pendingDeliveryId && <InstallOnboarding suggestedPlatform={installPlatform} nativePromptAvailable={installPromptAvailable} onClose={() => { setInstallOpen(false); setInstallDismissed(true); }} onInstallAndroid={promptNativeInstallation} onRecheckInstallation={() => { const installed = isRunningStandalone(); setStandalone(installed); return installed; }} />}</>;
@@ -1565,6 +1567,10 @@ export default function App() {
   if (workshopOpen) return <main className="app-shell app-main section-app"><WorkshopPanel user={session.user} program={programConfig} onBack={back} onNavigate={navigateTo} onRead={setReader} />{dock}</main>;
   if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (configurationOpen) return <main className="app-shell app-main section-app"><ConfigurationPanel user={session.user} onBack={back} onNavigate={navigateTo} onOpenNotifications={() => setNotificationsOpen(true)} />{dock}</main>;
+  if (tab === 'audiolibros' && !trail.length) {
+    const audiobookEntries = libraryItems.filter((entry) => entry.type.toLowerCase() === 'audiobook' || entry.tags.some((tag) => /audiolibro|audiobook/i.test(tag)));
+    return <main className="app-shell app-main section-app"><LibraryPanel entries={audiobookEntries} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: 'AUDIOLIBRO', detail: entry.excerpt || 'Audiolibro de Germán', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} />{dock}</main>;
+  }
   if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry) => setReader({ title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration })} />{dock}</main>;
   if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} showInstall={!standalone} onInstall={() => { setInstallDismissed(false); setInstallOpen(true); }} onSelect={select} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'propia' && !trail.length) return <main className="app-shell app-main section-app"><PropiaPracticaPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} />{dock}</main>;
