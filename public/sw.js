@@ -1,12 +1,14 @@
-const CACHE_NAME = 'german-app-v9';
+const CACHE_NAME = 'german-app-v10';
 const LAST_PUSH_CACHE = 'german-last-push-v1';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => {
-  event.waitUntil(Promise.all([
-    caches.keys().then((names) => Promise.all(names.filter((name) => name !== CACHE_NAME && name !== LAST_PUSH_CACHE).map((name) => caches.delete(name)))),
-    self.clients.claim(),
-  ]));
+  event.waitUntil((async () => {
+    await caches.keys().then((names) => Promise.all(names.filter((name) => name !== CACHE_NAME && name !== LAST_PUSH_CACHE).map((name) => caches.delete(name))));
+    await self.clients.claim();
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    await Promise.all(windows.map((client) => client.navigate(client.url)));
+  })());
 });
 
 self.addEventListener('push', (event) => {
