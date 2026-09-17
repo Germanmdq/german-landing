@@ -292,9 +292,8 @@ function LawCoursePanel({ onBack, onNavigate }: { onBack: () => void; onNavigate
       <FixedHeader eyebrow="TALLER DE 365 DÍAS" title={`Día ${formatCourseDay(selectedDay)}`} subtitle="Ley de Asunción" onBack={() => setSelectedDay(null)} onNavigate={onNavigate} />
       <article className="reader-body law-course-day">
         <section className="law-course-audio-player" aria-label={`Audio del Día ${formatCourseDay(selectedDay)}`}>
-          <span className="law-course-audio-icon"><Headphones size={22} aria-hidden="true" /></span>
-          <div><small>AUDIO</small><h2>Escuchar el audio</h2><p>Disponible próximamente</p></div>
-          <button type="button" disabled aria-label="Audio disponible próximamente"><Play size={18} fill="currentColor" aria-hidden="true" /></button>
+          <button type="button" disabled aria-label={`Audio del Día ${formatCourseDay(selectedDay)}`}><Play size={18} fill="currentColor" aria-hidden="true" /></button>
+          <div className="law-course-audio-track" aria-hidden="true"><span /></div>
         </section>
         <section className="law-course-content-card">
           <div className="law-course-content-heading"><BookOpen size={21} aria-hidden="true" /><div><small>BASE CONCEPTUAL</small><h2>El Fundamento de la Ley</h2></div></div>
