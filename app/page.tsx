@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, Download, House, CalendarDays, Menu } from 'lucide-react';
+import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, ChevronDown, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, Download, House, Menu } from 'lucide-react';
 import content from './content.generated.json';
+import course365 from './course365.generated.json';
 import { supabase } from './lib/supabase';
 import { subscribeToPush, ensurePushSubscription, reconcilePushSubscription, disablePushSubscription, disableCurrentBrowserPushSubscription, getPushSubscriptionActive, getCurrentBrowserPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
 import { detectInstallPlatform, hasNativeInstallPrompt, isRunningStandalone, listenForPwaInstallation, promptNativeInstallation } from './lib/pwa';
@@ -34,6 +35,7 @@ type LibraryEntry = { id: string; title: string; excerpt: string; body: string; 
 type FavoriteRecord = { id: string; title: string; detail: string; icon: string; tone: string; reader?: ReaderContent };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
 type TallerDelivery = { id: string; dayNumber: number; deliveryType: TallerDeliveryType; deliveredAt: string; seenAt: string | null; title: string; paragraphs: string[]; audioUrl?: string };
+type LawCourseDay = { day: number; title: string; source: string; audio: string; foundation: string; psychology: string; exercise: string };
 
 const palette = ['#D92D35', '#E5484D', '#F2555A', '#FF6B6F'];
 const cleanParagraphs = (text: string) => text.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
@@ -151,7 +153,7 @@ const navMenuItems: { target: NavTarget; icon: ReactNode; label: string }[] = [
   { target: 'meditaciones', icon: <Flower2 size={21} />, label: 'Meditaciones' },
   { target: 'biblioteca', icon: <BookOpen size={21} />, label: 'Biblioteca' },
   { target: 'consultas', icon: <MessageCircle size={21} />, label: 'Consultas' },
-  { target: 'curso', icon: <BookOpen size={21} />, label: 'Curso sobre la Ley' },
+  { target: 'curso', icon: <BookOpen size={21} />, label: 'Taller de 365 días' },
   { target: 'espacio', icon: <UserRound size={21} />, label: 'Mi perfil' },
   { target: 'favorites', icon: <Heart size={21} />, label: 'Favoritos' },
   { target: 'configuracion', icon: <Settings2 size={21} />, label: 'Configuración' },
@@ -262,13 +264,70 @@ function useNotificationsToggle(user: User) {
   return { active, loading, busy, error, toggle };
 }
 
+const lawCourseChapters = [
+  { number: 1, title: 'El Principio de Conciencia y el Poder del “Yo Soy”', start: 1, end: 30 },
+  { number: 2, title: 'El Secreto del Sentimiento y el Subconsciente', start: 31, end: 60 },
+  { number: 3, title: 'La Transformación Radical del Autoconcepto', start: 61, end: 90 },
+  { number: 4, title: 'El Estado Similar al Sueño (SATS) y la Imaginería Sensorial', start: 91, end: 120 },
+  { number: 5, title: 'Pensar DESDE el Final y la Dieta Mental Inflexible', start: 121, end: 150 },
+  { number: 6, title: 'Persistencia, Inmunidad a los Sentidos y el Sábado Mental', start: 151, end: 180 },
+  { number: 7, title: 'La Tijera de Podar de la Revisión', start: 181, end: 210 },
+  { number: 8, title: 'Demostración en las Grandes Áreas Humanas', start: 211, end: 240 },
+  { number: 9, title: 'El Puente de Incidentes y el Desapego del “Cómo”', start: 241, end: 270 },
+  { number: 10, title: 'La Decodificación Psicológica de la Escritura', start: 271, end: 300 },
+  { number: 11, title: 'El Hombre-Dios y la Imaginación Infinita', start: 301, end: 330 },
+  { number: 12, title: 'La Promesa, la Resurrección y la Libertad Eterna', start: 331, end: 365 },
+] as const;
+
+const formatCourseDay = (day: number) => String(day).padStart(3, '0');
+const lawCourseDays = course365 as LawCourseDay[];
+
 function LawCoursePanel({ onBack, onNavigate }: { onBack: () => void; onNavigate: (target: NavTarget) => void }) {
-  return <section className="reader-section">
-    <FixedHeader eyebrow="CURSO" title="Curso sobre la Ley" subtitle="Una formación clara para entenderla y aplicarla." onBack={onBack} onNavigate={onNavigate} />
-    <div className="reader-body meeting-panel">
-      <div className="meeting-schedule"><BookOpen size={20} /><span>Curso sobre la Ley</span></div>
-      <p className="workshop-hint">Estamos preparando las lecciones y el recorrido completo.</p>
-      <p>Muy pronto vas a encontrar acá el curso organizado paso a paso.</p>
+  const [openChapter, setOpenChapter] = useState<number | null>(1);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const dayContent = selectedDay === null ? null : lawCourseDays.find((entry) => entry.day === selectedDay) ?? null;
+
+  if (selectedDay !== null && dayContent) {
+    return <section className="reader-section law-course-section">
+      <FixedHeader eyebrow="TALLER DE 365 DÍAS" title={`Día ${formatCourseDay(selectedDay)}`} subtitle="Ley de Asunción" onBack={() => setSelectedDay(null)} onNavigate={onNavigate} />
+      <article className="reader-body law-course-day">
+        <section className="law-course-content-card law-course-audio-script">
+          <div className="law-course-content-heading"><Headphones size={21} aria-hidden="true" /><div><small>CONTENIDO</small><h2>Guion de audio</h2></div></div>
+          <p>{dayContent.audio}</p>
+        </section>
+        <section className="law-course-content-card">
+          <div className="law-course-content-heading"><BookOpen size={21} aria-hidden="true" /><div><small>BASE CONCEPTUAL</small><h2>Fundamento</h2></div></div>
+          <p>{dayContent.foundation}</p>
+        </section>
+        <section className="law-course-content-card">
+          <div className="law-course-content-heading"><Sparkles size={21} aria-hidden="true" /><div><small>INTEGRACIÓN</small><h2>Comprensión psicológica</h2></div></div>
+          <p>{dayContent.psychology}</p>
+        </section>
+        <section className="law-course-content-card law-course-exercise">
+          <div className="law-course-content-heading"><Route size={21} aria-hidden="true" /><div><small>PRÁCTICA</small><h2>Ejercicio</h2></div></div>
+          <p>{dayContent.exercise}</p>
+        </section>
+        {dayContent.source && <p className="law-course-source">Fuente: {dayContent.source}</p>}
+      </article>
+    </section>;
+  }
+
+  return <section className="reader-section law-course-section">
+    <FixedHeader eyebrow="LEY DE ASUNCIÓN" title="Taller de 365 días" subtitle="365 días para entenderla, practicarla y vivirla." onBack={onBack} onNavigate={onNavigate} />
+    <div className="reader-body law-course-browser">
+      <div className="law-course-progress-card"><div><span>TALLER COMPLETO</span><b>365 días</b></div><BookOpen size={22} /></div>
+      <div className="law-course-chapters">
+        {lawCourseChapters.map((chapter) => {
+          const expanded = openChapter === chapter.number;
+          return <section key={chapter.number} className={`law-course-chapter${expanded ? ' is-open' : ''}`}>
+            <button type="button" className="law-course-chapter-toggle" aria-expanded={expanded} onClick={() => setOpenChapter(expanded ? null : chapter.number)}>
+              <div><small>CAPÍTULO {chapter.number}</small><b>{chapter.title}</b><span>Días {formatCourseDay(chapter.start)}–{formatCourseDay(chapter.end)}</span></div>
+              <ChevronDown size={20} aria-hidden="true" />
+            </button>
+            {expanded && <div className="law-course-days">{Array.from({ length: chapter.end - chapter.start + 1 }, (_, i) => chapter.start + i).map((day) => <button key={day} type="button" className="law-course-day-row" onClick={() => setSelectedDay(day)}><span>Día {formatCourseDay(day)}</span><ChevronRight size={18} aria-hidden="true" /></button>)}</div>}
+          </section>;
+        })}
+      </div>
     </div>
   </section>;
 }
@@ -1484,7 +1543,7 @@ export default function App() {
   const dock = <MainNavigationDock current={mainMenu ? "home" : configurationOpen ? "configuracion" : tab} onSelect={navigateTo} />;
 
   if (mainMenu) {
-    const courseCard = { target: 'curso' as const, title: 'Curso sobre la Ley', detail: 'Entenderla y aplicarla paso a paso.', image: '/images/german-reunion.webp' };
+    const courseCard = { target: 'curso' as const, title: 'Taller de 365 días', detail: 'Ley de Asunción · recorrido completo.', image: '/images/german-reunion.webp' };
     const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/german-perfil.png' : target === 'biblioteca' ? '/images/german-biblioteca.png' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
     const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
     const items = [...welcomeItems.slice(0, meditIndex + 1), courseCard, ...welcomeItems.slice(meditIndex + 1)];

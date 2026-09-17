@@ -555,3 +555,36 @@ button, input { font-family: inherit !important; }
 @media (prefers-reduced-motion: reduce) {
   .shimmer-button__light, .border-beam, .notification-illustration i { animation: none !important; }
 }
+
+
+/* Taller de 365 días: capítulos desplegables y días sin títulos individuales. */
+.law-course-browser { display: grid; align-content: start; gap: 18px; }
+.law-course-progress-card { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 17px 18px; border: 1px solid var(--ui-line); border-radius: 20px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+.law-course-progress-card > div { display: grid; gap: 3px; }
+.law-course-progress-card span { color: var(--ui-accent); font-size: 10px; font-weight: 800; letter-spacing: .14em; }
+.law-course-progress-card b { color: var(--ui-ink); font-size: 20px; letter-spacing: -.02em; }
+.law-course-progress-card svg { color: var(--ui-accent); }
+.law-course-chapters { display: grid; gap: 11px; }
+.law-course-chapter { overflow: hidden; border: 1px solid var(--ui-line); border-radius: 19px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.035); }
+.law-course-chapter-toggle { width: 100%; min-height: 88px; display: grid; grid-template-columns: minmax(0,1fr) 24px; gap: 14px; align-items: center; padding: 16px 17px; border: 0; background: #fff; color: var(--ui-ink); text-align: left; }
+.law-course-chapter-toggle > div { min-width: 0; display: grid; gap: 4px; }
+.law-course-chapter-toggle small { color: var(--ui-accent); font-size: 10px; font-weight: 800; letter-spacing: .13em; }
+.law-course-chapter-toggle b { font-size: 16px; line-height: 1.2; letter-spacing: -.015em; }
+.law-course-chapter-toggle span { color: var(--ui-muted); font-size: 12px; }
+.law-course-chapter-toggle > svg { color: var(--ui-muted); transition: transform .2s ease; }
+.law-course-chapter.is-open .law-course-chapter-toggle > svg { transform: rotate(180deg); }
+.law-course-days { border-top: 1px solid var(--ui-line); }
+.law-course-day-row { width: 100%; min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 17px; border: 0; border-bottom: 1px solid var(--ui-line); background: #fff; color: var(--ui-ink); font-size: 15px; font-weight: 650; text-align: left; }
+.law-course-day-row:last-child { border-bottom: 0; }
+.law-course-day-row svg { color: var(--ui-muted); }
+.law-course-day { display: grid; gap: 14px; padding-bottom: 30px; }
+.law-course-content-card { padding: 18px; border: 1px solid var(--ui-line); border-radius: 20px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.045); }
+.law-course-content-heading { display: flex; align-items: center; gap: 11px; margin-bottom: 16px; color: var(--ui-accent); }
+.law-course-content-heading > div { display: grid; gap: 2px; }
+.law-course-content-heading small { font-size: 9px; font-weight: 800; letter-spacing: .14em; }
+.law-course-content-heading h2 { margin: 0; color: var(--ui-ink); font-size: 18px; line-height: 1.15; letter-spacing: -.02em; }
+.law-course-content-card > p { margin: 0 0 16px; color: #5f6065; font-size: 16px; line-height: 1.55; white-space: pre-line; }
+.law-course-content-card > p:last-child { margin-bottom: 0; }
+.law-course-audio-script { border-color: rgba(217,45,53,.22); }
+.law-course-exercise { background: #fffafa; }
+.law-course-source { margin: 2px 4px 0 !important; color: var(--ui-muted) !important; font-size: 12px !important; line-height: 1.4 !important; }
