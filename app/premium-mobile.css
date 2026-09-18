@@ -60,3 +60,13 @@
 /* La vida se ensaya por dentro */
 .interactive-book-intro { display:flex; justify-content:center; padding-top:18px; }
 .interactive-book-cover { display:block; width:100%; max-width:430px; height:auto; border-radius:28px; box-shadow:0 16px 40px rgba(0,0,0,.10); }
+
+/* Libro interactivo · prólogo */
+.interactive-book-prologue { max-width:720px; padding-top:24px; padding-bottom:130px; }
+.interactive-book-prologue-header { margin:4px 0 30px; }
+.interactive-book-prologue-header small { display:block; margin-bottom:8px; color:#d92832; font-size:11px; font-weight:800; letter-spacing:.16em; }
+.interactive-book-prologue-header h1 { margin:0; font-size:clamp(34px,9vw,52px); line-height:.98; letter-spacing:-.055em; }
+.interactive-book-prologue h2 { margin:42px 0 18px; font-size:13px; line-height:1.2; letter-spacing:.16em; color:#d92832; }
+.interactive-book-prologue p { margin:0 0 18px; font-size:17px; line-height:1.72; color:#27272a; }
+.interactive-book-prologue .interactive-book-lead { margin:28px 0; font-size:clamp(22px,5.8vw,30px); line-height:1.22; font-weight:750; letter-spacing:-.03em; color:#171719; }
+.interactive-book-signature { margin-top:42px; padding-top:24px; border-top:1px solid #e5e5ea; font-size:18px; font-weight:700; }

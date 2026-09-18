@@ -361,10 +361,61 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
 
 function InteractiveBookIntro({ onBack, onNavigate }: { onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   return <section className="reader-section interactive-book-section">
-    <FixedHeader eyebrow="LIBRO INTERACTIVO" title="La vida se ensaya por dentro" subtitle="Una experiencia para practicar la imaginación." onBack={onBack} onNavigate={onNavigate} />
-    <div className="reader-body interactive-book-intro">
-      <img className="interactive-book-cover" src="/images/la-vida-se-ensaya-card.png" alt="La vida se ensaya por dentro" />
-    </div>
+    <FixedHeader eyebrow="LIBRO INTERACTIVO" title="Prólogo" subtitle="La vida se ensaya por dentro" onBack={onBack} onNavigate={onNavigate} />
+    <article className="reader-body interactive-book-prologue">
+      <header className="interactive-book-prologue-header">
+        <small>PRÓLOGO</small>
+        <h1>La vida se ensaya por dentro</h1>
+      </header>
+
+      <p>Este libro nace de una obsesión que tengo hace años: encontrar la manera más clara, más directa y más práctica de explicar algo que descubrí y que me cambió la vida.</p>
+      <p className="interactive-book-lead">Que todo lo que vivimos afuera lo ensayamos primero adentro.</p>
+      <p>Suena simple. Y lo es. Pero llevarlo a la práctica es otra cosa. Porque nadie te enseña a usar tu propia imaginación. Te enseñan a estudiar, a trabajar, a pagar impuestos, a resolver problemas. Pero nadie se sienta con vos a decirte: mirá, ese diálogo que estás teniendo con vos mismo desde que te levantaste, esas imágenes que se repiten en tu cabeza, eso que sentís en el cuerpo cuando anticipás algo que todavía no pasó — todo eso está construyendo tu vida. Y podés elegir qué construir.</p>
+      <p>Eso es lo que hace este libro.</p>
+
+      <h2>LA FUENTE</h2>
+      <p>Detrás de estas páginas hay más de tres millones y medio de palabras. Más de setecientas cincuenta conferencias y quince libros de un hombre que dedicó su vida entera a investigar, practicar y enseñar un solo principio: que la imaginación es el poder creativo de la experiencia humana. Más de once mil páginas de enseñanza original que estudié, practiqué y compartí durante años.</p>
+      <p className="interactive-book-lead">Y la conclusión de todo ese material — de todas esas conferencias, de todos esos libros, de décadas de investigación y experiencia — cabe en una sola frase: la vida se ensaya por dentro.</p>
+      <p>Por eso el libro se llama así. Porque ese es el resumen. Ese es el punto al que todo vuelve, una y otra vez, sin importar si la conferencia habla de dinero, de relaciones, de salud, de propósito o de libertad interior. El mecanismo es siempre el mismo: lo que asumís internamente como verdadero se convierte en tu experiencia. Lo que ensayás adentro se manifiesta afuera.</p>
+      <p>Todo eso está destilado acá en treinta capítulos y doscientas veinte páginas. Once mil páginas convertidas en doscientas veinte. Escrito desde mi visión personal, que es una visión práctica: la imaginación no es un concepto filosófico ni un tema espiritual reservado para iluminados. Es una herramienta que usás todos los días, que ya estás usando ahora mismo, y que podés aprender a usar a tu favor.</p>
+      <p>No escribí este libro para impresionar a nadie ni para sonar profundo. Lo escribí como hablo. En un lenguaje simple y directo. Sin vocabulario religioso. Sin referencias que necesites estudiar antes. Sin capas de interpretación que te alejen de lo que importa. Porque creo que si algo no se puede explicar de manera clara, probablemente no se entendió bien. Y yo quiero que lo entiendas. Quiero que lo apliques. Quiero que funcione.</p>
+
+      <h2>LA GUÍA</h2>
+      <p>Este no es un libro para leer una vez y guardar. Es una guía. Una guía para toda tu vida.</p>
+      <p>Podés abrirlo hoy, trabajar un capítulo, dejarlo, retomarlo la semana que viene, volver al principio o ir directo al capítulo que necesitás en este momento de tu vida. Y podés volver a abrirlo dentro de un año, cuando tu vida sea otra y necesites trabajar algo nuevo. Y dentro de cinco. Y dentro de diez.</p>
+      <p>Hay treinta capítulos organizados en cinco bloques.</p>
+      <p>En el primero vamos a entender dónde ocurre todo. Tu vida ya se está ensayando. El lugar donde todo comienza. Lo que creés que es real. Las tres voces que te acompañan. El estado: la ropa invisible que usás todo el día. Y un primer alto para observar qué estás ensayando hoy.</p>
+      <p>En el segundo vamos a construir el ensayo. Definir qué querés de verdad. La escena breve. Sentirla como real. La conversación interna. Revisión: reescribir lo que ya pasó. Y tu primer ensayo completo de un día entero.</p>
+      <p>En el tercero vamos a trabajar con todo lo que aparece en el camino. Cuando no sentís nada. Cuando la realidad dice lo contrario. La diferencia entre persistir y forzar. El problema de “cuándo”. Volver a caer y volver a empezar. Y un segundo alto para ver dónde estás.</p>
+      <p>En el cuarto vamos a aplicar. Dinero: dejar de ensayar la escasez. Relaciones: dejar de ensayar la pelea. Trabajo y propósito: dejar de ensayar la insatisfacción. Salud y cuerpo: dejar de ensayar el diagnóstico. Situaciones puntuales. Y qué hacer cuando tu deseo involucra a otro.</p>
+      <p>Y en el quinto vamos a soltar la técnica y empezar a vivir desde adentro. La identidad nueva. Cuando se cumple. Cuando querés algo nuevo. La vida como práctica continua. Y el último capítulo: tu ensayo empieza ahora.</p>
+      <p>Cada capítulo tiene una estructura clara: qué hacer al despertar, qué observar durante el día, cómo corregir cuando te descubrís volviendo al estado anterior, y cómo cerrar la noche sintiéndote en el lugar correcto.</p>
+      <p>No vas a encontrar teoría por un lado y práctica por otro. Acá todo es práctica. Cada idea tiene un ejercicio, un ejemplo concreto, una forma de aplicarla hoy. Porque si hay algo que aprendí es que la gente no necesita más información. Información sobra. Lo que falta es saber qué hacer con lo que ya sabés. Y más importante todavía: saber qué hacer cuando lo que sabés no te alcanza para sostenerte.</p>
+      <p>Cuando visualizaste durante tres días y no pasó nada. Cuando repetiste una afirmación hasta el cansancio y seguís sintiendo lo mismo. Cuando leíste todo, escuchaste todo, entendiste todo — y sin embargo tu vida sigue igual.</p>
+      <p>Ahí es donde este libro quiere encontrarte. No para darte una frase más. Para mostrarte un camino que realmente puedas recorrer.</p>
+
+      <h2>LA EXPERIENCIA</h2>
+      <p>Y ahora necesito contarte algo, porque cambia todo.</p>
+      <p className="interactive-book-lead">Este libro no es solo un libro. Es una experiencia.</p>
+      <p>Voy a ser directo: la versión que estás leyendo — o escuchando — funciona completa por sí sola. No le falta nada. Cada palabra, cada ejercicio, cada ejemplo está acá. Si querés leerlo de forma tradicional, podés hacerlo y vas a tener todo lo que necesitás.</p>
+      <p>Pero además de esta versión, creé algo que nunca se hizo con este tipo de enseñanza. Una versión interactiva del libro dentro de una plataforma privada, construida con una tecnología que transforma el contenido en una experiencia inmersiva. No es un PDF con links. No es un audiolibro con música de fondo. No es un curso online con módulos y certificados. Es el mismo libro — los mismos treinta capítulos, las mismas ideas, la misma progresión — convertido en algo que no se lee solamente. Se vive.</p>
+      <p>Y quiero que entiendas concretamente qué significa eso.</p>
+      <p>Entrás a la plataforma desde tu celular o tu computadora. Ves tus treinta capítulos. Abrís el que estás trabajando.</p>
+      <p>Podés leerlo, como siempre. Pero también podés escucharlo narrado completo, sección por sección, con mi voz. Mientras caminás. Mientras manejás. Mientras cerrás los ojos antes de dormir. No un audio genérico — cada sección narrada con el tono y las pausas que corresponden al contenido.</p>
+      <p>Cuando llegás a la práctica del día, la experiencia cambia. No es un texto que te dice qué hacer y te deja solo. Es una práctica guiada. Hay una voz que te acompaña paso a paso. Hay indicaciones claras. Hay pausas reales donde cerrás los ojos y hacés el ejercicio en el momento. No leés sobre la práctica — la hacés. Ahí. En ese instante.</p>
+      <p>Al terminar ciertas secciones, aparecen preguntas de reflexión. No preguntas de examen — preguntas que te hacen detenerte y pensar de verdad. ¿Qué estuviste ensayando esta semana? ¿Cuál es la conversación interna que más se repite? ¿Qué sentís cuando imaginás tu escena? Tus respuestas quedan guardadas en tu espacio privado. Son tu diario de práctica, un registro de tu propio recorrido que podés releer cuando quieras y que te muestra cómo fuiste cambiando.</p>
+      <p>Hay visualizaciones y mapas que conectan los conceptos de una manera que el texto solo no puede. Diagramas que te muestran cómo se relaciona lo que aprendiste en el capítulo tres con lo que estás trabajando en el capítulo diecinueve. No decoración — herramientas reales de comprensión.</p>
+      <p>Si te trabás en algún punto — no entendés algo, no sabés cómo aplicarlo, querés profundizar una idea — podés hacerle preguntas a un asistente inteligente que conoce el libro completo. No una inteligencia artificial genérica que responde cualquier cosa. Un asistente entrenado específicamente con esta obra, con las setecientas cincuenta conferencias originales, con los quince libros de la fuente. Un asistente que responde desde el contenido real, como si estuvieras hablando conmigo.</p>
+      <p>Tu avance queda registrado capítulo por capítulo. Podés ver cuáles trabajaste, a cuáles volviste, cuáles completaste, cuántas veces pasaste por cada uno. No para competir ni para apurarte — para que tengas un mapa claro de tu recorrido. Para que sepas dónde estás y puedas decidir hacia dónde ir.</p>
+      <p>Todo funciona en cualquier dispositivo. Sin descargar archivos. Sin depender de que alguien te mande nada. Entrás, y tu libro está ahí, esperándote donde lo dejaste.</p>
+      <p>Hay algo que quiero que quede absolutamente claro: esto no es un producto separado. No es “el libro y además un curso”. Es la misma obra en dos formatos. La fuente es una. El contenido es uno. Lo que cambia es cómo lo recorrés.</p>
+      <p className="interactive-book-lead">Leer el libro es trabajar con el material. Vivir la experiencia interactiva es que el material trabaje con vos.</p>
+      <p>Porque yo creo que un libro sobre práctica merece una forma de ser practicado. Y creo que setecientas cincuenta conferencias y quince libros — más de once mil páginas de enseñanza — merecen llegar a tus manos de la manera más clara, más directa y más útil posible. No como un texto sagrado que hay que descifrar. Como una guía que podés usar hoy, mañana y dentro de diez años. Cada vez que tu vida te pida volver a elegir qué ensayar.</p>
+      <p>Porque la vida se ensaya por dentro. Siempre fue así. La única diferencia es que ahora podés elegir conscientemente qué obra vas a representar.</p>
+      <p>Este libro es esa elección puesta en tus manos.</p>
+
+      <footer className="interactive-book-signature">Germán González</footer>
+    </article>
   </section>;
 }
 
