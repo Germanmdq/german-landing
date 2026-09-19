@@ -21,6 +21,7 @@ import { AnimatedDialog, AnimatedDialogContent, AnimatedDialogTitle, AnimatedDia
 import AnimatedSwitch from './components/sona/animated-switch';
 import FolderFloat from './components/FolderFloat/FolderFloat';
 import BranchedMenu from './components/BranchedMenu';
+import VoicePill from './components/VoicePill';
 import './components/sona/sona.css';
 import './premium-mobile.css';
 import { hasActiveAccess, type Entitlement } from './lib/payments';
@@ -203,7 +204,7 @@ function PreguntamePanel({ onBack, onNavigate }: { onBack: () => void; onNavigat
     <FixedHeader eyebrow="PREGUNTAME" title="¿Qué te está pasando?" subtitle="Escribilo o decímelo con tu voz." onBack={onBack} onNavigate={onNavigate} />
     <div className="preguntame-stage">
       <div className="preguntame-copy"><span>GERMÁN</span><h2>Contame.</h2><p>No hace falta que armes bien la pregunta. Decime qué te pasa como te salga.</p></div>
-      {listening && <button type="button" className="voice-pill is-listening" onClick={toggleVoice}><span className="voice-dot" /><span className="voice-bars" aria-hidden="true">{Array.from({ length: 14 }, (_, index) => <i key={index} />)}</span><b>Escuchando</b><Square size={14} fill="currentColor" /></button>}
+      <div className="preguntame-reactbits-voice"><VoicePill mode="toggle" reactive="simulated" showTime waveform ariaLabel={listening ? 'Detener dictado' : 'Dictar pregunta'} onStart={() => { if (!listening) void toggleVoice(); }} onStop={() => { if (listening) void toggleVoice(); }} /></div>
       {working && <div className="lattice-loader" role="status" aria-live="polite"><span className="lattice-grid">{Array.from({ length: 9 }, (_, index) => <i key={index} />)}</span><p>Buscando la mejor respuesta… <small>{elapsed}s</small></p></div>}
       <div className={`prompt-bar${listening ? ' is-listening' : ''}`}>
         <textarea ref={promptRef} value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} rows={1} placeholder="Preguntame lo que quieras…" aria-label="Tu pregunta" />

@@ -82,6 +82,24 @@ html:has(.library-section),body:has(.library-section),html:has(.library-reader-s
   align-items: center;
 }
 
+/* Desde Perfil hacia adentro, las subcategorías usan el mismo lienzo negro. */
+.reader-section,
+.account-section,
+.configuration-settings,
+.notification-settings {
+  background: #09090a !important;
+}
+
+.app-shell:has(.reader-section) {
+  background: #09090a !important;
+}
+
+.preguntame-reactbits-voice {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
 /* Biblioteca: mismo tratamiento de superficie continua que Preguntame. */
 html:has(.library-section), body:has(.library-section) { background:#09090a !important; }
 .app-shell:has(.library-section) { background:#09090a !important; overflow:hidden !important; }
