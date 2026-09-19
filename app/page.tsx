@@ -717,11 +717,23 @@ function AudiobookLibraryPanel({ entries, loading, error, onBack, onNavigate, on
     <div className="reader-body audiobook-library">
       {loading && <p className="library-empty">Cargando audiolibros…</p>}
       {!loading && error && <p className="library-empty">No pudimos cargar los audiolibros. {error}</p>}
-      {!loading && !error && collection.map((entry, index) => <MagicCard key={entry.id} delay={Math.min(index * .04, .2)} className="audiobook-card" onClick={() => onOpen(entry)}>
-        <div className="audiobook-card-icon"><Headphones size={25} aria-hidden="true" /></div>
-        <div><small>ESCRITO Y NARRADO POR GERMÁN</small><b>{entry.title}</b><span>{entry.author}</span><p>{entry.excerpt || 'Libro completo para leer y escuchar.'}</p></div>
-        <ChevronRight size={20} aria-hidden="true" />
-      </MagicCard>)}
+      {!loading && !error && <div className="audiobook-folder-stage"><FolderFloat
+        items={collection.map((entry) => ({ label: entry.title, value: entry.id }))}
+        label="Libros de Germán"
+        sublabel="5 libros"
+        trigger="click"
+        closeOnSelect
+        physics
+        drift={0.5}
+        onSelect={(value) => { const entry = collection.find((item) => item.id === value); if (entry) onOpen(entry); }}
+        folderColor="#3f3f46"
+        frontColor="#52525b"
+        paperColor="#f5f5f5"
+        itemColor="#f5f5f5"
+        itemTextColor="#18181b"
+        labelColor="#f5f5f5"
+        width={200} height={148} radius={14} spread={180} lift={26} tilt={8} flapAngle={34} restAngle={16} openDuration={520} stagger={45} bounce={0.3}
+      /></div>}
     </div>
   </section>;
 }
