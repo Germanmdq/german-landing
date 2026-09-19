@@ -144,20 +144,24 @@ function PreguntamePanel({ onBack, onNavigate }: { onBack: () => void; onNavigat
   const [elapsed, setElapsed] = useState(0);
   const [notice, setNotice] = useState('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recognitionRef = useRef<{ stop: () => void } | null>(null);
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
   const toggleVoice = () => {
     setNotice('');
-    if (listening) { setListening(false); return; }
-    const SpeechRecognitionCtor = (window as typeof window & { webkitSpeechRecognition?: new () => { lang: string; interimResults: boolean; continuous: boolean; start: () => void; stop: () => void; onresult: ((event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null } }).webkitSpeechRecognition;
+    if (listening) { recognitionRef.current?.stop(); setListening(false); return; }
+    type Recognition = { lang: string; interimResults: boolean; continuous: boolean; start: () => void; stop: () => void; onresult: ((event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null };
+    const speechWindow = window as typeof window & { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
+    const SpeechRecognitionCtor = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
     if (!SpeechRecognitionCtor) { setNotice('El dictado no está disponible en este navegador. Podés escribir tu pregunta.'); return; }
     const recognition = new SpeechRecognitionCtor();
+    recognitionRef.current = recognition;
     recognition.lang = 'es-AR'; recognition.interimResults = false; recognition.continuous = false;
     recognition.onresult = (event) => { const text = event.results[0]?.[0]?.transcript?.trim(); if (text) setPrompt((value) => value ? `${value} ${text}` : text); };
-    recognition.onend = () => setListening(false);
-    recognition.onerror = () => { setListening(false); setNotice('No pude escuchar bien. Probá de nuevo o escribilo.'); };
-    setListening(true); recognition.start();
+    recognition.onend = () => { recognitionRef.current = null; setListening(false); };
+    recognition.onerror = () => { recognitionRef.current = null; setListening(false); setNotice('No pude acceder al micrófono. Revisá el permiso del micrófono para esta app y probá de nuevo.'); };
+    try { recognition.start(); setListening(true); } catch { recognitionRef.current = null; setNotice('No pude iniciar el micrófono. Probá de nuevo.'); }
   };
 
   const submit = () => {
