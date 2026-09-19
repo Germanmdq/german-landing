@@ -788,6 +788,7 @@ function extractConferenceYear(item: Record<string, unknown>): number | undefine
 function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggleFavorite }: { entries: LibraryEntry[]; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (entry: LibraryEntry, query?: string, mode?: 'audio' | 'text') => void; favorites: FavoriteRecord[]; onToggleFavorite: (favorite: FavoriteRecord) => void }) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
   const visible = entries.filter((entry) => {
     const q = query.trim().toLocaleLowerCase();
     const matchesQuery = !q || (
@@ -829,10 +830,11 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
   return <section className="reader-section library-section">
     <FixedHeader eyebrow="PARA ESCUCHAR Y LEER" title="Tu biblioteca" subtitle="Buscá por conferencia, tema o etiqueta." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body library-browser">
-      <section className="library-controls">
+      <section className={`library-controls${searchOpen || query ? ' is-search-open' : ''}`}>
         <div className="library-search-toolbar">
-          <div className="search-input-pill">
+          {!searchOpen && !query ? <button type="button" className="library-search-trigger" onClick={() => setSearchOpen(true)} aria-label="Buscar en la biblioteca"><Search size={21} /></button> : <div className="search-input-pill">
             <input
+              autoFocus
               type="text"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -843,8 +845,8 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
               <button
                 type="button"
                 className="search-clear-btn"
-                onClick={() => setQuery('')}
-                aria-label="Limpiar búsqueda"
+                onClick={() => { setQuery(''); setSearchOpen(false); }}
+                aria-label="Cerrar búsqueda"
               >
                 <X size={16} strokeWidth={2.4} />
               </button>
@@ -853,7 +855,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
                 <Search size={18} />
               </span>
             )}
-          </div>
+          </div>}
         </div>
         {filter && <button type="button" className="library-folders-back" onClick={() => { setFilter(null); setQuery(''); }}><ChevronLeft size={16} /> Biblioteca</button>}
       </section>
