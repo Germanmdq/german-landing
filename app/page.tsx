@@ -655,9 +655,8 @@ function AudioPlayer({ title, audioUrl, durationLabel }: { title: string; audioU
   }, [title]);
   return <section className="audio-player-card">
     <audio ref={audioRef} src={audioUrl} preload="metadata" playsInline onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => { setPlaying(false); setProgress(0); }} onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)} onTimeUpdate={(event) => setProgress(event.currentTarget.currentTime)} />
-    <div className="audio-player-copy"><p>ESCUCHÁ AHORA</p><b>{title}</b>{durationLabel && <span>{durationLabel}</span>}</div>
     <VoicePill className="audio-voice-pill" size={40} mode="toggle" reactive="simulated" showTime waveform slideToCancel={false} onStart={() => { void audioRef.current?.play(); }} onStop={() => { audioRef.current?.pause(); }} ariaLabel={playing ? 'Pausar audio' : 'Escuchar audio'} />
-    <input className="audio-progress" type="range" min="0" max={duration || 1} step="0.1" value={progress} onChange={(event) => { const next = Number(event.target.value); if (audioRef.current) audioRef.current.currentTime = next; setProgress(next); }} aria-label="Progreso del audio" />
+    <div className="audio-player-copy"><b>{title}</b>{durationLabel && <span>{durationLabel}</span>}</div>
   </section>;
 }
 
@@ -689,24 +688,9 @@ function AudiobookPlayer({ title, author, audioUrl, durationSeconds }: { title: 
       onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
     />
     <div className="audiobook-player-heading">
-      <div><small>AUDIOLIBRO COMPLETO</small><b>{playing ? 'Escuchando' : 'Listo para escuchar'}</b></div>
       <VoicePill className="audio-voice-pill" size={42} mode="toggle" reactive="simulated" showTime waveform slideToCancel={false} onStart={() => { void audioRef.current?.play(); }} onStop={() => { audioRef.current?.pause(); }} ariaLabel={playing ? 'Pausar audiolibro' : 'Reproducir audiolibro'} />
+      <div><b>{title}</b></div>
     </div>
-    <input
-      className="audiobook-progress"
-      type="range"
-      min="0"
-      max={duration || 1}
-      step="0.1"
-      value={Math.min(currentTime, duration || 1)}
-      onChange={(event) => {
-        const next = Number(event.target.value);
-        if (audioRef.current) audioRef.current.currentTime = next;
-        setCurrentTime(next);
-      }}
-      aria-label="Progreso del audiolibro"
-    />
-    <div className="audiobook-time"><span>{formatMediaTime(currentTime)}</span><span>{formatMediaTime(duration)}</span></div>
   </section>;
 }
 

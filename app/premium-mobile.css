@@ -292,3 +292,20 @@ html:has(.profile-section), body:has(.profile-section), .app-shell:has(.profile-
 .audiobook-player-heading { justify-content:space-between !important; width:100%; }
 .audiobook-player-heading > div { flex:1 1 auto; }
 .audiobook-player-heading .audio-voice-pill { flex:0 0 auto; margin-left:auto; }
+
+/* Audio definitivo: Voice Pill arriba, titulo abajo. Nada mas. */
+.audio-player-card {
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:flex-start !important;
+  gap:10px !important;
+}
+.audio-player-card .audio-voice-pill { align-self:flex-start !important; }
+.audio-player-card .audio-player-copy { width:100%; }
+.audiobook-player-heading {
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:flex-start !important;
+  gap:10px !important;
+}
+.audiobook-player-heading .audio-voice-pill { margin:0 !important; align-self:flex-start !important; }
