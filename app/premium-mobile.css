@@ -395,3 +395,37 @@ body:has(.meditaciones-photo-screen),
 .app-shell.section-app.meditaciones-photo-screen .feature-header > small {
   color:#6e6e73 !important;
 }
+
+/* Meditaciones para ahora: tema claro y controles en pildoras, sin bloques oscuros. */
+.meditaciones-photo-screen .day-one-controls {
+  gap:10px !important;
+}
+.meditaciones-photo-screen .day-one-play,
+.meditaciones-photo-screen .day-one-dots {
+  background:#f2f2f7 !important;
+  color:#1c1c1e !important;
+  border:0 !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+.meditaciones-photo-screen .day-one-play {
+  width:52px !important;
+  height:44px !important;
+  border-radius:999px !important;
+}
+.meditaciones-photo-screen .day-one-play svg {
+  width:44px !important;
+  height:44px !important;
+}
+.meditaciones-photo-screen .day-one-dots {
+  height:44px !important;
+  min-height:44px !important;
+  border-radius:999px !important;
+  padding:0 14px !important;
+}
+.meditaciones-photo-screen .day-one-dot,
+.meditaciones-photo-screen .day-one-dot span {
+  border:0 !important;
+  box-shadow:none !important;
+}
