@@ -525,7 +525,7 @@ function NotificationsPanel({ user, onBack, onNavigate }: { user: User; onBack: 
     setPermissionBusy(false);
     if (result.error) setPermissionMessage(result.error);
   };
-  return <section className="reader-section">
+  return <section className="reader-section profile-section">
     <FixedHeader eyebrow="NOTIFICACIONES" title="Horarios locales" subtitle="Esta preferencia se guarda en este dispositivo." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body notification-settings">
       {permission !== 'unsupported' && <ShimmerButton className="notification-permission" onClick={requestPermission} disabled={permissionBusy || permission === 'denied'}><Bell size={18} />{permissionBusy ? 'Activando…' : permission === 'granted' ? 'Notificaciones activadas' : permission === 'denied' ? 'Permiso bloqueado en el navegador' : 'Activar notificaciones'}</ShimmerButton>}
@@ -552,7 +552,7 @@ function ProfileScreen({ user, items, showInstall, onInstall, onSelect, onBack, 
       ]
     }
   ];
-  return <section className="reader-section">
+  return <section className="reader-section profile-section">
     <FixedHeader eyebrow="MI PERFIL" title="Tu espacio" subtitle="Tu cuenta y tus elecciones." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body profile-branched-stage">
       <BranchedMenu

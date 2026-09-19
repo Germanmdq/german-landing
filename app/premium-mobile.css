@@ -224,3 +224,16 @@ html:has(.preguntame-shell), body:has(.preguntame-shell) { background:#09090a !i
 .preguntame-notice { margin-top:-16px; }
 .preguntame-suggestions { display:none; }
 .preguntame-shell .main-navigation-dock { border-top-color:#29292d !important; }
+
+/* Perfil y subcategorias: lienzo negro completo. */
+html:has(.profile-section), body:has(.profile-section), .app-shell:has(.profile-section),
+.profile-section, .profile-section .feature-header, .profile-section .reader-body {
+  background:#09090a !important;
+  color:#f5f5f7 !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+.profile-section .feature-header::before, .profile-section .feature-header::after { display:none !important; }
+.profile-section .feature-header h1, .profile-section .feature-header button { color:#f5f5f7 !important; }
+.profile-section .feature-header > p, .profile-section .feature-header > small { color:#c7c7cc !important; }
+.profile-section .reader-body { min-height:0; }
