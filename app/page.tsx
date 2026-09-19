@@ -547,7 +547,7 @@ function ProfileScreen({ user, items, showInstall, onInstall, onSelect, onBack, 
           if (item) onSelect(item);
         }}
         folderColor="#3f3f46" frontColor="#52525b" paperColor="#f5f5f5" itemColor="#f5f5f5" itemTextColor="#18181b" labelColor="#f5f5f5"
-        width={200} height={148} radius={14} spread={180} lift={26} tilt={8} flapAngle={34} restAngle={16} openDuration={520} stagger={45} bounce={0.3}
+        width={200} height={148} radius={14} spread={205} lift={52} tilt={8} flapAngle={34} restAngle={16} openDuration={520} stagger={45} bounce={0.3}
       />
       {notifications.error && <p className="account-message">{notifications.error}</p>}
     </div>
@@ -723,7 +723,7 @@ function AudiobookLibraryPanel({ entries, loading, error, onBack, onNavigate, on
         itemColor="#f5f5f5"
         itemTextColor="#18181b"
         labelColor="#f5f5f5"
-        width={200} height={148} radius={14} spread={180} lift={26} tilt={8} flapAngle={34} restAngle={16} openDuration={520} stagger={45} bounce={0.3}
+        width={200} height={148} radius={14} spread={205} lift={52} tilt={8} flapAngle={34} restAngle={16} openDuration={520} stagger={45} bounce={0.3}
       /></div>}
     </div>
   </section>;
@@ -881,8 +881,8 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           width={200}
           height={148}
           radius={14}
-          spread={180}
-          lift={26}
+          spread={205}
+          lift={52}
           tilt={8}
           flapAngle={34}
           restAngle={16}
@@ -2023,7 +2023,7 @@ export default function App() {
   if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} showInstall={!standalone} onInstall={() => { setInstallDismissed(false); setInstallOpen(true); }} onSelect={select} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'consultas' && !trail.length) return <main className="app-shell app-main section-app preguntame-shell"><PreguntamePanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'propia' && !trail.length) return <main className="app-shell app-main section-app"><PropiaPracticaPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} />{dock}</main>;
-  if (tab === 'talleres' && !trail.length) return <main className="app-shell app-main section-app"><section className="reader-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><div className="reader-body guided-folder-stage"><FolderFloat items={screen.items.map((item) => ({ label: item.title, value: item.title }))} label="Prácticas guiadas" sublabel="3 recorridos" trigger="click" closeOnSelect physics drift={0.5} onSelect={(value) => { const item = screen.items.find((entry) => entry.title === value); if (item) select(item); }} folderColor="#3f3f46" frontColor="#52525b" paperColor="#f5f5f5" itemColor="#f5f5f5" itemTextColor="#18181b" labelColor="#f5f5f7" width={200} height={148} radius={14} spread={180} lift={26} tilt={8} flapAngle={34} restAngle={16} openDuration={520} stagger={45} bounce={0.3} /></div></section>{dock}</main>;
+  if (tab === 'talleres' && !trail.length) return <main className="app-shell app-main section-app"><section className="reader-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><div className="reader-body guided-folder-stage"><FolderFloat items={screen.items.map((item) => ({ label: item.title, value: item.title }))} label="Prácticas guiadas" sublabel="3 recorridos" trigger="click" closeOnSelect physics drift={0.5} onSelect={(value) => { const item = screen.items.find((entry) => entry.title === value); if (item) select(item); }} folderColor="#3f3f46" frontColor="#52525b" paperColor="#f5f5f5" itemColor="#f5f5f5" itemTextColor="#18181b" labelColor="#f5f5f7" width={200} height={148} radius={14} spread={205} lift={52} tilt={8} flapAngle={34} restAngle={16} openDuration={520} stagger={45} bounce={0.3} /></div></section>{dock}</main>;
   if (current?.title === 'Día 1') {
     const carouselKey = `${tab}-${trail.map((item) => item.title).join('/')}-dia1`;
     return <main className="app-shell app-main section-app day-one-screen"><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><DayOneCarousel key={carouselKey} items={screen.items} initialIndex={carouselIndicesRef.current[carouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[carouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[carouselKey] = index; select(item); }} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section>{dock}</main>;
