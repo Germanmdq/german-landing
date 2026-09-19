@@ -75,7 +75,7 @@ const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
   propia: { eyebrow: 'TU PROPIA PRÁCTICA', title: 'Creá tu recorrido', subtitle: 'Elegí qué querés trabajar y cómo querés hacerlo.', items: [] },
   meditaciones: { eyebrow: 'MEDITACIONES', title: '¿Qué necesitás ahora?', subtitle: 'Elegí el momento y abrí directamente la práctica.', items: momentNodes },
   biblioteca: { eyebrow: 'PARA ESCUCHAR Y LEER', title: 'Tu biblioteca', subtitle: 'Contenido organizado por formato.', items: [
-    { icon: '🎧', title: 'Meditaciones', detail: 'Prácticas disponibles para escuchar y leer.', tone: palette[0], children: momentNodes },
+    { icon: '🎧', title: 'Meditaciones', detail: 'Prácticas disponibles para escuchar.', tone: palette[0], children: momentNodes },
     { icon: '📖', title: 'Lecturas', detail: 'Frases organizadas dentro de cada recorrido.', tone: palette[1], children: planNodes },
     { icon: '🎙️', title: 'Conferencias', detail: 'Contenido pendiente de conectar.', tone: palette[2] },
   ] },
@@ -1815,7 +1815,7 @@ export default function App() {
             detail: 'Meditación para este momento.',
             tone: palette[index % palette.length],
             image: `/images/meditacion-${String(index + 1).padStart(2, '0')}.webp`,
-            reader: { title: row.title || 'Meditación', eyebrow: 'MEDITACIÓN PARA AHORA', detail: 'Leé la práctica a tu ritmo.', paragraphs: cleanParagraphs(row.body || ''), audioUrl, duration: asset?.duration_seconds ? `${Math.round(asset.duration_seconds / 60)} min` : undefined },
+            reader: { title: row.title || 'Meditación', eyebrow: 'MEDITACIÓN PARA AHORA', detail: 'Escuchá la práctica.', paragraphs: [], audioUrl, duration: asset?.duration_seconds ? `${Math.round(asset.duration_seconds / 60)} min` : undefined },
           } as DeckItem;
         }));
       });

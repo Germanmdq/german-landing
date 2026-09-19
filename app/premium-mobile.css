@@ -356,3 +356,22 @@ html:has(.profile-section), body:has(.profile-section), .app-shell:has(.profile-
   border-color:#2c2c2e !important;
   color:#f5f5f7 !important;
 }
+
+/* Interior definitivo: negro de borde a borde, incluido dock inferior. */
+html:has(.app-shell.section-app:not(.welcome-carousel-screen)),
+body:has(.app-shell.section-app:not(.welcome-carousel-screen)),
+.app-shell.section-app:not(.welcome-carousel-screen),
+.app-shell.section-app:not(.welcome-carousel-screen) > section,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-section,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body,
+.app-shell.section-app:not(.welcome-carousel-screen) .day-one-section,
+.app-shell.section-app:not(.welcome-carousel-screen) .feature-section,
+.app-shell.section-app:not(.welcome-carousel-screen) .categories-section {
+  background:#000 !important;
+}
+.app-shell.section-app:not(.welcome-carousel-screen) .bottom-dock,
+.app-shell.section-app:not(.welcome-carousel-screen) .app-dock,
+.app-shell.section-app:not(.welcome-carousel-screen) nav[aria-label="Navegación principal"] {
+  background:#000 !important;
+  border-color:#1c1c1e !important;
+}
