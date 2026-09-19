@@ -20,6 +20,7 @@ import FluidTabs from './components/sona/fluid-tabs';
 import { AnimatedDialog, AnimatedDialogContent, AnimatedDialogTitle, AnimatedDialogDescription, AnimatedDialogClose } from './components/sona/animated-dialog';
 import AnimatedSwitch from './components/sona/animated-switch';
 import FolderFloat from './components/FolderFloat/FolderFloat';
+import BranchedMenu from './components/BranchedMenu';
 import './components/sona/sona.css';
 import './premium-mobile.css';
 import { hasActiveAccess, type Entitlement } from './lib/payments';
@@ -537,23 +538,35 @@ function NotificationsPanel({ user, onBack, onNavigate }: { user: User; onBack: 
 
 function ProfileScreen({ user, items, showInstall, onInstall, onSelect, onBack, onNavigate }: { user: User; items: DeckItem[]; showInstall: boolean; onInstall: () => void; onSelect: (item: DeckItem) => void; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   const notifications = useNotificationsToggle(user);
+  const menuItems = [
+    {
+      label: 'Mi perfil',
+      children: items.map((item) => ({ value: `profile:${item.title}`, label: item.title }))
+    },
+    {
+      label: 'En este dispositivo',
+      children: [
+        ...(showInstall ? [{ value: 'install', label: 'Instalar Asistente Germán' }] : []),
+        { value: 'notifications', label: notifications.active ? 'Notificaciones activadas' : 'Activar notificaciones' }
+      ]
+    }
+  ];
   return <section className="reader-section">
     <FixedHeader eyebrow="MI PERFIL" title="Tu espacio" subtitle="Tu cuenta y tus elecciones." onBack={onBack} onNavigate={onNavigate} />
-    <div className="reader-body">
-      <div className="ios-card">
-        {items.map((item) => <button key={item.title} className="ios-row" onClick={() => onSelect(item)} disabled={item.title === 'Mi avance'}>
-          <span className="ios-row-label">{item.title}</span>
-          <span className="ios-row-value ios-row-value--muted">{item.title === 'Mi avance' ? 'Próximamente' : <ChevronRight size={17} />}</span>
-        </button>)}
-        {showInstall && <button type="button" className="ios-row" onClick={onInstall}>
-          <span className="ios-row-label install-profile-label"><Download size={18} />Instalar Asistente Germán</span>
-          <span className="ios-row-value ios-row-value--muted"><ChevronRight size={17} /></span>
-        </button>}
-        <div className="ios-row">
-          <span className="ios-row-label">Notificaciones</span>
-          {notifications.loading ? <span className="ios-toggle-placeholder" aria-hidden="true" /> : <ToggleSwitch checked={notifications.active} onChange={notifications.toggle} disabled={notifications.busy} label="Notificaciones" />}
-        </div>
-      </div>
+    <div className="reader-body profile-branched-stage">
+      <BranchedMenu
+        items={menuItems}
+        defaultOpen={[0, 1]}
+        onSelect={(value) => {
+          if (value === 'install') return onInstall();
+          if (value === 'notifications') return void notifications.toggle();
+          if (!value.startsWith('profile:')) return;
+          const title = value.slice('profile:'.length);
+          if (title === 'Mi avance') return;
+          const item = items.find((candidate) => candidate.title === title);
+          if (item) onSelect(item);
+        }}
+      />
       {notifications.error && <p className="account-message">{notifications.error}</p>}
     </div>
   </section>;

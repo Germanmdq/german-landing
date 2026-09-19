@@ -76,6 +76,12 @@ html:has(.library-section),body:has(.library-section),html:has(.library-reader-s
 .library-section .library-browser { background:#09090a !important; border:0 !important; box-shadow:none !important; }
 .library-folder-float-stage { min-height:calc(100dvh - 360px - 82px - env(safe-area-inset-bottom)); display:flex; align-items:center; justify-content:center; }
 
+.profile-branched-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 /* Biblioteca: mismo tratamiento de superficie continua que Preguntame. */
 html:has(.library-section), body:has(.library-section) { background:#09090a !important; }
 .app-shell:has(.library-section) { background:#09090a !important; overflow:hidden !important; }
