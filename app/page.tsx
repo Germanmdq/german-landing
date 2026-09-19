@@ -796,7 +796,11 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
       (entry.excerpt && entry.excerpt.toLocaleLowerCase().includes(q)) ||
       (entry.body && entry.body.toLocaleLowerCase().includes(q))
     );
-    const matchesFilter = !filter || (filter === 'Conferencias' && /conference|conferencia/i.test(entry.type)) || (filter === 'Audios' && Boolean(entry.audioUrl));
+    const isConference = /conference|conferencia/i.test(entry.type);
+    const hasAudio = Boolean(entry.audioUrl);
+    const matchesFilter = !filter ||
+      (filter === 'Conferencias' && isConference && !hasAudio) ||
+      (filter === 'Audios' && isConference && hasAudio);
     return matchesQuery && matchesFilter;
   });
   const q = query.trim();
