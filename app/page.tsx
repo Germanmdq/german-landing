@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, ChevronDown, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, ArrowUp, Download, House, Menu, Lock, Mic, Square } from 'lucide-react';
+import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, ChevronDown, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, ArrowUp, Download, House, Menu, Lock, Mic, Square, Folder } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { subscribeToPush, ensurePushSubscription, reconcilePushSubscription, disablePushSubscription, disableCurrentBrowserPushSubscription, getPushSubscriptionActive, getCurrentBrowserPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
 import { detectInstallPlatform, hasNativeInstallPrompt, isRunningStandalone, listenForPwaInstallation, promptNativeInstallation } from './lib/pwa';
@@ -787,7 +787,7 @@ function extractConferenceYear(item: Record<string, unknown>): number | undefine
 
 function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggleFavorite }: { entries: LibraryEntry[]; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (entry: LibraryEntry, query?: string) => void; favorites: FavoriteRecord[]; onToggleFavorite: (favorite: FavoriteRecord) => void }) {
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState('Conferencias');
+  const [filter, setFilter] = useState<string | null>(null);
   const filters = ['Conferencias', 'Audios'];
   const visible = entries.filter((entry) => {
     const q = query.trim().toLocaleLowerCase();
@@ -796,7 +796,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
       (entry.excerpt && entry.excerpt.toLocaleLowerCase().includes(q)) ||
       (entry.body && entry.body.toLocaleLowerCase().includes(q))
     );
-    const matchesFilter = (filter === 'Conferencias' && /conference|conferencia/i.test(entry.type)) || (filter === 'Audios' && Boolean(entry.audioUrl));
+    const matchesFilter = !filter || (filter === 'Conferencias' && /conference|conferencia/i.test(entry.type)) || (filter === 'Audios' && Boolean(entry.audioUrl));
     return matchesQuery && matchesFilter;
   });
   const q = query.trim();
@@ -826,6 +826,10 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
   return <section className="reader-section library-section">
     <FixedHeader eyebrow="PARA ESCUCHAR Y LEER" title="Tu biblioteca" subtitle="Buscá por conferencia, tema o etiqueta." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body library-browser">
+      {!filter && !query && <div className="library-folder-grid" aria-label="Colecciones de la biblioteca">
+        <button type="button" className="library-folder-card" onClick={() => setFilter('Conferencias')}><span className="library-folder-icon"><Folder size={42} strokeWidth={1.35} /></span><strong>Conferencias</strong><small>Leer y explorar por año</small></button>
+        <button type="button" className="library-folder-card" onClick={() => setFilter('Audios')}><span className="library-folder-icon"><Folder size={42} strokeWidth={1.35} /></span><strong>Audios</strong><small>Escuchar directamente</small></button>
+      </div>}
       <section className="library-controls">
         <div className="library-search-toolbar">
           <div className="search-input-pill">
@@ -852,10 +856,10 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
             )}
           </div>
         </div>
-        <FluidTabs tabs={filters.map((item) => ({ value: item, title: item, ariaControls: 'library-results' }))} value={filter} onValueChange={setFilter} ariaLabel="Filtrar la biblioteca" className="library-fluid-tabs" />
+        {filter && <><button type="button" className="library-folders-back" onClick={() => { setFilter(null); setQuery(''); }}><ChevronLeft size={16} /> Carpetas</button><FluidTabs tabs={filters.map((item) => ({ value: item, title: item, ariaControls: 'library-results' }))} value={filter} onValueChange={setFilter} ariaLabel="Filtrar la biblioteca" className="library-fluid-tabs" /></>}
       </section>
-      <p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p>
-      <div id="library-results" className="library-content-list" role="tabpanel" aria-label={`Resultados: ${filter}`}>{conferenceGroups.map((group) => {
+      {(filter || query) && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p>
+      <div id="library-results" className="library-content-list" role="tabpanel" aria-label={`Resultados: ${filter || 'Biblioteca'}`}>{conferenceGroups.map((group) => {
         const open = !group.label || openYears.has(group.label);
         return <section key={group.label || 'all'} className={`library-year-group${open ? ' is-open' : ''}`}>
           {group.label && <button type="button" className="library-year-toggle" onClick={() => toggleYear(group.label)} aria-expanded={open}><span>{group.label}</span><ChevronDown size={22} aria-hidden="true" /></button>}
@@ -886,7 +890,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
       })}
         </section>;
       })}</div>
-      {!ordered.length && <p className="library-empty">No se encontraron resultados</p>}
+      {!ordered.length && <p className="library-empty">No se encontraron resultados</p>}</>}
     </div>
   </section>;
 }

@@ -55,6 +55,14 @@
 .library-year-toggle svg { transition:transform .18s ease; }
 .library-year-group.is-open .library-year-toggle svg { transform:rotate(180deg); }
 .library-year-group + .library-year-group { margin-top:18px; }
+.library-folder-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:20px 0 22px; }
+.library-folder-card { min-height:164px; padding:18px 16px 16px; border:1px solid #e5e5ea; border-radius:24px; background:#fff; color:#1d1d1f; text-align:left; display:flex; flex-direction:column; align-items:flex-start; box-shadow:0 8px 26px #1d1d1f0a; transition:transform .2s ease,box-shadow .2s ease; }
+.library-folder-card:active { transform:scale(.97) translateY(2px); box-shadow:0 3px 12px #1d1d1f0d; }
+.library-folder-icon { width:64px; height:54px; display:grid; place-items:center; margin-bottom:auto; border-radius:16px; background:#f1e9ec; color:#a52e46; transform-origin:left bottom; transition:transform .22s ease; }
+.library-folder-card:active .library-folder-icon { transform:rotate(-4deg) translateY(-3px); }
+.library-folder-card strong { margin-top:18px; font-size:17px; letter-spacing:-.025em; }
+.library-folder-card small { margin-top:4px; color:#86868b; font-size:11px; line-height:1.3; }
+.library-folders-back { display:flex; align-items:center; gap:3px; margin:8px 0 2px; padding:7px 2px; border:0; background:transparent; color:#a52e46; font-size:13px; font-weight:700; }
 .search-highlight { background:#ffe66b; color:inherit; padding:0 .08em; border-radius:4px; font-weight:800; }
 
 /* La vida se ensaya por dentro */
