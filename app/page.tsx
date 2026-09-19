@@ -145,16 +145,27 @@ function PreguntamePanel({ onBack, onNavigate }: { onBack: () => void; onNavigat
   const [notice, setNotice] = useState('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recognitionRef = useRef<{ stop: () => void } | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); recognitionRef.current?.stop(); recorderRef.current?.stop(); streamRef.current?.getTracks().forEach((track) => track.stop()); }, []);
 
-  const toggleVoice = () => {
+  const toggleVoice = async () => {
     setNotice('');
-    if (listening) { recognitionRef.current?.stop(); setListening(false); return; }
+    if (listening) { recognitionRef.current?.stop(); recorderRef.current?.stop(); streamRef.current?.getTracks().forEach((track) => track.stop()); streamRef.current = null; setListening(false); return; }
     type Recognition = { lang: string; interimResults: boolean; continuous: boolean; start: () => void; stop: () => void; onresult: ((event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null };
     const speechWindow = window as typeof window & { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
     const SpeechRecognitionCtor = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
-    if (!SpeechRecognitionCtor) { setNotice('El dictado no está disponible en este navegador. Podés escribir tu pregunta.'); return; }
+    if (!SpeechRecognitionCtor) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        streamRef.current = stream;
+        const recorder = new MediaRecorder(stream);
+        recorderRef.current = recorder;
+        recorder.onstop = () => { stream.getTracks().forEach((track) => track.stop()); streamRef.current = null; recorderRef.current = null; setListening(false); setNotice('El micrófono funciona. En iPhone esta versión de Safari no convierte la voz a texto; para transcribirla tenemos que enviar la grabación al servidor.'); };
+        recorder.start(); setListening(true); return;
+      } catch { setNotice('No pude acceder al micrófono. Permití el micrófono para esta app en el iPhone y probá de nuevo.'); return; }
+    }
     const recognition = new SpeechRecognitionCtor();
     recognitionRef.current = recognition;
     recognition.lang = 'es-AR'; recognition.interimResults = false; recognition.continuous = false;
