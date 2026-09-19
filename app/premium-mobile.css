@@ -278,3 +278,17 @@ html:has(.profile-section), body:has(.profile-section), .app-shell:has(.profile-
 .app-shell.section-app:not(.welcome-carousel-screen) .feature-header > p,
 .app-shell.section-app:not(.welcome-carousel-screen) .feature-header > small,
 .app-shell.section-app:not(.welcome-carousel-screen) .reader-body > p { color:#c7c7cc !important; }
+
+/* Audio: titulo a la izquierda, Voice Pill en la punta derecha y scrubber debajo. */
+.audio-player-card {
+  grid-template-columns:minmax(0,1fr) auto !important;
+  grid-template-areas:"copy control" "progress progress" !important;
+  align-items:center !important;
+  gap:12px 14px !important;
+}
+.audio-player-card .audio-player-copy { grid-area:copy; min-width:0; }
+.audio-player-card .audio-voice-pill { grid-area:control; justify-self:end; }
+.audio-player-card .audio-progress { grid-area:progress; grid-column:auto !important; width:100%; margin-top:4px !important; }
+.audiobook-player-heading { justify-content:space-between !important; width:100%; }
+.audiobook-player-heading > div { flex:1 1 auto; }
+.audiobook-player-heading .audio-voice-pill { flex:0 0 auto; margin-left:auto; }
