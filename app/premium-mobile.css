@@ -87,7 +87,7 @@
 .preguntame-copy p { max-width:340px; margin:0 auto; color:#d1d1d6; font-size:15px; line-height:1.5; }
 .prompt-bar { display:flex; align-items:flex-end; gap:10px; padding:10px 10px 10px 16px; border:1px solid #343438; border-radius:26px; background:#1c1c1ecc; backdrop-filter:blur(24px); box-shadow:0 14px 45px #0008; transition:border-color .2s,transform .2s; }
 .prompt-bar:focus-within,.prompt-bar.is-listening { border-color:#66666c; transform:translateY(-1px); }
-.prompt-bar textarea { flex:1; min-height:42px; max-height:120px; resize:none; border:0; outline:0; padding:10px 0 6px; background:transparent; color:#fff; font:inherit; font-size:16px; line-height:1.35; }
+.prompt-bar textarea { flex:1; min-height:42px; max-height:144px; resize:none; overflow-y:auto; border:0; outline:0; padding:10px 0 6px; background:transparent; color:#fff; font:inherit; font-size:16px; line-height:1.35; field-sizing:content; }
 .prompt-bar textarea::placeholder { color:#b0b0b5; opacity:1; }
 .prompt-actions { display:flex; gap:7px; }
 .prompt-actions button { width:42px; height:42px; border:0; border-radius:50%; display:grid; place-items:center; transition:transform .15s,opacity .15s; }
