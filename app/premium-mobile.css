@@ -63,6 +63,26 @@
 .library-folder-card strong { margin-top:18px; font-size:17px; letter-spacing:-.025em; }
 .library-folder-card small { margin-top:4px; color:#86868b; font-size:11px; line-height:1.3; }
 .library-folders-back { display:flex; align-items:center; gap:3px; margin:8px 0 2px; padding:7px 2px; border:0; background:transparent; color:#a52e46; font-size:13px; font-weight:700; }
+.library-section { background:#09090a !important; color:#f5f5f7; min-height:100dvh; }
+.library-section .feature-header { background:#09090a !important; border-color:#222225 !important; }
+.library-section .feature-header h1,.library-section .feature-header p,.library-section .feature-header span,.library-section .feature-header small { color:#f5f5f7 !important; }
+.library-section .library-browser { background:#09090a !important; }
+.library-section .search-input-pill { background:#1c1c1e !important; border-color:#343438 !important; }
+.library-section .search-input-pill input { color:#f5f5f7 !important; }
+.library-section .library-folder-card { background:#171719; border-color:#2c2c2f; color:#f5f5f7; box-shadow:none; }
+.library-section .library-folder-icon { background:#262629; color:#f2555a; }
+.library-section .library-folder-card small { color:#98989f; }
+.library-section .library-folders-back { color:#f2555a; }
+.library-year-folders { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 12px; margin:18px 0 26px; }
+.library-year-folder { min-height:132px; padding:16px; border:1px solid #2c2c2f; border-radius:22px; background:#171719; color:#f5f5f7; text-align:left; opacity:0; transform:translateY(14px) scale(.96); animation:libraryFolderIn .42s cubic-bezier(.2,.8,.2,1) forwards; }
+.library-year-folder-shape { position:relative; width:58px; height:48px; display:grid; place-items:center; margin-bottom:15px; color:#f2555a; transform-origin:20% 80%; transition:transform .22s cubic-bezier(.2,.8,.2,1); }
+.library-year-folder-shape i { position:absolute; inset:7px 4px 3px; border-radius:9px; background:#2a2022; transform:rotate(-5deg); transition:transform .22s cubic-bezier(.2,.8,.2,1); }
+.library-year-folder-shape svg { position:relative; z-index:1; }
+.library-year-folder strong { display:block; font-size:20px; letter-spacing:-.035em; }
+.library-year-folder small { display:block; margin-top:3px; color:#8e8e93; font-size:11px; }
+.library-year-folder:active .library-year-folder-shape { transform:translateY(-4px) rotate(-5deg); }
+.library-year-folder:active .library-year-folder-shape i { transform:translateY(-7px) rotate(-11deg); }
+@keyframes libraryFolderIn { to { opacity:1; transform:translateY(0) scale(1); } }
 .search-highlight { background:#ffe66b; color:inherit; padding:0 .08em; border-radius:4px; font-weight:800; }
 
 /* La vida se ensaya por dentro */

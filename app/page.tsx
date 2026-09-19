@@ -788,6 +788,7 @@ function extractConferenceYear(item: Record<string, unknown>): number | undefine
 function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggleFavorite }: { entries: LibraryEntry[]; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (entry: LibraryEntry, query?: string) => void; favorites: FavoriteRecord[]; onToggleFavorite: (favorite: FavoriteRecord) => void }) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<string | null>(null);
+  const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const filters = ['Conferencias', 'Audios'];
   const visible = entries.filter((entry) => {
     const q = query.trim().toLocaleLowerCase();
@@ -806,6 +807,8 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
     if (filter === 'Conferencias' && ay !== by) return ay - by;
     return a.title.localeCompare(b.title, 'es', { sensitivity: 'base' });
   });
+  const yearFolders = Array.from(new Set(ordered.map((entry) => entry.year ? String(entry.year) : 'Sin fecha')));
+  const yearEntries = selectedYear ? ordered.filter((entry) => (entry.year ? String(entry.year) : 'Sin fecha') === selectedYear) : [];
   const conferenceGroups = filter === 'Conferencias'
     ? Array.from(new Set(ordered.map((entry) => entry.year ? String(entry.year) : 'Sin fecha'))).map((label) => ({ label, entries: ordered.filter((entry) => (entry.year ? String(entry.year) : 'Sin fecha') === label) }))
     : [{ label: '', entries: ordered }];
@@ -826,9 +829,9 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
   return <section className="reader-section library-section">
     <FixedHeader eyebrow="PARA ESCUCHAR Y LEER" title="Tu biblioteca" subtitle="Buscá por conferencia, tema o etiqueta." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body library-browser">
-      {!filter && !query && <div className="library-folder-grid" aria-label="Colecciones de la biblioteca">
-        <button type="button" className="library-folder-card" onClick={() => setFilter('Conferencias')}><span className="library-folder-icon"><Folder size={42} strokeWidth={1.35} /></span><strong>Conferencias</strong><small>Leer y explorar por año</small></button>
-        <button type="button" className="library-folder-card" onClick={() => setFilter('Audios')}><span className="library-folder-icon"><Folder size={42} strokeWidth={1.35} /></span><strong>Audios</strong><small>Escuchar directamente</small></button>
+      {!filter && !query && <div className="library-folder-grid library-root-folders" aria-label="Colecciones de la biblioteca">
+        <button type="button" className="library-folder-card" onClick={() => { setFilter('Conferencias'); setSelectedYear(null); }}><span className="library-folder-icon"><Folder size={42} strokeWidth={1.35} /></span><strong>Conferencias</strong><small>Ordenadas por año</small></button>
+        <button type="button" className="library-folder-card" onClick={() => { setFilter('Audios'); setSelectedYear(null); }}><span className="library-folder-icon"><Folder size={42} strokeWidth={1.35} /></span><strong>Audios</strong><small>Ordenados por año</small></button>
       </div>}
       <section className="library-controls">
         <div className="library-search-toolbar">
@@ -856,11 +859,13 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
             )}
           </div>
         </div>
-        {filter && <><button type="button" className="library-folders-back" onClick={() => { setFilter(null); setQuery(''); }}><ChevronLeft size={16} /> Carpetas</button><FluidTabs tabs={filters.map((item) => ({ value: item, title: item, ariaControls: 'library-results' }))} value={filter} onValueChange={setFilter} ariaLabel="Filtrar la biblioteca" className="library-fluid-tabs" /></>}
+        {filter && <button type="button" className="library-folders-back" onClick={() => { if (selectedYear) setSelectedYear(null); else { setFilter(null); setQuery(''); } }}><ChevronLeft size={16} /> {selectedYear ? filter : 'Biblioteca'}</button>}
       </section>
-      {(filter || query) && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p>
+      {filter && !query && !selectedYear && <div className="library-year-folders" aria-label={`${filter} por año`}>{yearFolders.map((year, index) => <button key={year} type="button" className="library-year-folder" style={{ animationDelay: `${Math.min(index * 45, 360)}ms` }} onClick={() => setSelectedYear(year)}><span className="library-year-folder-shape"><i /><Folder size={38} strokeWidth={1.25} /></span><strong>{year}</strong><small>{ordered.filter((entry) => (entry.year ? String(entry.year) : 'Sin fecha') === year).length} contenidos</small></button>)}</div>}
+      {(query || selectedYear) && <><p className="library-count">{selectedYear ? yearEntries.length : ordered.length} {((selectedYear ? yearEntries.length : ordered.length) === 1) ? 'resultado' : 'resultados'}</p>
       <div id="library-results" className="library-content-list" role="tabpanel" aria-label={`Resultados: ${filter || 'Biblioteca'}`}>{conferenceGroups.map((group) => {
         const open = !group.label || openYears.has(group.label);
+        if (selectedYear && group.label !== selectedYear) return null;
         return <section key={group.label || 'all'} className={`library-year-group${open ? ' is-open' : ''}`}>
           {group.label && <button type="button" className="library-year-toggle" onClick={() => toggleYear(group.label)} aria-expanded={open}><span>{group.label}</span><ChevronDown size={22} aria-hidden="true" /></button>}
           {open && group.entries.map((entry, index) => {
