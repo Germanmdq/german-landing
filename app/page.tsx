@@ -148,6 +148,14 @@ function PreguntamePanel({ onBack, onNavigate }: { onBack: () => void; onNavigat
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const promptRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    const element = promptRef.current;
+    if (!element) return;
+    element.style.height = '0px';
+    element.style.height = `${Math.min(Math.max(element.scrollHeight, 42), 144)}px`;
+  }, [prompt]);
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); recognitionRef.current?.stop(); recorderRef.current?.stop(); streamRef.current?.getTracks().forEach((track) => track.stop()); }, []);
 
@@ -196,7 +204,7 @@ function PreguntamePanel({ onBack, onNavigate }: { onBack: () => void; onNavigat
       {listening && <button type="button" className="voice-pill is-listening" onClick={toggleVoice}><span className="voice-dot" /><span className="voice-bars" aria-hidden="true">{Array.from({ length: 14 }, (_, index) => <i key={index} />)}</span><b>Escuchando</b><Square size={14} fill="currentColor" /></button>}
       {working && <div className="lattice-loader" role="status" aria-live="polite"><span className="lattice-grid">{Array.from({ length: 9 }, (_, index) => <i key={index} />)}</span><p>Buscando la mejor respuesta… <small>{elapsed}s</small></p></div>}
       <div className={`prompt-bar${listening ? ' is-listening' : ''}`}>
-        <textarea value={prompt} onChange={(event) => { setPrompt(event.target.value); event.currentTarget.style.height = 'auto'; event.currentTarget.style.height = `${Math.min(event.currentTarget.scrollHeight, 144)}px`; }} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} rows={1} placeholder="Preguntame lo que quieras…" aria-label="Tu pregunta" />
+        <textarea ref={promptRef} value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} rows={1} placeholder="Preguntame lo que quieras…" aria-label="Tu pregunta" />
         <div className="prompt-actions"><button type="button" className="prompt-mic" onClick={toggleVoice} aria-label={listening ? 'Detener dictado' : 'Dictar pregunta'}>{listening ? <Square size={16} fill="currentColor" /> : <Mic size={20} />}</button><button type="button" className="prompt-send" disabled={!prompt.trim() || working} onClick={submit} aria-label="Enviar pregunta"><ArrowUp size={20} strokeWidth={2.5} /></button></div>
       </div>
       {notice && <p className="preguntame-notice">{notice}</p>}
