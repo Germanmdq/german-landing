@@ -112,7 +112,7 @@
 .library-folder-revealed button { width:100%; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 8px; border:0; border-bottom:1px solid #29292d; background:transparent; color:#f5f5f7; text-align:left; opacity:0; transform:translateY(-8px); animation:libraryReveal .28s ease forwards; }
 .library-folder-revealed button:last-child { border-bottom:0; }
 @keyframes libraryReveal { to { opacity:1; transform:translateY(0); } }
-.search-highlight { background:transparent; color:inherit; padding:0; border-radius:0; font-weight:inherit; }
+.search-highlight { background:rgba(255,255,255,.14); color:#fff; padding:0 .12em; border-radius:4px; font-weight:800; }
 
 /* La vida se ensaya por dentro */
 .interactive-book-intro { display:flex; justify-content:center; padding-top:18px; }

@@ -886,7 +886,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           const bodySnippet = snippetAround(entry.body || '', q);
           const contextText = excerptSnippet || bodySnippet;
           if (contextText) {
-            preview = contextText;
+            preview = highlightText(contextText, q);
           } else if (!titleHasMatch) {
             preview = entry.excerpt || 'Abrí para leer o escuchar.';
           }
@@ -894,7 +894,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
         return <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index * .025, .2)} className="library-content-card" onClick={() => onRead(entry, q)}>
           <div>
             <p>{entry.type || 'Contenido'}</p>
-            <b className="card-title">{entry.title}</b>
+            <b className="card-title">{q ? highlightText(entry.title, q) : entry.title}</b>
             <em className="card-subtitle">{preview}</em>
           </div>
           <span className="library-card-actions">
