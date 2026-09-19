@@ -89,7 +89,7 @@ const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
     { icon: '👤', title: 'Mi cuenta', detail: 'Nombre, mail, suscripción y acceso.', tone: palette[0], accountPanel: true },
     { icon: '⭐', title: 'Favoritos', detail: 'Prácticas, audios y lecturas guardadas.', tone: palette[1] },
     { icon: '📈', title: 'Mi avance', detail: 'Próximamente.', tone: palette[2], disabled: true },
-    { icon: '⚙️', title: 'Configuración', detail: 'Notificaciones y horarios locales.', tone: palette[3] },
+    { icon: '🔔', title: 'Notificaciones', detail: 'Activá o desactivá los avisos.', tone: palette[3] },
   ] },
 });
 
@@ -539,34 +539,25 @@ function NotificationsPanel({ user, onBack, onNavigate }: { user: User; onBack: 
 
 function ProfileScreen({ user, items, showInstall, onInstall, onSelect, onBack, onNavigate }: { user: User; items: DeckItem[]; showInstall: boolean; onInstall: () => void; onSelect: (item: DeckItem) => void; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   const notifications = useNotificationsToggle(user);
-  const menuItems = [
-    {
-      label: 'Mi perfil',
-      children: items.map((item) => ({ value: `profile:${item.title}`, label: item.title }))
-    },
-    {
-      label: 'En este dispositivo',
-      children: [
-        ...(showInstall ? [{ value: 'install', label: 'Instalar Asistente Germán' }] : []),
-        { value: 'notifications', label: notifications.active ? 'Notificaciones activadas' : 'Activar notificaciones' }
-      ]
-    }
-  ];
   return <section className="reader-section profile-section">
     <FixedHeader eyebrow="MI PERFIL" title="Tu espacio" subtitle="Tu cuenta y tus elecciones." onBack={onBack} onNavigate={onNavigate} />
-    <div className="reader-body profile-branched-stage">
-      <BranchedMenu
-        items={menuItems}
-        defaultOpen={[0, 1]}
+    <div className="reader-body profile-folder-stage">
+      <FolderFloat
+        items={items.map((item) => ({ label: item.title, value: item.title }))}
+        label="Perfil"
+        sublabel="4 contenidos"
+        trigger="click"
+        closeOnSelect
+        physics
+        drift={0.5}
         onSelect={(value) => {
-          if (value === 'install') return onInstall();
-          if (value === 'notifications') return void notifications.toggle();
-          if (!value.startsWith('profile:')) return;
-          const title = value.slice('profile:'.length);
-          if (title === 'Mi avance') return;
-          const item = items.find((candidate) => candidate.title === title);
+          if (value === 'Mi avance') return;
+          if (value === 'Notificaciones') return void notifications.toggle();
+          const item = items.find((candidate) => candidate.title === value);
           if (item) onSelect(item);
         }}
+        folderColor="#3f3f46" frontColor="#52525b" paperColor="#f5f5f5" itemColor="#f5f5f5" itemTextColor="#18181b" labelColor="#f5f5f5"
+        width={200} height={148} radius={14} spread={180} lift={26} tilt={8} flapAngle={34} restAngle={16} openDuration={520} stagger={45} bounce={0.3}
       />
       {notifications.error && <p className="account-message">{notifications.error}</p>}
     </div>

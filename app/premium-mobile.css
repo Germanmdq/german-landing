@@ -317,3 +317,24 @@ html:has(.profile-section), body:has(.profile-section), .app-shell:has(.profile-
 .audiobook-player-heading { align-items:center !important; text-align:center !important; }
 .audiobook-player-heading .audio-voice-pill { align-self:center !important; }
 .audiobook-player-heading > div { width:100%; align-items:center !important; text-align:center !important; }
+
+/* Perfil usa el mismo Folder Float de Biblioteca. */
+.profile-folder-stage {
+  min-height:calc(100dvh - 220px - 82px - env(safe-area-inset-bottom));
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:#09090a !important;
+}
+/* Ninguna superficie interna vuelve a blanco. */
+.app-shell.section-app:not(.welcome-carousel-screen) .ios-card,
+.app-shell.section-app:not(.welcome-carousel-screen) .subscription-card,
+.app-shell.section-app:not(.welcome-carousel-screen) .audiobook-index,
+.app-shell.section-app:not(.welcome-carousel-screen) .audiobook-card,
+.app-shell.section-app:not(.welcome-carousel-screen) .favorite-content-card,
+.app-shell.section-app:not(.welcome-carousel-screen) .favorites-empty,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-favorite {
+  background:#111113 !important;
+  color:#f5f5f7 !important;
+  border-color:#29292d !important;
+}
