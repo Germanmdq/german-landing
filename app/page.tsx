@@ -344,7 +344,7 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | undefined>();
   const [dayContent, setDayContent] = useState<LawCourseDay>({});
-  const [unlockedDay, setUnlockedDay] = useState(1);
+  const [unlockedDay, setUnlockedDay] = useState(0);
   const [progressLoading, setProgressLoading] = useState(true);
 
   useEffect(() => {
@@ -354,18 +354,12 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
       if (cancelled) return;
       if (readError) { console.error('[365] error leyendo progreso:', readError); setProgressLoading(false); return; }
       let startedAt = existing?.started_at as string | undefined;
-      if (!startedAt) {
-        const { data: created, error: insertError } = await supabase.from('law_course_progress').insert({ user_id: user.id }).select('started_at').single();
-        if (cancelled) return;
-        if (insertError) { console.error('[365] error iniciando progreso:', insertError); setProgressLoading(false); return; }
-        startedAt = created.started_at;
-      }
       if (!startedAt) { setProgressLoading(false); return; }
       const started = new Date(startedAt);
       const now = new Date();
       const startDay = new Date(started.getFullYear(), started.getMonth(), started.getDate()).getTime();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const day = Math.min(365, Math.max(3, Math.floor((today - startDay) / 86400000) + 1));
+      const day = Math.min(365, Math.max(1, Math.floor((today - startDay) / 86400000) + 1));
       setUnlockedDay(day);
       setProgressLoading(false);
     })();
@@ -399,13 +393,10 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
   }, [selectedDay]);
 
   if (selectedDay !== null) {
-    const explanation = [dayContent.foundation, dayContent.psychology].filter(Boolean).join('\n\n');
     return <section className="reader-section law-course-section">
       <FixedHeader eyebrow="TALLER DE 365 DÍAS" title={`Día ${formatCourseDayLabel(selectedDay)}`} subtitle={dayContent.title || 'Ley de Asunción'} onBack={() => setSelectedDay(null)} onNavigate={onNavigate} />
       <article className="reader-body law-course-day">
         {audioUrl ? <AudioPlayer title={`Día ${formatCourseDayLabel(selectedDay)}${dayContent.title ? ` · ${dayContent.title}` : ''}`} audioUrl={audioUrl} /> : <div className="law-course-audio-missing"><Headphones size={22} /><span>Audio pendiente para este día.</span></div>}
-        {explanation && <section className="law-course-support-card"><small>FUNDAMENTO Y EXPLICACIÓN</small>{cleanParagraphs(explanation).map((paragraph, index) => <p key={index}>{paragraph}</p>)}</section>}
-        {dayContent.exercise && <section className="law-course-support-card law-course-practice-card"><small>PRÁCTICA DE HOY</small>{cleanParagraphs(dayContent.exercise).map((paragraph, index) => <p key={index}>{paragraph}</p>)}</section>}
       </article>
     </section>;
   }
@@ -413,7 +404,7 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
   return <section className="reader-section law-course-section">
     <FixedHeader eyebrow="LEY DE ASUNCIÓN" title="Taller de 365 días" subtitle="365 días para entenderla, practicarla y vivirla." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body law-course-browser">
-      <div className="law-course-progress-card"><div><span>TU RECORRIDO</span><b>{progressLoading ? 'Cargando…' : `Día ${unlockedDay} de 365`}</b></div><BookOpen size={22} /></div>
+      <div className="law-course-progress-card"><div><span>TU RECORRIDO</span><b>{progressLoading ? 'Cargando…' : unlockedDay ? `Día ${unlockedDay} de 365` : 'Todavía no iniciado'}</b></div><BookOpen size={22} /></div>
       <div className="law-course-chapters">
         {lawCourseChapters.map((chapter) => {
           const expanded = openChapter === chapter.number;
@@ -2032,6 +2023,7 @@ export default function App() {
   if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} showInstall={!standalone} onInstall={() => { setInstallDismissed(false); setInstallOpen(true); }} onSelect={select} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'consultas' && !trail.length) return <main className="app-shell app-main section-app preguntame-shell"><PreguntamePanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'propia' && !trail.length) return <main className="app-shell app-main section-app"><PropiaPracticaPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} />{dock}</main>;
+  if (tab === 'talleres' && !trail.length) return <main className="app-shell app-main section-app"><section className="reader-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><div className="reader-body guided-folder-stage"><FolderFloat items={screen.items.map((item) => ({ label: item.title, value: item.title }))} label="Prácticas guiadas" sublabel="3 recorridos" trigger="click" closeOnSelect physics drift={0.5} onSelect={(value) => { const item = screen.items.find((entry) => entry.title === value); if (item) select(item); }} folderColor="#3f3f46" frontColor="#52525b" paperColor="#f5f5f5" itemColor="#f5f5f5" itemTextColor="#18181b" labelColor="#f5f5f7" width={200} height={148} radius={14} spread={180} lift={26} tilt={8} flapAngle={34} restAngle={16} openDuration={520} stagger={45} bounce={0.3} /></div></section>{dock}</main>;
   if (current?.title === 'Día 1') {
     const carouselKey = `${tab}-${trail.map((item) => item.title).join('/')}-dia1`;
     return <main className="app-shell app-main section-app day-one-screen"><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><DayOneCarousel key={carouselKey} items={screen.items} initialIndex={carouselIndicesRef.current[carouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[carouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[carouselKey] = index; select(item); }} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section>{dock}</main>;

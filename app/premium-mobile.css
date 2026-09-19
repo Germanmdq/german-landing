@@ -493,3 +493,20 @@ body:has(.meditaciones-photo-screen),
   justify-content:center !important;
   background:#000 !important;
 }
+
+/* Folder Float: más abajo para que la apertura tenga aire debajo del título. */
+.library-folder-float-stage,
+.profile-folder-stage,
+.audiobook-folder-stage,
+.guided-folder-stage {
+  min-height:calc(100dvh - 160px - 82px - env(safe-area-inset-bottom)) !important;
+  display:flex !important;
+  align-items:flex-start !important;
+  justify-content:center !important;
+  padding-top:42vh !important;
+  background:#000 !important;
+}
+
+/* Tema y duración: una píldora debajo de la otra. */
+.propia-choice-pills { flex-direction:column !important; gap:12px !important; }
+.propia-choice-pill { width:100% !important; flex:none !important; }
