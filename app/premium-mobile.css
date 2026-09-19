@@ -309,3 +309,11 @@ html:has(.profile-section), body:has(.profile-section), .app-shell:has(.profile-
   gap:10px !important;
 }
 .audiobook-player-heading .audio-voice-pill { margin:0 !important; align-self:flex-start !important; }
+
+/* Voice Pill centrado: el componente despliega hacia la izquierda. */
+.audio-player-card { align-items:center !important; text-align:center !important; }
+.audio-player-card .audio-voice-pill { align-self:center !important; }
+.audio-player-card .audio-player-copy { text-align:center !important; }
+.audiobook-player-heading { align-items:center !important; text-align:center !important; }
+.audiobook-player-heading .audio-voice-pill { align-self:center !important; }
+.audiobook-player-heading > div { width:100%; align-items:center !important; text-align:center !important; }
