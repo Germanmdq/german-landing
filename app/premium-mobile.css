@@ -528,3 +528,18 @@ body:has(.meditaciones-photo-screen),
 .propia-schedule-pill .ios-row-value { display:flex; align-items:center; gap:7px; min-width:0; color:#f5f5f7 !important; font-size:15px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .propia-schedule-pill .ios-row-value--muted { color:#aeaeb2 !important; }
 .propia-schedule-pill svg { flex:0 0 auto; color:#8e8e93; }
+
+/* Menú de tres puntos: píldoras, no bloque cuadrado. */
+.nav-menu-sheet { border-radius:28px 28px 0 0 !important; background:#fff !important; }
+.nav-menu-content { padding:18px 16px max(20px, env(safe-area-inset-bottom)) !important; }
+.nav-menu-list { display:flex !important; flex-direction:column !important; gap:10px !important; background:transparent !important; border-radius:0 !important; overflow:visible !important; margin-bottom:14px !important; }
+.nav-menu-row {
+  min-height:58px !important; padding:0 20px !important; border:0 !important;
+  border-radius:999px !important; background:#f2f2f7 !important;
+  gap:14px !important;
+}
+.nav-menu-row:first-child { border:0 !important; }
+.nav-menu-cancel {
+  min-height:58px !important; border:0 !important; border-radius:999px !important;
+  background:#f2f2f7 !important;
+}
