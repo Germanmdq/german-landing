@@ -499,11 +499,16 @@ body:has(.meditaciones-photo-screen),
 .profile-folder-stage,
 .audiobook-folder-stage,
 .guided-folder-stage {
+  box-sizing:border-box !important;
+  width:100% !important;
+  height:calc(100dvh - 160px - 82px - env(safe-area-inset-bottom)) !important;
   min-height:calc(100dvh - 160px - 82px - env(safe-area-inset-bottom)) !important;
   display:flex !important;
   align-items:flex-start !important;
   justify-content:center !important;
-  padding-top:42vh !important;
+  padding-top:30vh !important;
+  padding-bottom:0 !important;
+  margin:0 !important;
   background:#000 !important;
 }
 
