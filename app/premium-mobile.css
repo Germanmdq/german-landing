@@ -65,6 +65,8 @@
 .library-folders-back { display:flex; align-items:center; gap:3px; margin:8px 0 2px; padding:7px 2px; border:0; background:transparent; color:#a52e46; font-size:13px; font-weight:700; }
 .library-section { background:#09090a !important; color:#f5f5f7; min-height:100dvh; }
 .library-section .feature-header { background:#09090a !important; border-color:#09090a !important; box-shadow:none !important; }
+.library-section .feature-header::before,.library-section .feature-header::after { display:none !important; border:0 !important; box-shadow:none !important; }
+.library-section.reader-section { border:0 !important; box-shadow:none !important; }
 .library-section .feature-header h1,.library-section .feature-header p,.library-section .feature-header span,.library-section .feature-header small { color:#f5f5f7 !important; }
 .library-section .library-browser { background:#09090a !important; }
 .library-section .search-input-pill { background:#1c1c1e !important; border-color:#343438 !important; }
