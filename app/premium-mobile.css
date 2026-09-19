@@ -250,3 +250,31 @@ html:has(.profile-section), body:has(.profile-section), .app-shell:has(.profile-
 
 /* Voice Pill es el control visual de reproduccion en todos los players. */
 .audio-voice-pill { flex:0 0 auto; }
+
+/* Tema definitivo: todo el interior de la app es negro; solo Inicio conserva el tema claro. */
+.app-shell.section-app:not(.welcome-carousel-screen),
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-section,
+.app-shell.section-app:not(.welcome-carousel-screen) .feature-section,
+.app-shell.section-app:not(.welcome-carousel-screen) .categories-section,
+.app-shell.section-app:not(.welcome-carousel-screen) .day-one-section,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body,
+.app-shell.section-app:not(.welcome-carousel-screen) .feature-list,
+.app-shell.section-app:not(.welcome-carousel-screen) .category-list,
+.app-shell.section-app:not(.welcome-carousel-screen) .feature-header,
+.app-shell.section-app:not(.welcome-carousel-screen) .assistant-welcome {
+  background:#09090a !important;
+  color:#f5f5f7 !important;
+}
+.app-shell.section-app:not(.welcome-carousel-screen) .feature-header h1,
+.app-shell.section-app:not(.welcome-carousel-screen) .feature-header h2,
+.app-shell.section-app:not(.welcome-carousel-screen) .feature-header button,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body h1,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body h2,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body h3,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body b,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body strong {
+  color:#f5f5f7 !important;
+}
+.app-shell.section-app:not(.welcome-carousel-screen) .feature-header > p,
+.app-shell.section-app:not(.welcome-carousel-screen) .feature-header > small,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body > p { color:#c7c7cc !important; }

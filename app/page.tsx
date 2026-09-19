@@ -728,7 +728,7 @@ function splitAudiobookSections(body: string, chapters: AudiobookChapter[]) {
 }
 
 function AudiobookLibraryPanel({ entries, loading, error, onBack, onNavigate, onOpen }: { entries: AudiobookEntry[]; loading: boolean; error: string; onBack: () => void; onNavigate: (target: NavTarget) => void; onOpen: (entry: AudiobookEntry) => void }) {
-  const collectionTitles = ['Neville Anotaciones', 'Sinfonía de susurros', 'Florecer', 'El arte de imaginar', 'Sentir'];
+  const collectionTitles = ['Revisión — Cambiar el pasado desde el presente', 'Persistir — Hasta que se vuelva natural', 'Vivir desde el final', 'La imaginación aplicada', 'El arte de asumir'];
   const collection = collectionTitles.map((title, index) => entries.find((entry) => entry.title.toLocaleLowerCase('es').trim() === title.toLocaleLowerCase('es').trim()) ?? ({
     id: `german-book-${index + 1}`,
     slug: title.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
