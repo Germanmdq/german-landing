@@ -1360,16 +1360,16 @@ function PropiaPracticaPanel({ user, onBack, onNavigate, onRead }: { user: User;
           <span>Duración</span><b>{duracion || 'Elegir duración'}</b><ChevronDown size={17} />
         </button>
       </div>
-      <div className="ios-card">
-        {needsSchedule && <button type="button" className="ios-row" onClick={() => setEditingField('frecuencia')} aria-haspopup="dialog">
+      <div className="propia-schedule-pills">
+        {needsSchedule && <button type="button" className="propia-schedule-pill" onClick={() => setEditingField('frecuencia')} aria-haspopup="dialog">
           <span className="ios-row-label">Frecuencia</span>
           <span className="ios-row-value">{workshopIntervalLabel(frequency)}<ChevronRight size={17} /></span>
         </button>}
-        {needsSchedule && workshopMomentKeys.map((key) => <button key={key} type="button" className="ios-row" onClick={() => setEditingMoment(key)} aria-label={`Cambiar horario de ${workshopMomentPickerLabels[key]}: ${schedule[key]}`} aria-haspopup="dialog">
+        {needsSchedule && workshopMomentKeys.map((key) => <button key={key} type="button" className="propia-schedule-pill" onClick={() => setEditingMoment(key)} aria-label={`Cambiar horario de ${workshopMomentPickerLabels[key]}: ${schedule[key]}`} aria-haspopup="dialog">
           <span className="ios-row-label">{workshopMomentPickerLabels[key]}</span>
           <span className="ios-row-value">{schedule[key]}<ChevronRight size={17} /></span>
         </button>)}
-        {needsSchedule && <button type="button" className="ios-row" onClick={() => setEditingTimezone(true)} aria-haspopup="dialog">
+        {needsSchedule && <button type="button" className="propia-schedule-pill" onClick={() => setEditingTimezone(true)} aria-haspopup="dialog">
           <span className="ios-row-label">Zona horaria</span>
           <span className="ios-row-value ios-row-value--muted">{timezone.replace(/_/g, ' ')}<ChevronRight size={17} /></span>
         </button>}

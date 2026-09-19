@@ -510,3 +510,16 @@ body:has(.meditaciones-photo-screen),
 /* Tema y duración: una píldora debajo de la otra. */
 .propia-choice-pills { flex-direction:column !important; gap:12px !important; }
 .propia-choice-pill { width:100% !important; flex:none !important; }
+
+/* Tu propia práctica: un solo lenguaje visual, todo en píldoras. */
+.propia-schedule-pills { display:flex; flex-direction:column; gap:12px; margin:0 0 16px; }
+.propia-schedule-pill {
+  width:100%; min-height:66px; padding:0 22px; border:1px solid #2c2c2e;
+  border-radius:999px; background:#1c1c1e; color:#f5f5f7;
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  box-shadow:none; text-align:left;
+}
+.propia-schedule-pill .ios-row-label { color:#8e8e93 !important; font-size:14px; font-weight:600; }
+.propia-schedule-pill .ios-row-value { display:flex; align-items:center; gap:7px; min-width:0; color:#f5f5f7 !important; font-size:15px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.propia-schedule-pill .ios-row-value--muted { color:#aeaeb2 !important; }
+.propia-schedule-pill svg { flex:0 0 auto; color:#8e8e93; }
