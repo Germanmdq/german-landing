@@ -74,8 +74,15 @@ html:has(.library-section),body:has(.library-section),html:has(.library-reader-s
 .library-reader-section .reader-favorite,.library-reader-section .audio-player-card { background:#151517 !important; color:#f5f5f7 !important; border-color:#29292d !important; box-shadow:none !important; }
 .library-section .feature-header h1,.library-section .feature-header p,.library-section .feature-header span,.library-section .feature-header small { color:#f5f5f7 !important; }
 .library-section .library-browser { background:#09090a !important; border:0 !important; box-shadow:none !important; }
-.library-folder-float-stage { min-height:410px; display:flex; align-items:flex-end; justify-content:center; padding:150px 0 34px; overflow:visible; }
+.library-folder-float-stage { min-height:360px; display:flex; align-items:flex-end; justify-content:center; padding:120px 0 34px; overflow:visible; }
 .library-folder-float-stage .folder-float { flex:0 0 auto; }
+
+/* Biblioteca: mismo tratamiento de superficie continua que Preguntame. */
+html:has(.library-section), body:has(.library-section) { background:#09090a !important; }
+.app-shell:has(.library-section) { background:#09090a !important; overflow:hidden !important; }
+.library-section { height:100dvh; min-height:100dvh; overflow:hidden !important; padding:0 0 calc(82px + env(safe-area-inset-bottom)); background:#09090a !important; border:0 !important; box-shadow:none !important; }
+.library-section .feature-header { box-sizing:border-box; background:#09090a !important; border:0 !important; box-shadow:none !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
+.library-section .reader-body,.library-section .library-browser { background:#09090a !important; border:0 !important; box-shadow:none !important; }
 .library-section .search-input-pill { background:#1c1c1e !important; border-color:#343438 !important; }
 .library-section .search-input-pill input { color:#f5f5f7 !important; }
 .library-section .library-folder-card { background:#171719; border-color:#2c2c2f; color:#f5f5f7; box-shadow:none; }
