@@ -113,3 +113,20 @@
 @keyframes voiceBar{to{height:22px;opacity:.55}}
 @keyframes lattice{0%,100%{opacity:.2;transform:scale(.65)}50%{opacity:1;transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){.voice-dot,.voice-bars i,.lattice-grid i{animation:none}}
+
+/* Preguntame: layout final. Sobrescribe las reglas claras del carrusel. */
+html:has(.preguntame-shell), body:has(.preguntame-shell) { background:#09090a !important; }
+.preguntame-shell.app-shell { background:#09090a !important; overflow:hidden !important; }
+.preguntame-panel { height:100dvh; min-height:100dvh; overflow:hidden; padding:0 0 calc(82px + env(safe-area-inset-bottom)); background:#09090a !important; }
+.preguntame-shell .feature-header { box-sizing:border-box; min-height:255px; padding:max(18px,env(safe-area-inset-top)) 6.25% 18px !important; background:#09090a !important; display:grid; grid-template-columns:1fr; justify-items:center; align-content:start; }
+.preguntame-shell .feature-header .header-top-row { width:100%; justify-self:stretch; }
+.preguntame-shell .feature-header > p { width:100%; margin:14px 0 8px !important; text-align:center !important; }
+.preguntame-shell .feature-header h1 { width:min(100%,390px); margin:0 auto 10px !important; padding:0 !important; text-align:center !important; font-size:clamp(42px,11vw,54px) !important; line-height:.98 !important; letter-spacing:-.055em !important; }
+.preguntame-shell .feature-header > span, .preguntame-shell .feature-header > small { width:100%; text-align:center !important; }
+.preguntame-stage { box-sizing:border-box; height:calc(100dvh - 255px - 82px - env(safe-area-inset-bottom)); min-height:0; padding:18px 20px 28px; display:grid; grid-template-rows:1fr auto auto auto; align-content:stretch; gap:12px; }
+.preguntame-copy { align-self:center; margin:0; padding:0 5px; transform:translateY(-34px); }
+.preguntame-copy h2 { font-size:clamp(44px,12vw,62px); }
+.prompt-bar { align-self:end; margin-bottom:24px; }
+.preguntame-notice { margin-top:-16px; }
+.preguntame-suggestions { display:none; }
+.preguntame-shell .main-navigation-dock { border-top-color:#29292d !important; }
