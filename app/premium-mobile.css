@@ -429,3 +429,46 @@ body:has(.meditaciones-photo-screen),
   border:0 !important;
   box-shadow:none !important;
 }
+
+/* Taller 365 y Consultas: interior negro real, sin widgets blancos. */
+.law-course-section,
+.law-course-section .feature-header,
+.law-course-section .reader-body,
+.law-course-browser,
+.law-course-chapter,
+.law-course-chapter-toggle,
+.law-course-days,
+.law-course-day-row,
+.app-shell.section-app:has(.preguntame-panel),
+.app-shell.section-app:has(.preguntame-panel) .day-one-section,
+.app-shell.section-app:has(.preguntame-panel) .feature-header,
+.app-shell.section-app:has(.preguntame-panel) .preguntame-panel {
+  background:#000 !important;
+  color:#f5f5f7 !important;
+  border-color:#29292d !important;
+  box-shadow:none !important;
+}
+.law-course-progress-card,
+.law-course-support-card,
+.law-course-audio-missing {
+  background:#111113 !important;
+  color:#f5f5f7 !important;
+  border-color:#29292d !important;
+  box-shadow:none !important;
+}
+.law-course-day-row span,
+.law-course-chapter-toggle b,
+.law-course-chapter-toggle span { color:#f5f5f7 !important; }
+
+/* Audio: no hay tarjeta/widget contenedor. Solo Voice Pill y titulo. */
+.audio-player-card,
+.library-reader-section .audio-player-card,
+.law-course-section .audio-player-card {
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+}
+.audio-player-card::before,
+.audio-player-card::after { display:none !important; }

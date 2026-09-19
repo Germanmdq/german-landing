@@ -370,7 +370,7 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
       const now = new Date();
       const startDay = new Date(started.getFullYear(), started.getMonth(), started.getDate()).getTime();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const day = Math.min(365, Math.max(1, Math.floor((today - startDay) / 86400000) + 1));
+      const day = Math.min(365, Math.max(3, Math.floor((today - startDay) / 86400000) + 1));
       setUnlockedDay(day);
       setProgressLoading(false);
     })();
