@@ -98,11 +98,14 @@
 .folder-float__label {
   font-size: 13px;
   font-weight: 500;
+  width: 100%;
+  text-align: center;
 }
 
 .folder-float__sub {
   font-size: 11px;
   opacity: 0.55;
+  text-align: center;
 }
 
 .folder-float__trigger {

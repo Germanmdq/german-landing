@@ -167,7 +167,7 @@ const FolderFloat: React.FC<FolderFloatProps> = ({
   const liveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const list: Entry[] = items.map(item => (typeof item === 'string' ? { label: item, value: item } : item));
   const n = list.length;
-  const sub = sublabel || `${n} ${n === 1 ? 'note' : 'notes'}`;
+  const sub = sublabel === undefined ? `${n} ${n === 1 ? 'note' : 'notes'}` : sublabel;
   const pos = layout(list, spread, lift, tilt, sizes);
 
   const labelsKey = list.map(item => item.label).join('|');
@@ -259,6 +259,7 @@ const FolderFloat: React.FC<FolderFloatProps> = ({
     const tick = (now: number) => {
       const s = world.current;
       if (!s.engine) return;
+      const firstFrame = s.last === 0;
       const dt = s.last ? Math.min(32, now - s.last) : 16;
       s.last = now;
       const t = (now - s.t0) / 1000;
@@ -271,7 +272,11 @@ const FolderFloat: React.FC<FolderFloatProps> = ({
           y: Math.cos(t * 1.3 + ph * 1.7) * k * b.mass
         });
       });
-      Engine.update(s.engine, dt);
+      // El primer frame de Matter debe conservar exactamente la posición en
+      // la que terminó la animación CSS. Si actualizamos el motor antes de
+      // pintarlo, la resolución física puede producir un pequeño "salto" al
+      // tomar el control de las píldoras.
+      if (!firstFrame) Engine.update(s.engine, dt);
       s.bodies.forEach((b, i) => {
         const el = pillRefs.current[i];
         if (!el) return;
