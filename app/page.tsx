@@ -80,11 +80,7 @@ const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
     { icon: '🎙️', title: 'Conferencias', detail: 'Contenido pendiente de conectar.', tone: palette[2] },
   ] },
   audiolibros: { eyebrow: 'AUDIOLIBROS DE GERMÁN', title: 'Libros para escuchar', subtitle: 'Audiolibros narrados por Germán.', items: [] },
-  consultas: { eyebrow: 'CONSULTAS', title: 'Hablemos de lo que te pasa', subtitle: 'Consultas para leer, escuchar y guardar.', items: [
-    { icon: '💬', title: 'Preguntar', detail: 'Contame qué te está pasando.', tone: palette[0] },
-    { icon: '🔊', title: 'Escuchar', detail: 'Próximamente.', tone: palette[1], disabled: true },
-    { icon: '🔖', title: 'Guardadas', detail: 'Próximamente.', tone: palette[2], disabled: true },
-  ] },
+  consultas: { eyebrow: 'CONSULTAS', title: 'Hablemos de lo que te pasa', subtitle: 'Contame qué te está pasando.', items: [] },
   espacio: { eyebrow: 'MI PERFIL', title: 'Tu espacio', subtitle: 'Tu cuenta y tus elecciones.', items: [
     { icon: '👤', title: 'Mi cuenta', detail: 'Nombre, mail, suscripción y acceso.', tone: palette[0], accountPanel: true },
     { icon: '⭐', title: 'Favoritos', detail: 'Prácticas, audios y lecturas guardadas.', tone: palette[1] },
@@ -204,7 +200,6 @@ function PreguntamePanel({ onBack, onNavigate }: { onBack: () => void; onNavigat
     <FixedHeader eyebrow="PREGUNTAME" title="¿Qué te está pasando?" subtitle="Escribilo o decímelo con tu voz." onBack={onBack} onNavigate={onNavigate} />
     <div className="preguntame-stage">
       <div className="preguntame-copy"><span>GERMÁN</span><h2>Contame.</h2><p>No hace falta que armes bien la pregunta. Decime qué te pasa como te salga.</p></div>
-      <div className="preguntame-reactbits-voice"><VoicePill mode="toggle" reactive="simulated" showTime waveform ariaLabel={listening ? 'Detener dictado' : 'Dictar pregunta'} onStart={() => { if (!listening) void toggleVoice(); }} onStop={() => { if (listening) void toggleVoice(); }} /></div>
       {working && <div className="lattice-loader" role="status" aria-live="polite"><span className="lattice-grid">{Array.from({ length: 9 }, (_, index) => <i key={index} />)}</span><p>Buscando la mejor respuesta… <small>{elapsed}s</small></p></div>}
       <div className={`prompt-bar${listening ? ' is-listening' : ''}`}>
         <textarea ref={promptRef} value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} rows={1} placeholder="Preguntame lo que quieras…" aria-label="Tu pregunta" />
@@ -2023,6 +2018,7 @@ export default function App() {
   }
   if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry, searchQuery, mode) => setReader({ title: entry.title, eyebrow: mode === 'audio' ? 'AUDIO' : mode === 'text' ? 'TEXTO' : entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: mode === 'audio' ? [] : cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: mode === 'text' ? undefined : entry.audioUrl, duration: entry.duration, highlightQuery: searchQuery })} />{dock}</main>;
   if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} showInstall={!standalone} onInstall={() => { setInstallDismissed(false); setInstallOpen(true); }} onSelect={select} onBack={back} onNavigate={navigateTo} />{dock}</main>;
+  if (tab === 'consultas' && !trail.length) return <main className="app-shell app-main section-app preguntame-shell"><PreguntamePanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'propia' && !trail.length) return <main className="app-shell app-main section-app"><PropiaPracticaPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} />{dock}</main>;
   if (current?.title === 'Día 1') {
     const carouselKey = `${tab}-${trail.map((item) => item.title).join('/')}-dia1`;
@@ -2034,7 +2030,6 @@ export default function App() {
   // Prácticas guiadas, su sub-deck de 7 días, y Consultas.
   const photoCardsScreen = (tab === 'talleres' && trail.length === 0)
     || (tab === 'talleres' && trail.length === 1 && trail[0].title === 'Prácticas de 7 días')
-    || (tab === 'consultas' && trail.length === 0)
     || (tab === 'meditaciones' && trail.length === 0);
   // "Meditaciones para ahora" ya trae su propia imagen en cada DeckItem
   // (momentNodes, asignada por posición 1..15), así que no se pisa acá.
