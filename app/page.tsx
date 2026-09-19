@@ -868,8 +868,29 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
             { label: 'Conferencias en texto', value: 'Conferencias' }
           ]}
           label="Biblioteca"
+          sublabel="4 contenidos"
           trigger="click"
+          closeOnSelect
+          physics
+          drift={0.5}
           onSelect={(value) => setFilter(value)}
+          folderColor="#3f3f46"
+          frontColor="#52525b"
+          paperColor="#f5f5f5"
+          itemColor="#f5f5f5"
+          itemTextColor="#18181b"
+          labelColor="#f5f5f5"
+          width={200}
+          height={148}
+          radius={14}
+          spread={180}
+          lift={26}
+          tilt={8}
+          flapAngle={34}
+          restAngle={16}
+          openDuration={520}
+          stagger={45}
+          bounce={0.3}
         />
       </div>}
       {filter && !query && !/Libros/.test(filter) && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p><div className="library-content-list">{conferenceGroups.map((group) => <section key={group.label || 'all'} className="library-year-group is-open">{group.label && <div className="library-year-toggle"><span>{group.label}</span></div>}{group.entries.map((entry,index) => <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index*.025,.2)} className="library-content-card" onClick={() => onRead(entry, undefined, filter === 'Audios' ? 'audio' : 'text')}><div><p>{filter === 'Audios' ? 'Audio' : 'Texto'}</p><b className="card-title">{entry.title}</b>{filter === 'Audios' ? <em className="card-subtitle">Escuchar conferencia</em> : <em className="card-subtitle">{entry.excerpt || 'Abrir conferencia'}</em>}</div><span className="library-card-actions"><i>{filter === 'Audios' ? <Headphones size={19}/> : <ChevronRight size={19}/>}</i></span></MagicCard></div>)}</section>)}</div></>}
