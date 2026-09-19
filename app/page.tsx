@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, ChevronDown, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, ArrowUp, Download, House, Menu, Lock, Mic, Square, Folder } from 'lucide-react';
+import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, ChevronDown, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, ArrowUp, Download, House, Menu, Lock, Mic, Square } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { subscribeToPush, ensurePushSubscription, reconcilePushSubscription, disablePushSubscription, disableCurrentBrowserPushSubscription, getPushSubscriptionActive, getCurrentBrowserPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
 import { detectInstallPlatform, hasNativeInstallPrompt, isRunningStandalone, listenForPwaInstallation, promptNativeInstallation } from './lib/pwa';
@@ -19,6 +19,7 @@ import { TimezonePicker } from './components/timezone-picker';
 import FluidTabs from './components/sona/fluid-tabs';
 import { AnimatedDialog, AnimatedDialogContent, AnimatedDialogTitle, AnimatedDialogDescription, AnimatedDialogClose } from './components/sona/animated-dialog';
 import AnimatedSwitch from './components/sona/animated-switch';
+import FolderFloat from './components/FolderFloat/FolderFloat';
 import './components/sona/sona.css';
 import './premium-mobile.css';
 import { hasActiveAccess, type Entitlement } from './lib/payments';
@@ -576,7 +577,7 @@ function ConfigurationPanel({ user, onBack, onNavigate, onOpenNotifications }: {
 
 function Reader({ content: reader, onBack, onNavigate, favorite, onFavorite }: { content: ReaderContent; onBack: () => void; onNavigate: (target: NavTarget) => void; favorite: boolean; onFavorite: () => void }) {
   const libraryMode = reader.eyebrow === 'AUDIO' || reader.eyebrow === 'TEXTO';
-  return <section className={`reader-section${libraryMode ? ' library-reader-section' : ''}`}><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} onNavigate={onNavigate} /><article className="reader-body"><button className={`reader-favorite${favorite ? ' is-favorite' : ''}`} onClick={onFavorite}><Heart size={18} fill={favorite ? 'currentColor' : 'none'} />{reader.audioUrl && <AudioPlayer title={reader.title} audioUrl={reader.audioUrl} durationLabel={reader.duration} />}{reader.audios?.map((audio) => <AudioPlayer key={audio.label} title={audio.label} audioUrl={audio.url} />)}{reader.paragraphs.map((paragraph, index) => <p key={index}>{reader.highlightQuery ? highlightText(paragraph, reader.highlightQuery) : paragraph}</p>)}</article></section>;
+  return <section className={`reader-section${libraryMode ? ' library-reader-section' : ''}`}><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} onNavigate={onNavigate} /><article className="reader-body"><button className={`reader-favorite${favorite ? ' is-favorite' : ''}`} onClick={onFavorite}><Heart size={18} fill={favorite ? 'currentColor' : 'none'} /></button>{reader.audioUrl && <AudioPlayer title={reader.title} audioUrl={reader.audioUrl} durationLabel={reader.duration} />}{reader.audios?.map((audio) => <AudioPlayer key={audio.label} title={audio.label} audioUrl={audio.url} />)}{reader.paragraphs.map((paragraph, index) => <p key={index}>{reader.highlightQuery ? highlightText(paragraph, reader.highlightQuery) : paragraph}</p>)}</article></section>;
 }
 
 function AccountPanel({ user, fullName, onBack, onNavigate, onNameSaved, onLogout }: { user: User; fullName: string | null; onBack: () => void; onNavigate: (target: NavTarget) => void; onNameSaved: (name: string) => void; onLogout: () => void }) {
@@ -789,7 +790,6 @@ function extractConferenceYear(item: Record<string, unknown>): number | undefine
 function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggleFavorite }: { entries: LibraryEntry[]; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (entry: LibraryEntry, query?: string, mode?: 'audio' | 'text') => void; favorites: FavoriteRecord[]; onToggleFavorite: (favorite: FavoriteRecord) => void }) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<string | null>(null);
-  const [libraryFolderOpen, setLibraryFolderOpen] = useState(false);
   const visible = entries.filter((entry) => {
     const q = query.trim().toLocaleLowerCase();
     const matchesQuery = !q || (
@@ -859,17 +859,39 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
         </div>
         {filter && <button type="button" className="library-folders-back" onClick={() => { setFilter(null); setQuery(''); }}><ChevronLeft size={16} /> Biblioteca</button>}
       </section>
-      {!filter && !query && <div className={`library-master-folder${libraryFolderOpen ? ' is-open' : ''}`}>
-        <div className="library-master-folder-button">
-          <span className="library-master-items">
-            <button type="button" onClick={() => setFilter('Audios')}>Conferencias en audio</button>
-            <button type="button" onClick={() => setFilter('Libros en audio')}>Libros en audio</button>
-            <button type="button" onClick={() => setFilter('Libros en texto')}>Libros en texto</button>
-            <button type="button" onClick={() => setFilter('Conferencias')}>Conferencias en texto</button>
-          </span>
-          <button type="button" className="library-master-folder-shape" onClick={() => setLibraryFolderOpen((value) => !value)} aria-expanded={libraryFolderOpen} aria-label="Abrir contenidos de la biblioteca"><i /><Folder size={112} strokeWidth={1.0} /></button>
-          <strong>Biblioteca</strong><small>Tocá para ver el contenido</small>
-        </div>
+      {!filter && !query && <div className="library-folder-float-stage">
+        <FolderFloat
+          items={[
+            { label: 'Conferencias en audio', value: 'Audios' },
+            { label: 'Libros en audio', value: 'Libros en audio' },
+            { label: 'Libros en texto', value: 'Libros en texto' },
+            { label: 'Conferencias en texto', value: 'Conferencias' }
+          ]}
+          label="Biblioteca"
+          sublabel="4 contenidos"
+          trigger="click"
+          closeOnSelect
+          physics
+          drift={0.5}
+          onSelect={(value) => setFilter(value)}
+          folderColor="#3f3f46"
+          frontColor="#52525b"
+          paperColor="#f5f5f5"
+          itemColor="#f5f5f5"
+          itemTextColor="#18181b"
+          labelColor="#f5f5f5"
+          width={240}
+          height={178}
+          radius={17}
+          spread={190}
+          lift={42}
+          tilt={8}
+          flapAngle={34}
+          restAngle={16}
+          openDuration={520}
+          stagger={45}
+          bounce={0.3}
+        />
       </div>}
       {filter && !query && !/Libros/.test(filter) && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p><div className="library-content-list">{conferenceGroups.map((group) => <section key={group.label || 'all'} className="library-year-group is-open">{group.label && <div className="library-year-toggle"><span>{group.label}</span></div>}{group.entries.map((entry,index) => <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index*.025,.2)} className="library-content-card" onClick={() => onRead(entry, undefined, filter === 'Audios' ? 'audio' : 'text')}><div><p>{filter === 'Audios' ? 'Audio' : 'Texto'}</p><b className="card-title">{entry.title}</b>{filter === 'Audios' ? <em className="card-subtitle">Escuchar conferencia</em> : <em className="card-subtitle">{entry.excerpt || 'Abrir conferencia'}</em>}</div><span className="library-card-actions"><i>{filter === 'Audios' ? <Headphones size={19}/> : <ChevronRight size={19}/>}</i></span></MagicCard></div>)}</section>)}</div></>}
       {filter && /Libros/.test(filter) && !query && <p className="library-empty">Los libros se conectan después.</p>}

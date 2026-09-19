@@ -74,6 +74,8 @@ html:has(.library-section),body:has(.library-section),html:has(.library-reader-s
 .library-reader-section .reader-favorite,.library-reader-section .audio-player-card { background:#151517 !important; color:#f5f5f7 !important; border-color:#29292d !important; box-shadow:none !important; }
 .library-section .feature-header h1,.library-section .feature-header p,.library-section .feature-header span,.library-section .feature-header small { color:#f5f5f7 !important; }
 .library-section .library-browser { background:#09090a !important; border:0 !important; box-shadow:none !important; }
+.library-folder-float-stage { min-height:410px; display:flex; align-items:flex-end; justify-content:center; padding:150px 0 34px; overflow:visible; }
+.library-folder-float-stage .folder-float { flex:0 0 auto; }
 .library-section .search-input-pill { background:#1c1c1e !important; border-color:#343438 !important; }
 .library-section .search-input-pill input { color:#f5f5f7 !important; }
 .library-section .library-folder-card { background:#171719; border-color:#2c2c2f; color:#f5f5f7; box-shadow:none; }
