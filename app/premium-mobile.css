@@ -338,3 +338,21 @@ html:has(.profile-section), body:has(.profile-section), .app-shell:has(.profile-
   color:#f5f5f7 !important;
   border-color:#29292d !important;
 }
+
+/* Favoritos sobre fondo negro: icono/card sin superficie blanca. */
+.app-shell.section-app:not(.welcome-carousel-screen) .favorite-content-card > span:first-child,
+.app-shell.section-app:not(.welcome-carousel-screen) .favorite-content-card .card-image {
+  background:#1c1c1e !important;
+  border-color:#2c2c2e !important;
+  color:#f5f5f7 !important;
+}
+.app-shell.section-app:not(.welcome-carousel-screen) .favorite-content-card b,
+.app-shell.section-app:not(.welcome-carousel-screen) .favorite-content-card em {
+  color:#f5f5f7 !important;
+}
+.app-shell.section-app:not(.welcome-carousel-screen) .favorite-content-card em { color:#a1a1a6 !important; }
+.app-shell.section-app:not(.welcome-carousel-screen) .remove-favorite {
+  background:#1c1c1e !important;
+  border-color:#2c2c2e !important;
+  color:#f5f5f7 !important;
+}

@@ -552,7 +552,11 @@ function ProfileScreen({ user, items, showInstall, onInstall, onSelect, onBack, 
         drift={0.5}
         onSelect={(value) => {
           if (value === 'Mi avance') return;
-          if (value === 'Notificaciones') return void notifications.toggle();
+          if (value === 'Notificaciones') {
+            const item = items.find((candidate) => candidate.title === value);
+            if (item) onSelect(item);
+            return;
+          }
           const item = items.find((candidate) => candidate.title === value);
           if (item) onSelect(item);
         }}
