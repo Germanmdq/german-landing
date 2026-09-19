@@ -728,17 +728,26 @@ function splitAudiobookSections(body: string, chapters: AudiobookChapter[]) {
 }
 
 function AudiobookLibraryPanel({ entries, loading, error, onBack, onNavigate, onOpen }: { entries: AudiobookEntry[]; loading: boolean; error: string; onBack: () => void; onNavigate: (target: NavTarget) => void; onOpen: (entry: AudiobookEntry) => void }) {
+  const collectionTitles = ['Neville Anotaciones', 'Sinfonía de susurros', 'Florecer', 'El arte de imaginar', 'Sentir'];
+  const collection = collectionTitles.map((title, index) => entries.find((entry) => entry.title.toLocaleLowerCase('es').trim() === title.toLocaleLowerCase('es').trim()) ?? ({
+    id: `german-book-${index + 1}`,
+    slug: title.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+    title,
+    author: 'Germán González',
+    excerpt: 'Libro escrito y narrado por Germán.',
+    body: '',
+    chapters: []
+  } satisfies AudiobookEntry));
   return <section className="reader-section audiobook-library-section">
-    <FixedHeader eyebrow="AUDIOLIBROS DE GERMÁN" title="Libros para escuchar" subtitle="Libros completos narrados por Germán." onBack={onBack} onNavigate={onNavigate} />
+    <FixedHeader eyebrow="LIBROS DE GERMÁN" title="Escritos y narrados por Germán" subtitle="Cinco libros para leer y escuchar." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body audiobook-library">
       {loading && <p className="library-empty">Cargando audiolibros…</p>}
       {!loading && error && <p className="library-empty">No pudimos cargar los audiolibros. {error}</p>}
-      {!loading && !error && entries.map((entry, index) => <MagicCard key={entry.id} delay={Math.min(index * .04, .2)} className="audiobook-card" onClick={() => onOpen(entry)}>
+      {!loading && !error && collection.map((entry, index) => <MagicCard key={entry.id} delay={Math.min(index * .04, .2)} className="audiobook-card" onClick={() => onOpen(entry)}>
         <div className="audiobook-card-icon"><Headphones size={25} aria-hidden="true" /></div>
-        <div><small>AUDIOLIBRO</small><b>{entry.title}</b><span>{entry.author}</span><p>{entry.excerpt || 'Libro completo para escuchar y leer.'}</p></div>
+        <div><small>ESCRITO Y NARRADO POR GERMÁN</small><b>{entry.title}</b><span>{entry.author}</span><p>{entry.excerpt || 'Libro completo para leer y escuchar.'}</p></div>
         <ChevronRight size={20} aria-hidden="true" />
       </MagicCard>)}
-      {!loading && !error && !entries.length && <p className="library-empty">Todavía no hay audiolibros disponibles.</p>}
     </div>
   </section>;
 }
