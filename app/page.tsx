@@ -855,19 +855,19 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
         {filter && <button type="button" className="library-folders-back" onClick={() => { setFilter(null); setQuery(''); }}><ChevronLeft size={16} /> Biblioteca</button>}
       </section>
       {!filter && !query && <div className={`library-master-folder${libraryFolderOpen ? ' is-open' : ''}`}>
-        <button type="button" className="library-master-folder-button" onClick={() => setLibraryFolderOpen((value) => !value)} aria-expanded={libraryFolderOpen} aria-label="Abrir contenidos de la biblioteca">
+        <div className="library-master-folder-button">
           <span className="library-master-items" aria-hidden="true">
             {['Conferencias en audio','Libros en audio','Libros en texto','Conferencias en texto'].map((label,index) => <i key={label} style={{ '--item-index': index } as React.CSSProperties}>{label}</i>)}
           </span>
-          <span className="library-master-folder-shape"><i /><Folder size={78} strokeWidth={1.05} /></span>
+          <button type="button" className="library-master-folder-shape" onClick={() => setLibraryFolderOpen((value) => !value)} aria-expanded={libraryFolderOpen} aria-label="Abrir contenidos de la biblioteca"><i /><Folder size={78} strokeWidth={1.05} /></button>
           <strong>Biblioteca</strong><small>Tocá para ver el contenido</small>
-        </button>
-        {libraryFolderOpen && <div className="library-master-actions">
-          <button type="button" onClick={() => setFilter('Audios')}><Headphones size={18}/><span>Conferencias en audio</span><ChevronRight size={16}/></button>
-          <button type="button" onClick={() => setFilter('Libros en audio')}><Headphones size={18}/><span>Libros en audio</span><ChevronRight size={16}/></button>
-          <button type="button" onClick={() => setFilter('Libros en texto')}><BookOpen size={18}/><span>Libros en texto</span><ChevronRight size={16}/></button>
-          <button type="button" onClick={() => setFilter('Conferencias')}><BookOpen size={18}/><span>Conferencias en texto</span><ChevronRight size={16}/></button>
-        </div>}
+          {libraryFolderOpen && <span className="library-master-hitareas">
+            <button type="button" onClick={() => setFilter('Audios')} aria-label="Conferencias en audio" />
+            <button type="button" onClick={() => setFilter('Libros en audio')} aria-label="Libros en audio" />
+            <button type="button" onClick={() => setFilter('Libros en texto')} aria-label="Libros en texto" />
+            <button type="button" onClick={() => setFilter('Conferencias')} aria-label="Conferencias en texto" />
+          </span>}
+        </div>
       </div>}
       {filter && !query && !/Libros/.test(filter) && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p><div className="library-content-list">{conferenceGroups.map((group) => <section key={group.label || 'all'} className="library-year-group is-open">{group.label && <div className="library-year-toggle"><span>{group.label}</span></div>}{group.entries.map((entry,index) => <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index*.025,.2)} className="library-content-card" onClick={() => onRead(entry)}><div><p>{entry.type || 'Contenido'}</p><b className="card-title">{entry.title}</b><em className="card-subtitle">{entry.excerpt || 'Abrí para leer o escuchar.'}</em></div><span className="library-card-actions"><i><ChevronRight size={19}/></i></span></MagicCard></div>)}</section>)}</div></>}
       {filter && /Libros/.test(filter) && !query && <p className="library-empty">Los libros se conectan después.</p>}
