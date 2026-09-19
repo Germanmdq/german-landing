@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, ChevronDown, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, Download, House, Menu, Lock } from 'lucide-react';
+import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, ChevronDown, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, ArrowUp, Download, House, Menu, Lock, Mic, Square } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { subscribeToPush, ensurePushSubscription, reconcilePushSubscription, disablePushSubscription, disableCurrentBrowserPushSubscription, getPushSubscriptionActive, getCurrentBrowserPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
 import { detectInstallPlatform, hasNativeInstallPrompt, isRunningStandalone, listenForPwaInstallation, promptNativeInstallation } from './lib/pwa';
@@ -78,7 +78,7 @@ const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
   ] },
   audiolibros: { eyebrow: 'AUDIOLIBROS DE GERMÁN', title: 'Libros para escuchar', subtitle: 'Audiolibros narrados por Germán.', items: [] },
   consultas: { eyebrow: 'CONSULTAS', title: 'Hablemos de lo que te pasa', subtitle: 'Consultas para leer, escuchar y guardar.', items: [
-    { icon: '💬', title: 'Preguntar', detail: 'Próximamente.', tone: palette[0], disabled: true },
+    { icon: '💬', title: 'Preguntar', detail: 'Contame qué te está pasando.', tone: palette[0] },
     { icon: '🔊', title: 'Escuchar', detail: 'Próximamente.', tone: palette[1], disabled: true },
     { icon: '🔖', title: 'Guardadas', detail: 'Próximamente.', tone: palette[2], disabled: true },
   ] },
@@ -135,6 +135,56 @@ function DeckCard({ item, index, last, onClick, favorite, onFavorite }: { item: 
 
 function Deck({ items, onSelect, favorites, onToggleFavorite }: { items: DeckItem[]; onSelect: (item: DeckItem) => void; favorites: FavoriteRecord[]; onToggleFavorite: (favorite: FavoriteRecord) => void }) {
   return <div className="feature-list">{items.map((entry, index) => <DeckCard key={entry.title} item={entry} index={index} last={index === items.length - 1} onClick={() => onSelect(entry)} favorite={entry.reader ? favorites.some((favorite) => favorite.id === deckFavorite(entry).id) : undefined} onFavorite={entry.reader ? () => onToggleFavorite(deckFavorite(entry)) : undefined} />)}<div className="deck-end-space" aria-hidden="true" /></div>;
+}
+
+function PreguntamePanel({ onBack, onNavigate }: { onBack: () => void; onNavigate: (target: NavTarget) => void }) {
+  const [prompt, setPrompt] = useState('');
+  const [listening, setListening] = useState(false);
+  const [working, setWorking] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [notice, setNotice] = useState('');
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+
+  const toggleVoice = () => {
+    setNotice('');
+    if (listening) { setListening(false); return; }
+    const SpeechRecognitionCtor = (window as typeof window & { webkitSpeechRecognition?: new () => { lang: string; interimResults: boolean; continuous: boolean; start: () => void; stop: () => void; onresult: ((event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null } }).webkitSpeechRecognition;
+    if (!SpeechRecognitionCtor) { setNotice('El dictado no está disponible en este navegador. Podés escribir tu pregunta.'); return; }
+    const recognition = new SpeechRecognitionCtor();
+    recognition.lang = 'es-AR'; recognition.interimResults = false; recognition.continuous = false;
+    recognition.onresult = (event) => { const text = event.results[0]?.[0]?.transcript?.trim(); if (text) setPrompt((value) => value ? `${value} ${text}` : text); };
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => { setListening(false); setNotice('No pude escuchar bien. Probá de nuevo o escribilo.'); };
+    setListening(true); recognition.start();
+  };
+
+  const submit = () => {
+    if (!prompt.trim() || working) return;
+    setWorking(true); setElapsed(0); setNotice('');
+    timerRef.current = setInterval(() => setElapsed((value) => value + 1), 1000);
+    window.setTimeout(() => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null; setWorking(false);
+      setNotice('La caja de Preguntame ya está funcionando. Ahora conectamos tus respuestas para que Germán responda desde tu contenido.');
+    }, 1500);
+  };
+
+  return <section className="preguntame-panel">
+    <FixedHeader eyebrow="PREGUNTAME" title="¿Qué te está pasando?" subtitle="Escribilo o decímelo con tu voz." onBack={onBack} onNavigate={onNavigate} />
+    <div className="preguntame-stage">
+      <div className="preguntame-copy"><span>GERMÁN</span><h2>Contame.</h2><p>No hace falta que armes bien la pregunta. Decime qué te pasa como te salga.</p></div>
+      {listening && <button type="button" className="voice-pill is-listening" onClick={toggleVoice}><span className="voice-dot" /><span className="voice-bars" aria-hidden="true">{Array.from({ length: 14 }, (_, index) => <i key={index} />)}</span><b>Escuchando</b><Square size={14} fill="currentColor" /></button>}
+      {working && <div className="lattice-loader" role="status" aria-live="polite"><span className="lattice-grid">{Array.from({ length: 9 }, (_, index) => <i key={index} />)}</span><p>Buscando la mejor respuesta… <small>{elapsed}s</small></p></div>}
+      <div className={`prompt-bar${listening ? ' is-listening' : ''}`}>
+        <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} rows={1} placeholder="Preguntame lo que quieras…" aria-label="Tu pregunta" />
+        <div className="prompt-actions"><button type="button" className="prompt-mic" onClick={toggleVoice} aria-label={listening ? 'Detener dictado' : 'Dictar pregunta'}>{listening ? <Square size={16} fill="currentColor" /> : <Mic size={20} />}</button><button type="button" className="prompt-send" disabled={!prompt.trim() || working} onClick={submit} aria-label="Enviar pregunta"><ArrowUp size={20} strokeWidth={2.5} /></button></div>
+      </div>
+      {notice && <p className="preguntame-notice">{notice}</p>}
+      <div className="preguntame-suggestions"><button onClick={() => setPrompt('No puedo dejar de pensar en algo que pasó')}>No puedo dejar de pensar</button><button onClick={() => setPrompt('Tengo miedo de que algo salga mal')}>Tengo miedo</button><button onClick={() => setPrompt('¿Cómo vuelvo a sentirme seguro?')}>Quiero sentirme seguro</button></div>
+    </div>
+  </section>;
 }
 
 type NavTarget = 'home' | 'favorites' | 'biblioteca' | 'audiolibros' | 'meditaciones' | 'talleres' | 'propia' | 'consultas' | 'curso' | 'espacio' | 'configuracion' | 'notificaciones';
@@ -1452,6 +1502,7 @@ export default function App() {
   const [installPromptAvailable, setInstallPromptAvailable] = useState(false);
   const [standalone, setStandalone] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteRecord[]>([]);
+  const [preguntameOpen, setPreguntameOpen] = useState(false);
   const [libraryItems, setLibraryItems] = useState<LibraryEntry[]>([]);
   const [audiobookItems, setAudiobookItems] = useState<AudiobookEntry[]>([]);
   const [audiobooksLoading, setAudiobooksLoading] = useState(true);
@@ -1468,6 +1519,7 @@ export default function App() {
   }, [current, tab, trail]);
 
   const back = () => {
+    if (preguntameOpen) return setPreguntameOpen(false);
     if (selectedAudiobook) return setSelectedAudiobook(null);
     if (reader) return setReader(null);
     if (notificationsOpen) return setNotificationsOpen(false);
@@ -1489,6 +1541,7 @@ export default function App() {
     setAccountOpen(false);
     setFavoritesOpen(false);
     setWorkshopOpen(false);
+    setPreguntameOpen(false);
     setCourseOpen(false);
     setInteractiveBookOpen(false);
     setTrail([]);
@@ -1540,6 +1593,7 @@ export default function App() {
     if (selected.workshopPanel) return setWorkshopOpen(true);
     if (selected.title === 'Favoritos') return setFavoritesOpen(true);
     if (selected.title === 'Configuración') return setConfigurationOpen(true);
+    if (selected.title === 'Preguntar') return setPreguntameOpen(true);
     if (selected.children) setTrail((value) => [...value, selected]);
   };
 
@@ -1896,6 +1950,7 @@ export default function App() {
   if (workshopOpen) return <main className="app-shell app-main section-app"><WorkshopPanel user={session.user} program={programConfig} onBack={back} onNavigate={navigateTo} onRead={setReader} />{dock}</main>;
   if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (configurationOpen) return <main className="app-shell app-main section-app"><ConfigurationPanel user={session.user} onBack={back} onNavigate={navigateTo} onOpenNotifications={() => setNotificationsOpen(true)} />{dock}</main>;
+  if (preguntameOpen) return <main className="app-shell app-main section-app preguntame-shell"><PreguntamePanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'audiolibros' && !trail.length) {
     return <main className="app-shell app-main section-app"><AudiobookLibraryPanel entries={audiobookItems} loading={audiobooksLoading} error={audiobooksError} onBack={back} onNavigate={navigateTo} onOpen={setSelectedAudiobook} />{dock}</main>;
   }
