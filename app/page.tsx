@@ -147,32 +147,35 @@ function PreguntamePanel({ onBack, onNavigate }: { onBack: () => void; onNavigat
   const recognitionRef = useRef<{ stop: () => void } | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); recognitionRef.current?.stop(); recorderRef.current?.stop(); streamRef.current?.getTracks().forEach((track) => track.stop()); }, []);
 
   const toggleVoice = async () => {
     setNotice('');
-    if (listening) { recognitionRef.current?.stop(); recorderRef.current?.stop(); streamRef.current?.getTracks().forEach((track) => track.stop()); streamRef.current = null; setListening(false); return; }
-    type Recognition = { lang: string; interimResults: boolean; continuous: boolean; start: () => void; stop: () => void; onresult: ((event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null };
-    const speechWindow = window as typeof window & { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
-    const SpeechRecognitionCtor = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
-    if (!SpeechRecognitionCtor) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        streamRef.current = stream;
-        const recorder = new MediaRecorder(stream);
-        recorderRef.current = recorder;
-        recorder.onstop = () => { stream.getTracks().forEach((track) => track.stop()); streamRef.current = null; recorderRef.current = null; setListening(false); setNotice('El micrófono funciona. En iPhone esta versión de Safari no convierte la voz a texto; para transcribirla tenemos que enviar la grabación al servidor.'); };
-        recorder.start(); setListening(true); return;
-      } catch { setNotice('No pude acceder al micrófono. Permití el micrófono para esta app en el iPhone y probá de nuevo.'); return; }
-    }
-    const recognition = new SpeechRecognitionCtor();
-    recognitionRef.current = recognition;
-    recognition.lang = 'es-AR'; recognition.interimResults = false; recognition.continuous = false;
-    recognition.onresult = (event) => { const text = event.results[0]?.[0]?.transcript?.trim(); if (text) setPrompt((value) => value ? `${value} ${text}` : text); };
-    recognition.onend = () => { recognitionRef.current = null; setListening(false); };
-    recognition.onerror = () => { recognitionRef.current = null; setListening(false); setNotice('No pude acceder al micrófono. Revisá el permiso del micrófono para esta app y probá de nuevo.'); };
-    try { recognition.start(); setListening(true); } catch { recognitionRef.current = null; setNotice('No pude iniciar el micrófono. Probá de nuevo.'); }
+    if (listening) { recorderRef.current?.stop(); setListening(false); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream; chunksRef.current = [];
+      const mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : '';
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      recorderRef.current = recorder;
+      recorder.ondataavailable = (event) => { if (event.data.size) chunksRef.current.push(event.data); };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop()); streamRef.current = null; recorderRef.current = null; setListening(false);
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' }); chunksRef.current = [];
+        if (!blob.size) { setNotice('No pude registrar el audio. Probá de nuevo.'); return; }
+        setNotice('Transcribiendo…');
+        try {
+          const form = new FormData(); const extension = blob.type.includes('mp4') ? 'm4a' : 'webm'; form.append('audio', blob, `pregunta.${extension}`);
+          const response = await fetch('/api/transcribe', { method: 'POST', body: form }); const data = await response.json();
+          if (!response.ok) throw new Error(data?.error || 'No pude transcribir el audio.');
+          const text = String(data?.text || '').trim(); if (!text) throw new Error('No pude entender lo que dijiste.');
+          setPrompt((value) => value ? `${value} ${text}` : text); setNotice('');
+        } catch (error) { setNotice(error instanceof Error ? error.message : 'No pude transcribir el audio.'); }
+      };
+      recorder.start(); setListening(true);
+    } catch { setNotice('No pude acceder al micrófono. Permití el micrófono para esta app en el iPhone y probá de nuevo.'); }
   };
 
   const submit = () => {
