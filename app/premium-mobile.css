@@ -375,3 +375,23 @@ body:has(.app-shell.section-app:not(.welcome-carousel-screen)),
   background:#000 !important;
   border-color:#1c1c1e !important;
 }
+
+/* Excepcion: selector visual de Meditaciones para ahora va sobre blanco. */
+html:has(.meditaciones-photo-screen),
+body:has(.meditaciones-photo-screen),
+.app-shell.section-app.meditaciones-photo-screen,
+.app-shell.section-app.meditaciones-photo-screen .day-one-section {
+  background:#fff !important;
+  color:#18181b !important;
+}
+.app-shell.section-app.meditaciones-photo-screen .feature-header,
+.app-shell.section-app.meditaciones-photo-screen .feature-header h1,
+.app-shell.section-app.meditaciones-photo-screen .feature-header h2,
+.app-shell.section-app.meditaciones-photo-screen .feature-header button {
+  background:#fff !important;
+  color:#18181b !important;
+}
+.app-shell.section-app.meditaciones-photo-screen .feature-header > p,
+.app-shell.section-app.meditaciones-photo-screen .feature-header > small {
+  color:#6e6e73 !important;
+}
