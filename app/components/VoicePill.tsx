@@ -49,6 +49,8 @@ export interface VoicePillProps {
   ariaLabel?: string;
   onStart?: (info: { source: VoicePillSource }) => void;
   onStop?: (info: { reason: VoicePillStopReason; duration: number }) => void;
+  active?: boolean;
+  onToggle?: () => void;
   className?: string;
 }
 
@@ -243,6 +245,8 @@ const VoicePill: React.FC<VoicePillProps> = ({
   ariaLabel = 'Dictate',
   onStart,
   onStop,
+  active,
+  onToggle,
   className = ''
 }) => {
   const [listening, setListening] = useState(false);
@@ -408,6 +412,11 @@ const VoicePill: React.FC<VoicePillProps> = ({
     }
   };
   const onClick = (e: MouseEvent<HTMLButtonElement>) => {
+    if (onToggle) {
+      e.preventDefault();
+      onToggle();
+      return;
+    }
     if (e.detail === 0 && st.current.pointerId === null && !(e.nativeEvent as globalThis.PointerEvent).pointerType) {
       if (st.current.listening) end('key');
       else begin('key');
@@ -454,9 +463,9 @@ const VoicePill: React.FC<VoicePillProps> = ({
       type="button"
       disabled={disabled}
       aria-label={ariaLabel}
-      aria-pressed={listening}
+      aria-pressed={active ?? listening}
       className={`voice-pill${className ? ` ${className}` : ''}`}
-      data-state={listening ? 'listening' : 'idle'}
+      data-state={(active ?? listening) ? 'listening' : 'idle'}
       data-pressed={pressed ? '' : undefined}
       data-input={input}
       data-time={showTime ? '' : undefined}

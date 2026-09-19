@@ -237,3 +237,16 @@ html:has(.profile-section), body:has(.profile-section), .app-shell:has(.profile-
 .profile-section .feature-header h1, .profile-section .feature-header button { color:#f5f5f7 !important; }
 .profile-section .feature-header > p, .profile-section .feature-header > small { color:#c7c7cc !important; }
 .profile-section .reader-body { min-height:0; }
+
+/* Perfil: Branched Menu mas grande y centrado. */
+.profile-branched-stage .branched-menu {
+  --bm-w: 310px !important;
+  --bm-font: 17px !important;
+  --bm-row: 44px !important;
+  width: min(310px, 88vw) !important;
+  margin: 26px auto 0 !important;
+}
+.profile-branched-stage .branched-menu__head { font-size:18px !important; padding-block:12px !important; }
+
+/* Voice Pill es el control visual de reproduccion en todos los players. */
+.audio-voice-pill { flex:0 0 auto; }
