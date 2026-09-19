@@ -472,3 +472,15 @@ body:has(.meditaciones-photo-screen),
 }
 .audio-player-card::before,
 .audio-player-card::after { display:none !important; }
+
+/* Tu propia práctica: selectores principales en píldoras. */
+.propia-choice-pills { display:flex; gap:10px; margin:0 0 16px; }
+.propia-choice-pill {
+  flex:1 1 0; min-width:0; min-height:58px; padding:9px 13px;
+  display:grid; grid-template-columns:1fr auto; grid-template-rows:auto auto;
+  align-items:center; column-gap:6px; border:1px solid #2c2c2e;
+  border-radius:999px; background:#1c1c1e; color:#f5f5f7; text-align:left;
+}
+.propia-choice-pill span { grid-column:1; font-size:10px; color:#8e8e93; text-transform:uppercase; letter-spacing:.06em; }
+.propia-choice-pill b { grid-column:1; font-size:13px; font-weight:600; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.propia-choice-pill svg { grid-column:2; grid-row:1 / 3; color:#8e8e93; }

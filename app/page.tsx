@@ -1349,15 +1349,15 @@ function PropiaPracticaPanel({ user, onBack, onNavigate, onRead }: { user: User;
   return <section className="reader-section">
     <FixedHeader eyebrow="TU PROPIA PRÁCTICA" title="Creá tu recorrido" subtitle="Elegí qué practicar, cuánto tiempo y cuándo." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body">
+      <div className="propia-choice-pills">
+        <button type="button" className="propia-choice-pill" onClick={() => setEditingField('tema')} aria-haspopup="dialog">
+          <span>Tema</span><b>{tema || 'Elegir tema'}</b><ChevronDown size={17} />
+        </button>
+        <button type="button" className="propia-choice-pill" onClick={() => setEditingField('duracion')} aria-haspopup="dialog">
+          <span>Duración</span><b>{duracion || 'Elegir duración'}</b><ChevronDown size={17} />
+        </button>
+      </div>
       <div className="ios-card">
-        <button type="button" className="ios-row" onClick={() => setEditingField('tema')} aria-haspopup="dialog">
-          <span className="ios-row-label">Tema</span>
-          <span className={`ios-row-value${tema ? '' : ' ios-row-value--muted'}`}>{tema || 'Elegir'}<ChevronRight size={17} /></span>
-        </button>
-        <button type="button" className="ios-row" onClick={() => setEditingField('duracion')} aria-haspopup="dialog">
-          <span className="ios-row-label">Duración</span>
-          <span className={`ios-row-value${duracion ? '' : ' ios-row-value--muted'}`}>{duracion || 'Elegir'}<ChevronRight size={17} /></span>
-        </button>
         {needsSchedule && <button type="button" className="ios-row" onClick={() => setEditingField('frecuencia')} aria-haspopup="dialog">
           <span className="ios-row-label">Frecuencia</span>
           <span className="ios-row-value">{workshopIntervalLabel(frequency)}<ChevronRight size={17} /></span>
