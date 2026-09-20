@@ -106,14 +106,32 @@ function findNumberedMessageText(body: string, index: number): string | null {
   const blocks = body.split(/\n\s*\n/).map((block) => block.trim()).filter(Boolean);
   const pattern = new RegExp(`^0*${index}\\.\\s*`);
   const block = blocks.find((candidate) => pattern.test(candidate));
-  if (!block) return null;
-  const text = block.replace(pattern, '').trim();
-  return text || null;
+  if (block) {
+    const text = block.replace(pattern, '').trim();
+    return text || null;
+  }
+
+  // Algunos días históricos (por ejemplo Taller 40 · Día 7) guardan los
+  // mensajes como una lista de líneas después del separador `---`, sin
+  // numeración. En esos casos preservamos el orden y usamos la posición como
+  // message_index, en lugar de dejar de enviar todas las notificaciones.
+  const separator = body.lastIndexOf('\n---\n');
+  if (separator === -1) return null;
+  const unnumbered = body
+    .slice(separator + 5)
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !/^0*\d+\.\s+/.test(line));
+  return unnumbered[index - 1] || null;
 }
 
 function numberedMessageCount(body: string): number {
   const matches = [...body.matchAll(/(?:^|\n)\s*0*(\d+)\.\s+/g)];
-  return matches.reduce((max, match) => Math.max(max, Number(match[1]) || 0), 0);
+  const numbered = matches.reduce((max, match) => Math.max(max, Number(match[1]) || 0), 0);
+  if (numbered > 0) return numbered;
+  const separator = body.lastIndexOf('\n---\n');
+  if (separator === -1) return 0;
+  return body.slice(separator + 5).split('\n').map((line) => line.trim()).filter(Boolean).length;
 }
 
 // Calcula, para el momento actual, qué message_index (1-based) de mensajes
