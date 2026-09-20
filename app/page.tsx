@@ -1153,7 +1153,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
   };
 
   const openDelivery = (delivery: TallerDelivery) => {
-    onRead({ title: `Día ${delivery.dayNumber} · ${deliveryTypeLabels[delivery.deliveryType]}`, eyebrow: 'PRÁCTICA GUIADA', detail: `Recibido ${formatDeliveredAt(delivery.deliveredAt)}.`, paragraphs: delivery.paragraphs, audioUrl: delivery.audioUrl });
+    onRead({ title: `Día ${delivery.dayNumber} · ${deliveryTypeLabels[delivery.deliveryType]}`, eyebrow: 'PRÁCTICA GUIADA', detail: ``, paragraphs: [], audioUrl: delivery.audioUrl });
     if (!delivery.seenAt) {
       const seenAt = new Date().toISOString();
       setDeliveries((current) => current.map((item) => item.id === delivery.id ? { ...item, seenAt } : item));
