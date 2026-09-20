@@ -5,7 +5,7 @@ export const deliveryTypeLabels: Record<TallerDeliveryType, string> = {
   meditation_noon: 'Meditación del mediodía',
   meditation_afternoon: 'Meditación de la tarde',
   meditation_night: 'Meditación de la noche',
-  intermediate_message: 'Mensaje',
+  intermediate_message: 'Mensaje de Germán',
 };
 
 const deliveryMomentPatterns: Partial<Record<TallerDeliveryType, RegExp>> = {

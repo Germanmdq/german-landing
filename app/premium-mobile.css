@@ -553,3 +553,28 @@ body:has(.meditaciones-photo-screen),
   display:grid; place-items:center; background:#1c1c1e; color:#aeaeb2;
 }
 .library-controls.is-search-open .library-search-toolbar { padding:0 !important; }
+
+/* Taller 40 días: entregas como píldoras negras, no cards blancas. */
+.workshop-section .library-content-card {
+  min-height: 68px !important;
+  padding: 13px 18px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: #111113 !important;
+  color: #f5f5f7 !important;
+  box-shadow: none !important;
+  align-items: center !important;
+}
+.workshop-section .library-content-card p,
+.workshop-section .library-content-card b,
+.workshop-section .library-content-card em,
+.workshop-section .library-content-card span,
+.workshop-section .library-content-card i { color: #f5f5f7 !important; }
+
+/* Mi avance: progreso real del programa activo. */
+.progress-card { padding: 22px; border-radius: 26px; background: #111113; color: #f5f5f7; }
+.progress-card p { margin: 0 0 7px; color: #a1a1a6; font-size: 13px; }
+.progress-card b { display: block; font-size: 24px; letter-spacing: -.04em; }
+.progress-card small { display: block; margin-top: 9px; color: #a1a1a6; font-size: 12px; }
+.progress-track { height: 9px; margin-top: 18px; overflow: hidden; border-radius: 999px; background: #2c2c2e; }
+.progress-track span { display: block; height: 100%; border-radius: inherit; background: #f5f5f7; }

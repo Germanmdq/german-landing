@@ -111,6 +111,11 @@ function findNumberedMessageText(body: string, index: number): string | null {
   return text || null;
 }
 
+function numberedMessageCount(body: string): number {
+  const matches = [...body.matchAll(/(?:^|\n)\s*0*(\d+)\.\s+/g)];
+  return matches.reduce((max, match) => Math.max(max, Number(match[1]) || 0), 0);
+}
+
 // Calcula, para el momento actual, qué message_index (1-based) de mensajes
 // intermedios corresponde, dado el horario mañana/noche y el intervalo
 // elegido por el usuario. Devuelve null si "ahora" no cae cerca de ningún slot.
@@ -332,7 +337,18 @@ async function processIntermediateMessage(enrollment: ProgramEnrollmentRow, mess
   const dayContent = await getDayContent(enrollment.collection_id, enrollment.current_day);
   if (!dayContent) return;
   const messageText = findNumberedMessageText(dayContent.body || '', messageIndex);
-  if (!messageText) return; // no hay un mensaje #N para este día, no hay nada que mandar
+  if (!messageText) {
+    // No fallar en silencio: esto deja una señal inequívoca en los logs cuando
+    // un día se queda corto de mensajes respecto de la ventana configurada.
+    console.warn(JSON.stringify({
+      event: 'missing-intermediate-message',
+      enrollmentId: enrollment.id,
+      day: enrollment.current_day,
+      requestedIndex: messageIndex,
+      availableMessages: numberedMessageCount(dayContent.body || ''),
+    }));
+    return;
+  }
 
   const inserted = await reserveDelivery({
     enrollment_id: enrollment.id,

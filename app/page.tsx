@@ -84,7 +84,7 @@ const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
   espacio: { eyebrow: 'MI PERFIL', title: 'Tu espacio', subtitle: 'Tu cuenta y tus elecciones.', items: [
     { icon: '👤', title: 'Mi cuenta', detail: 'Nombre, mail, suscripción y acceso.', tone: palette[0], accountPanel: true },
     { icon: '⭐', title: 'Favoritos', detail: 'Prácticas, audios y lecturas guardadas.', tone: palette[1] },
-    { icon: '📈', title: 'Mi avance', detail: 'Próximamente.', tone: palette[2], disabled: true },
+    { icon: '📈', title: 'Mi avance', detail: 'Tu progreso en las prácticas guiadas.', tone: palette[2] },
     { icon: '🔔', title: 'Notificaciones', detail: 'Activá o desactivá los avisos.', tone: palette[3] },
   ] },
 });
@@ -523,7 +523,7 @@ function NotificationsPanel({ user, onBack, onNavigate }: { user: User; onBack: 
   </section>;
 }
 
-function ProfileScreen({ user, items, showInstall, onInstall, onSelect, onBack, onNavigate }: { user: User; items: DeckItem[]; showInstall: boolean; onInstall: () => void; onSelect: (item: DeckItem) => void; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
+function ProfileScreen({ user, items, showInstall, onInstall, onSelect, onBack, onNavigate, onOpenProgress }: { user: User; items: DeckItem[]; showInstall: boolean; onInstall: () => void; onSelect: (item: DeckItem) => void; onBack: () => void; onNavigate: (target: NavTarget) => void; onOpenProgress: () => void }) {
   const notifications = useNotificationsToggle(user);
   return <section className="reader-section profile-section">
     <FixedHeader eyebrow="MI PERFIL" title="Tu espacio" subtitle="Tu cuenta y tus elecciones." onBack={onBack} onNavigate={onNavigate} />
@@ -537,7 +537,7 @@ function ProfileScreen({ user, items, showInstall, onInstall, onSelect, onBack, 
         physics
         drift={0.5}
         onSelect={(value) => {
-          if (value === 'Mi avance') return;
+          if (value === 'Mi avance') { onOpenProgress(); return; }
           if (value === 'Notificaciones') {
             const item = items.find((candidate) => candidate.title === value);
             if (item) onSelect(item);
@@ -552,6 +552,23 @@ function ProfileScreen({ user, items, showInstall, onInstall, onSelect, onBack, 
       {notifications.error && <p className="account-message">{notifications.error}</p>}
     </div>
   </section>;
+}
+
+function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
+  const [progress, setProgress] = useState<{ title: string; currentDay: number; totalDays: number } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void supabase.from('program_enrollments').select('current_day,collections(title,slug)').eq('user_id', user.id).eq('status', 'active').maybeSingle().then(({ data }) => {
+      if (cancelled || !data) return;
+      const collection = data.collections as unknown as { title?: string; slug?: string } | null;
+      const slug = collection?.slug || '';
+      const totalDays = slug.includes('40') ? 40 : slug.includes('15') ? 15 : slug.includes('7') ? 7 : 40;
+      setProgress({ title: collection?.title || 'Práctica guiada', currentDay: data.current_day || 1, totalDays });
+    });
+    return () => { cancelled = true; };
+  }, [user.id]);
+  const pct = progress ? Math.min(100, Math.round((progress.currentDay / progress.totalDays) * 100)) : 0;
+  return <section className="reader-section profile-section"><FixedHeader eyebrow="MI PERFIL" title="Mi avance" subtitle="Tu recorrido actual." onBack={onBack} onNavigate={onNavigate} /><div className="reader-body progress-screen">{progress ? <div className="progress-card"><p>{progress.title}</p><b>Día {progress.currentDay} de {progress.totalDays}</b><div className="progress-track" aria-label={`${pct}% completado`}><span style={{ width: `${pct}%` }} /></div><small>{pct}% del recorrido</small></div> : <p className="library-empty">Todavía no tenés una práctica guiada activa.</p>}</div></section>;
 }
 
 function ConfigurationPanel({ user, onBack, onNavigate, onOpenNotifications }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void; onOpenNotifications: () => void }) {
@@ -1560,6 +1577,7 @@ export default function App() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [favoritesOpen, setFavoritesOpen] = useState(false);
   const [workshopOpen, setWorkshopOpen] = useState(false);
+  const [showProgress, setShowProgress] = useState(false);
   const [programConfig, setProgramConfig] = useState<ProgramPanelConfig>({ slug: 'taller-40-dias', title: 'Taller de 40 días', subtitle: 'Autoconcepto y control de la imaginación.' });
   const [courseOpen, setCourseOpen] = useState(false);
   const [interactiveBookOpen, setInteractiveBookOpen] = useState(false);
@@ -2022,7 +2040,8 @@ export default function App() {
     return <main className="app-shell app-main section-app"><AudiobookLibraryPanel entries={audiobookItems} loading={audiobooksLoading} error={audiobooksError} onBack={back} onNavigate={navigateTo} onOpen={setSelectedAudiobook} />{dock}</main>;
   }
   if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry, searchQuery, mode) => setReader({ title: entry.title, eyebrow: mode === 'audio' ? 'AUDIO' : mode === 'text' ? 'TEXTO' : entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: mode === 'audio' ? [] : cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: mode === 'text' ? undefined : entry.audioUrl, duration: entry.duration, highlightQuery: searchQuery })} />{dock}</main>;
-  if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} showInstall={!standalone} onInstall={() => { setInstallDismissed(false); setInstallOpen(true); }} onSelect={select} onBack={back} onNavigate={navigateTo} />{dock}</main>;
+  if (showProgress) return <main className="app-shell app-main section-app"><ProgressScreen user={session.user} onBack={() => setShowProgress(false)} onNavigate={navigateTo} />{dock}</main>;
+  if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} showInstall={!standalone} onInstall={() => { setInstallDismissed(false); setInstallOpen(true); }} onSelect={select} onBack={back} onNavigate={navigateTo} onOpenProgress={() => setShowProgress(true)} />{dock}</main>;
   if (tab === 'consultas' && !trail.length) return <main className="app-shell app-main section-app preguntame-shell"><PreguntamePanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'propia' && !trail.length) return <main className="app-shell app-main section-app"><PropiaPracticaPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} />{dock}</main>;
   if (tab === 'talleres' && !trail.length) return <main className="app-shell app-main section-app"><section className="reader-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><div className="reader-body guided-folder-stage"><FolderFloat items={screen.items.map((item) => ({ label: item.title, value: item.title }))} label="Prácticas guiadas" sublabel="3 recorridos" trigger="click" closeOnSelect physics drift={0.5} onSelect={(value) => { const item = screen.items.find((entry) => entry.title === value); if (item) select(item); }} folderColor="#3f3f46" frontColor="#52525b" paperColor="#f5f5f5" itemColor="#f5f5f5" itemTextColor="#18181b" labelColor="#f5f5f7" width={200} height={148} radius={14} spread={205} lift={52} tilt={8} flapAngle={34} restAngle={16} openDuration={520} stagger={45} bounce={0.3} /></div></section>{dock}</main>;
