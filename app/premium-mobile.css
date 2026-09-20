@@ -225,6 +225,19 @@ html:has(.preguntame-shell), body:has(.preguntame-shell) { background:#09090a !i
 .preguntame-suggestions { display:none; }
 .preguntame-shell .main-navigation-dock { border-top-color:#29292d !important; }
 
+/* iOS: cuando aparece el teclado, el viewport visual se achica. Mantener la
+   caja de pregunta accesible y quitar contenido decorativo antes que taparla. */
+@media (max-height: 620px) and (pointer: coarse) {
+  .preguntame-shell .feature-header { min-height:132px; padding-bottom:8px !important; }
+  .preguntame-shell .feature-header > p,
+  .preguntame-shell .feature-header > span,
+  .preguntame-shell .feature-header > small { display:none; }
+  .preguntame-shell .feature-header h1 { font-size:32px !important; margin-bottom:0 !important; }
+  .preguntame-stage { height:calc(100dvh - 132px - 82px - env(safe-area-inset-bottom)); padding-top:8px; padding-bottom:10px; grid-template-rows:1fr auto auto; }
+  .preguntame-copy { display:none; }
+  .prompt-bar { margin-bottom:4px; }
+}
+
 /* Perfil y subcategorias: lienzo negro completo. */
 html:has(.profile-section), body:has(.profile-section), .app-shell:has(.profile-section),
 .profile-section, .profile-section .feature-header, .profile-section .reader-body {

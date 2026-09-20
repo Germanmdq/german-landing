@@ -574,22 +574,22 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
 function ConfigurationPanel({ user, onBack, onNavigate, onOpenNotifications }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void; onOpenNotifications: () => void }) {
   const notifications = useNotificationsToggle(user);
   return <section className="reader-section">
-    <FixedHeader eyebrow="MI PERFIL" title="Configuración" subtitle="Avisos y horarios en tu dispositivo." onBack={onBack} onNavigate={onNavigate} />
+    <FixedHeader eyebrow="MI PERFIL" title="Configuración" subtitle="Preferencias de la aplicación." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body configuration-settings">
       <p className="settings-group-label">AVISOS</p>
       <div className="ios-card">
         <div className="ios-row"><span className="ios-row-label">Notificaciones push</span>{notifications.loading ? <span className="ios-toggle-placeholder" aria-hidden="true" /> : <ToggleSwitch checked={notifications.active} onChange={notifications.toggle} disabled={notifications.busy} label="Notificaciones push" />}</div>
-        <button type="button" className="ios-row" onClick={onOpenNotifications}><span className="ios-row-label">Horarios locales</span><span className="ios-row-value ios-row-value--muted"><ChevronRight size={17} /></span></button>
+        <button type="button" className="ios-row" onClick={onOpenNotifications}><span className="ios-row-label">Notificaciones</span><span className="ios-row-value ios-row-value--muted"><ChevronRight size={17} /></span></button>
       </div>
       {notifications.error && <p className="account-message" role="alert">{notifications.error}</p>}
-      <p className="settings-explanation">Esta preferencia se guarda en este dispositivo. Las entregas de un programa siguen los horarios que elegiste al comenzarlo.</p>
+      <p className="settings-explanation">Las entregas de cada práctica siguen los horarios que elegiste al comenzarla.</p>
     </div>
   </section>;
 }
 
 function Reader({ content: reader, onBack, onNavigate, favorite, onFavorite }: { content: ReaderContent; onBack: () => void; onNavigate: (target: NavTarget) => void; favorite: boolean; onFavorite: () => void }) {
   const libraryMode = reader.eyebrow === 'AUDIO' || reader.eyebrow === 'TEXTO';
-  return <section className={`reader-section${libraryMode ? ' library-reader-section' : ''}`}><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} onNavigate={onNavigate} /><article className="reader-body"><button className={`reader-favorite${favorite ? ' is-favorite' : ''}`} onClick={onFavorite}><Heart size={18} fill={favorite ? 'currentColor' : 'none'} /></button>{reader.audioUrl && <AudioPlayer title={reader.title} audioUrl={reader.audioUrl} durationLabel={reader.duration} />}{reader.audios?.map((audio) => <AudioPlayer key={audio.label} title={audio.label} audioUrl={audio.url} />)}{reader.paragraphs.map((paragraph, index) => <p key={index}>{reader.highlightQuery ? highlightText(paragraph, reader.highlightQuery) : paragraph}</p>)}</article></section>;
+  return <section className={`reader-section${libraryMode ? ' library-reader-section' : ''}`}><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} onNavigate={onNavigate} /><article className="reader-body"><button className={`reader-favorite${favorite ? ' is-favorite' : ''}`} onClick={onFavorite}><Heart size={18} fill={favorite ? 'currentColor' : 'none'} /></button>{reader.audioUrl && <AudioPlayer title={reader.title} audioUrl={reader.audioUrl} />}{reader.audios?.map((audio) => <AudioPlayer key={audio.label} title={audio.label} audioUrl={audio.url} />)}{reader.paragraphs.map((paragraph, index) => <p key={index}>{reader.highlightQuery ? highlightText(paragraph, reader.highlightQuery) : paragraph}</p>)}</article></section>;
 }
 
 function AccountPanel({ user, fullName, onBack, onNavigate, onNameSaved, onLogout }: { user: User; fullName: string | null; onBack: () => void; onNavigate: (target: NavTarget) => void; onNameSaved: (name: string) => void; onLogout: () => void }) {
@@ -635,7 +635,7 @@ function AccountPanel({ user, fullName, onBack, onNavigate, onNameSaved, onLogou
   </section>;
 }
 
-function AudioPlayer({ title, audioUrl, durationLabel }: { title: string; audioUrl: string; durationLabel?: string }) {
+function AudioPlayer({ title, audioUrl }: { title: string; audioUrl: string }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -654,7 +654,7 @@ function AudioPlayer({ title, audioUrl, durationLabel }: { title: string; audioU
   return <section className="audio-player-card">
     <audio ref={audioRef} src={audioUrl} preload="metadata" playsInline onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => { setPlaying(false); setProgress(0); }} onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)} onTimeUpdate={(event) => setProgress(event.currentTarget.currentTime)} />
     <VoicePill className="audio-voice-pill" size={40} mode="toggle" reactive="simulated" showTime waveform slideToCancel={false} onStart={() => { void audioRef.current?.play(); }} onStop={() => { audioRef.current?.pause(); }} ariaLabel={playing ? 'Pausar audio' : 'Escuchar audio'} />
-    <div className="audio-player-copy"><b>{title}</b>{durationLabel && <span>{durationLabel}</span>}</div>
+    <div className="audio-player-copy"><b>{title}</b></div>
   </section>;
 }
 
