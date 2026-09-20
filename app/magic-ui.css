@@ -483,7 +483,7 @@ button, input { font-family: inherit !important; }
 }
 .login-google-button span { flex: 1; text-align: left; }
 .login-google-button svg:last-child { color: #AEAEB2; flex-shrink: 0; }
-.login-google-button:hover { background: #E8E8E8; }
+@media (hover: hover) and (pointer: fine) { .login-google-button:hover { background: #E8E8E8; } }
 .login-google-button:active { transform: scale(.98); opacity: .85; }
 .login-google-button:disabled { opacity: .6; cursor: default; }
 
@@ -507,7 +507,7 @@ button, input { font-family: inherit !important; }
   box-shadow: none;
   transition: opacity .2s ease;
 }
-.btn-primary:hover { opacity: .85; }
+@media (hover: hover) and (pointer: fine) { .btn-primary:hover { opacity: .85; } }
 .btn-primary:active { transform: scale(.98); }
 .btn-primary:disabled { opacity: .5; cursor: default; }
 

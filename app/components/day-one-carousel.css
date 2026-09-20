@@ -217,7 +217,7 @@
 }
 .day-one-play { width: 56px; padding: 0; color: #1d1d1f; flex-shrink: 0; }
 .day-one-play svg { width: 56px; height: 56px; fill: currentColor; }
-.day-one-play:hover { background: rgba(223,223,227,.698); }
+@media (hover: hover) and (pointer: fine) { .day-one-play:hover { background: rgba(223,223,227,.698); } }
 .day-one-play:active { background: rgba(193,193,198,.654); }
 .day-one-dots { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 16px; max-width: calc(100cqw - 106px); overflow-x: auto; scrollbar-width: none; }
 .day-one-dots::-webkit-scrollbar { display: none; }

@@ -8,7 +8,16 @@ export const metadata: Metadata = {
   icons: { icon: '/images/german-welcome.png', apple: '/images/german-welcome.png' },
   appleWebApp: { capable: true, title: 'Germán Asistente', statusBarStyle: 'default' },
 };
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#D92D35' };
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  interactiveWidget: 'resizes-content',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#09090a' },
+  ],
+};
 export default function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" suppressHydrationWarning>
@@ -28,4 +37,3 @@ export default function Layout({ children }: Readonly<{ children: React.ReactNod
     </html>
   );
 }
-

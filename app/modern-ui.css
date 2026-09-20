@@ -14,7 +14,7 @@
 .magic-card { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 .magic-card::before { display: none; }
 .category-list, .feature-list, .reader-body { background: var(--ui-bg); scrollbar-width: thin; scroll-snap-type: none; }
-.category-card:hover, .library-content-card:hover, .favorite-content-card:hover { border-color: #d1a2a5; background: #fffafa; }
+@media (hover: hover) and (pointer: fine) { .category-card:hover, .library-content-card:hover, .favorite-content-card:hover { border-color: #d1a2a5; background: #fffafa; } }
 .category-card b { font-size: 24px; line-height: 1.13; }
 .category-card small, .feature-header > p, .gate-kicker { font-size: 12px; }
 .category-card em { font-size: 15px; line-height: 1.5; }
@@ -103,7 +103,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .ios-toggle.is-on .ios-toggle-thumb { transform: translateX(20px); }
 .workshop-notifications-warning { color: #8E8E93; font-size: 13px; line-height: 1.5; margin: 4px 0 20px; }
 .workshop-abandon { display: block; width: 100%; margin: 28px 0 8px; padding: 12px; border: 0; background: transparent; color: #8E8E93; font: inherit; font-size: 14px; text-decoration: underline; text-underline-offset: 4px; }
-.workshop-abandon:hover { color: #C42B35; }
+@media (hover: hover) and (pointer: fine) { .workshop-abandon:hover { color: #C42B35; } }
 .workshop-abandon:focus-visible { outline: 2px solid #C42B35; outline-offset: 2px; border-radius: 10px; }
 
 /* Confirmación de eliminar, estilo iOS: sheet desde abajo con blur. */
