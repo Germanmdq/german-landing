@@ -348,6 +348,8 @@ async function processMeditation(enrollment: ProgramEnrollmentRow, moment: Medit
     title: 'Mensaje de Germán',
     body: '',
     url: `/delivery/${inserted.id}`,
+    deliveryId: inserted.id,
+    tag: `delivery-${inserted.id}`,
     data: { type: deliveryType, day: enrollment.current_day },
   });
 
@@ -400,6 +402,8 @@ async function processIntermediateMessage(enrollment: ProgramEnrollmentRow, mess
     title: 'Mensaje de Germán',
     body: '',
     url: `/delivery/${inserted.id}`,
+    deliveryId: inserted.id,
+    tag: `delivery-${inserted.id}`,
     data: { type: 'intermediate_message', day: enrollment.current_day, index: messageIndex },
   });
 }
@@ -471,6 +475,8 @@ async function retrySingleDelivery(subscriptionId: string, deliveryId: string) {
     title: 'Mensaje de Germán',
     body: '',
     url: `/delivery/${delivery.id}`,
+    deliveryId: delivery.id,
+    tag: `delivery-${delivery.id}`,
     data: { type: deliveryType, day: delivery.day_number, retry: true },
   };
 

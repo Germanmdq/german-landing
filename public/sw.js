@@ -1,4 +1,4 @@
-const CACHE_NAME = 'german-app-v11';
+const CACHE_NAME = 'german-app-v12';
 const LAST_PUSH_CACHE = 'german-last-push-v1';
 
 self.addEventListener('install', () => self.skipWaiting());
@@ -14,13 +14,16 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
   const url = data.url || '/';
+  // Cada entrega debe ser una notificación distinta. Reutilizar siempre el
+  // mismo tag hace que iOS pueda reemplazar/coalescer avisos consecutivos.
+  const notificationTag = data.tag || `german-${data.deliveryId || Date.now()}`;
   event.waitUntil(Promise.all([
     caches.open(LAST_PUSH_CACHE).then((cache) => cache.put('/__last_push__', new Response(JSON.stringify({ url, at: Date.now() })))),
     self.registration.showNotification(data.title || 'Asistente Germán', {
       body: data.body || 'Germán te dejó una práctica.',
       icon: data.icon || '/images/german-welcome.png',
       badge: data.badge || '/images/german-welcome.png',
-      tag: data.tag || 'german-asistente',
+      tag: notificationTag,
       renotify: true,
       lang: 'es-AR',
       data: { url },
