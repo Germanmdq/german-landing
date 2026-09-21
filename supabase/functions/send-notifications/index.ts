@@ -353,18 +353,6 @@ async function retryRecentUnsentDeliveries(now: Date) {
   return { candidates: data?.length || 0, attempted, failed };
 }
 
-async function hasActiveDevice(userId: string) {
-  const { data, error } = await supabase
-    .from('push_subscriptions')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('is_active', true)
-    .limit(1)
-    .maybeSingle();
-  if (error) throw error;
-  return Boolean(data);
-}
-
 // --- Procesamiento de una suscripción ---------------------------------------
 
 async function processMeditation(enrollment: ProgramEnrollmentRow, moment: MeditationMoment, now: Date) {
@@ -466,7 +454,6 @@ async function processIntermediateMessage(enrollment: ProgramEnrollmentRow, mess
 
 async function processEnrollment(enrollment: ProgramEnrollmentRow, now: Date) {
   if (enrollment.status !== 'active' || !enrollment.timezone) return;
-  if (!await hasActiveDevice(enrollment.user_id)) return;
   const nowMinutes = localMinutesNow(now, enrollment.timezone);
 
   const moments: MeditationMoment[] = ['morning', 'noon', 'afternoon', 'night'];

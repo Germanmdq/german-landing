@@ -57,29 +57,12 @@ const deckFavorite = (item: DeckItem): FavoriteRecord => ({ id: `deck:${item.tit
 const libraryFavorite = (entry: LibraryEntry): FavoriteRecord => ({ id: `library:${entry.id}`, title: entry.title, detail: entry.excerpt || 'Biblioteca', icon: entry.audioUrl ? '🎙️' : '📖', tone: palette[0], reader: { title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration } });
 const touchContentProgress = (userId: string, contentKey: string, contentType: string, progress: Record<string, unknown> = {}) => { void supabase.from('user_content_progress').upsert({ user_id: userId, content_key: contentKey, content_type: contentType, progress, last_opened_at: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: 'user_id,content_key' }).then(({ error }) => { if (error) console.error('[progress] sync error:', error); }); };
 
-const planNodes: DeckItem[] = [
-  { icon: '💞', title: 'Amor y relaciones', detail: 'Recorrido completo de 7 días.', tone: palette[0], programPanel: { slug: 'practica-7-dias-amor', title: 'Amor y relaciones', subtitle: '7 días con meditaciones y mensajes intermedios.' } },
-  { icon: '💫', title: 'Dinero y trabajo', detail: 'Recorrido completo de 7 días.', tone: palette[1], programPanel: { slug: 'practica-7-dias-dinero', title: 'Dinero y trabajo', subtitle: '7 días con meditaciones y mensajes intermedios.' } },
-  { icon: '🌿', title: 'Salud y bienestar', detail: 'Recorrido completo de 7 días.', tone: palette[2], programPanel: { slug: 'practica-7-dias-salud', title: 'Salud y bienestar', subtitle: '7 días con meditaciones y mensajes intermedios.' } },
-];
-
-const emptyGuidedThemes = (): DeckItem[] => [
-  { icon: '💞', title: 'Amor y relaciones', detail: '', tone: palette[0], children: [] },
-  { icon: '💫', title: 'Dinero y trabajo', detail: '', tone: palette[1], children: [] },
-  { icon: '🌿', title: 'Salud y bienestar', detail: '', tone: palette[2], children: [] },
-];
-
-const sevenDayEmptyThemes = emptyGuidedThemes();
-const fifteenDayEmptyThemes = emptyGuidedThemes();
-const thirtyDayEmptyThemes = emptyGuidedThemes();
-
 const momentIcons = ['🎯', '🌬️', '🌙', '💬', '📰', '🧭', '🤍', '🌧️', '🎤', '🫶', '☀️', '🌆', '🛡️', '🙏', '✨'] as const;
 
 const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
   talleres: { eyebrow: 'PRÁCTICAS GUIADAS', title: 'Elegí una práctica', subtitle: 'Recorridos preparados para acompañarte paso a paso.', items: [
-    { icon: '🌱', title: 'Prácticas de 7 días', detail: 'Amor, salud y dinero.', tone: palette[0], children: sevenDayEmptyThemes },
-    { icon: '🌿', title: 'Prácticas de 15 días', detail: 'Amor, salud y dinero.', tone: palette[1], children: fifteenDayEmptyThemes },
-    { icon: '🪴', title: 'Prácticas de 30 días', detail: 'Amor, salud y dinero.', tone: palette[2], children: thirtyDayEmptyThemes },
+    { icon: '🌱', title: 'Práctica de 7 días', detail: 'Recorrido guiado de 7 días.', tone: palette[0], programPanel: { slug: 'practica-guiada-7-dias', title: 'Práctica guiada de 7 días', subtitle: 'Un recorrido preparado de principio a fin.' } },
+    { icon: '🌿', title: 'Práctica de 15 días', detail: 'Recorrido guiado de 15 días.', tone: palette[1], programPanel: { slug: 'practica-guiada-15-dias', title: 'Práctica guiada de 15 días', subtitle: 'Un recorrido preparado de principio a fin.' } },
     { icon: '🌳', title: 'Prácticas de 40 días', detail: 'Autoconcepto y control de la imaginación.', tone: palette[3], programPanel: { slug: 'taller-40-dias', title: 'Taller de 40 días', subtitle: 'Autoconcepto y control de la imaginación.' } },
   ] },
   // "Tu propia práctica" ya no es un deck navegable: es un formulario único
@@ -88,7 +71,7 @@ const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
   meditaciones: { eyebrow: 'MEDITACIONES', title: '¿Qué necesitás ahora?', subtitle: 'Elegí el momento y abrí directamente la práctica.', items: momentNodes },
   biblioteca: { eyebrow: 'PARA ESCUCHAR Y LEER', title: 'Tu biblioteca', subtitle: 'Contenido organizado por formato.', items: [
     { icon: '🎧', title: 'Meditaciones', detail: 'Prácticas disponibles para escuchar.', tone: palette[0], children: momentNodes },
-    { icon: '📖', title: 'Lecturas', detail: 'Frases organizadas dentro de cada recorrido.', tone: palette[1], children: planNodes },
+    { icon: '📖', title: 'Lecturas', detail: 'Lecturas y textos de la biblioteca.', tone: palette[1], children: [] },
     { icon: '🎙️', title: 'Conferencias', detail: 'Contenido pendiente de conectar.', tone: palette[2] },
   ] },
   audiolibros: { eyebrow: 'AUDIOLIBROS DE GERMÁN', title: 'Libros para escuchar', subtitle: 'Audiolibros narrados por Germán.', items: [] },
@@ -105,7 +88,7 @@ const mainCategories: Array<[Tab, string, string, string, string]> = [
   ['espacio', '👋', 'Mi perfil', 'Tu cuenta, favoritos y configuración.', palette[0]],
   ['biblioteca', '📚', 'Biblioteca', 'Audios, lecturas y conferencias.', palette[1]],
   ['audiolibros', '🎧', 'Audiolibros de Germán', 'Libros completos narrados por Germán.', palette[2]],
-  ['talleres', '✨', 'Prácticas guiadas', 'Recorridos de 7, 15, 30 y 40 días.', palette[2]],
+  ['talleres', '✨', 'Prácticas guiadas', 'Recorridos de 7, 15 y 40 días.', palette[2]],
   ['propia', '🧩', 'Tu propia práctica', 'Armá un camino para lo que hoy necesitás.', palette[3]],
   ['meditaciones', '🧘‍♂️', 'Meditaciones para ahora', 'Elegí una práctica según tu momento.', palette[0]],
   ['consultas', '💭', 'Consultas', 'Preguntá lo que te está pasando.', palette[1]],
@@ -557,21 +540,88 @@ function ProfileScreen({ user, items, showInstall, onInstall, onSelect, onBack, 
   </section>;
 }
 
+type ProgressDelivery = { enrollment_id: string; day_number: number; delivery_type: string; delivered_at: string; seen_at: string | null };
+type ProgressEnrollment = { id: string; status: 'active' | 'abandoned' | 'completed'; current_day: number; started_at: string; abandoned_at: string | null; completed_at: string | null; custom_config: Record<string, unknown> | null; collections: { title?: string; slug?: string } | null };
+
+function attentionFromDelivery(delivery: ProgressDelivery): 'Excelente' | 'Buena' | 'Mala' {
+  if (!delivery.seen_at) return 'Mala';
+  const minutes = (new Date(delivery.seen_at).getTime() - new Date(delivery.delivered_at).getTime()) / 60000;
+  if (minutes <= 5) return 'Excelente';
+  if (minutes <= 10) return 'Buena';
+  return 'Mala';
+}
+
+function practiceDuration(enrollment: ProgressEnrollment): number {
+  const customDuration = typeof enrollment.custom_config?.duracion === 'string' ? enrollment.custom_config.duracion : '';
+  const customMatch = customDuration.match(/(7|15|30)/);
+  if (customMatch) return Number(customMatch[1]);
+  const slug = enrollment.collections?.slug || '';
+  if (slug.includes('40')) return 40;
+  if (slug.includes('30')) return 30;
+  if (slug.includes('15')) return 15;
+  if (slug.includes('7')) return 7;
+  return Math.max(1, enrollment.current_day);
+}
+
+function progressStatusLabel(status: ProgressEnrollment['status']) {
+  if (status === 'completed') return 'Terminada';
+  if (status === 'abandoned') return 'Abandonada';
+  return 'Activa';
+}
+
 function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
-  const [progress, setProgress] = useState<{ title: string; currentDay: number; totalDays: number } | null>(null);
+  const [history, setHistory] = useState<ProgressEnrollment[]>([]);
+  const [deliveries, setDeliveries] = useState<ProgressDelivery[]>([]);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     let cancelled = false;
-    void supabase.from('program_enrollments').select('current_day,collections(title,slug)').eq('user_id', user.id).eq('status', 'active').maybeSingle().then(({ data }) => {
-      if (cancelled || !data) return;
-      const collection = data.collections as unknown as { title?: string; slug?: string } | null;
-      const slug = collection?.slug || '';
-      const totalDays = slug.includes('40') ? 40 : slug.includes('15') ? 15 : slug.includes('7') ? 7 : 40;
-      setProgress({ title: collection?.title || 'Práctica guiada', currentDay: data.current_day || 1, totalDays });
+    setLoading(true);
+    void Promise.all([
+      supabase.from('program_enrollments').select('id,status,current_day,started_at,abandoned_at,completed_at,custom_config,collections(title,slug)').eq('user_id', user.id).order('started_at', { ascending: false }),
+      supabase.from('taller_deliveries').select('enrollment_id,day_number,delivery_type,delivered_at,seen_at').eq('user_id', user.id).order('delivered_at', { ascending: false }).limit(1000),
+    ]).then(([enrollmentsResult, deliveriesResult]) => {
+      if (cancelled) return;
+      if (enrollmentsResult.error) console.error('[progress] enrollments:', enrollmentsResult.error);
+      if (deliveriesResult.error) console.error('[progress] deliveries:', deliveriesResult.error);
+      setHistory((enrollmentsResult.data || []) as unknown as ProgressEnrollment[]);
+      setDeliveries((deliveriesResult.data || []) as ProgressDelivery[]);
+      setLoading(false);
+    }).catch((error) => {
+      if (!cancelled) { console.error('[progress] history:', error); setLoading(false); }
     });
     return () => { cancelled = true; };
   }, [user.id]);
-  const pct = progress ? Math.min(100, Math.round((progress.currentDay / progress.totalDays) * 100)) : 0;
-  return <section className="reader-section profile-section"><FixedHeader eyebrow="MI PERFIL" title="Mi avance" subtitle="Tu recorrido actual." onBack={onBack} onNavigate={onNavigate} /><div className="reader-body progress-screen">{progress ? <div className="progress-card"><p>{progress.title}</p><b>Día {progress.currentDay} de {progress.totalDays}</b><div className="progress-track" aria-label={`${pct}% completado`}><span style={{ width: `${pct}%` }} /></div><small>{pct}% del recorrido</small></div> : <p className="library-empty">Todavía no tenés una práctica guiada activa.</p>}</div></section>;
+
+  return <section className="reader-section profile-section">
+    <FixedHeader eyebrow="MI PERFIL" title="Mi avance" subtitle="Historial de tus prácticas y tus entregas." onBack={onBack} onNavigate={onNavigate} />
+    <div className="reader-body progress-screen">
+      {loading && <p className="library-empty">Cargando tu historial…</p>}
+      {!loading && !history.length && <p className="library-empty">Todavía no tenés prácticas en tu historial.</p>}
+      {!loading && history.map((enrollment) => {
+        const totalDays = practiceDuration(enrollment);
+        const pct = enrollment.status === 'completed' ? 100 : Math.min(100, Math.round((enrollment.current_day / totalDays) * 100));
+        const ownDeliveries = deliveries.filter((delivery) => delivery.enrollment_id === enrollment.id);
+        const customTopic = typeof enrollment.custom_config?.tema === 'string' ? enrollment.custom_config.tema : '';
+        const customDuration = typeof enrollment.custom_config?.duracion === 'string' ? enrollment.custom_config.duracion : '';
+        const title = customTopic ? `${customTopic} · ${customDuration}` : enrollment.collections?.title || 'Práctica';
+        return <article className="progress-card" key={enrollment.id}>
+          <p>{title}</p>
+          <b>{progressStatusLabel(enrollment.status)} · Día {Math.min(enrollment.current_day, totalDays)} de {totalDays}</b>
+          <small>Comenzó {new Date(enrollment.started_at).toLocaleDateString('es-AR')}</small>
+          <div className="progress-track" aria-label={`${pct}% del recorrido`}><span style={{ width: `${pct}%` }} /></div>
+          <small>{pct}% del recorrido</small>
+          {ownDeliveries.length > 0 && <div className="progress-delivery-history">
+            {ownDeliveries.map((delivery, index) => {
+              const attention = attentionFromDelivery(delivery);
+              const sent = new Date(delivery.delivered_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+              const opened = delivery.seen_at ? new Date(delivery.seen_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : 'No abierta';
+              return <p key={`${delivery.delivered_at}-${index}`}><strong>Día {delivery.day_number}</strong> · Enviada {sent} · Abierta {opened} · <b>{attention}</b></p>;
+            })}
+          </div>}
+        </article>;
+      })}
+    </div>
+  </section>;
 }
 
 function ConfigurationPanel({ user, onBack, onNavigate, onOpenNotifications }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void; onOpenNotifications: () => void }) {
@@ -1398,10 +1448,10 @@ function OptionSheet({ title, options, value, onCancel, onSave }: { title: strin
   </dialog>;
 }
 
-type PropiaTema = 'Amor y relaciones' | 'Dinero y trabajo' | 'Salud y bienestar' | 'Imaginación';
-const propiaTemaOptions: PropiaTema[] = ['Amor y relaciones', 'Dinero y trabajo', 'Salud y bienestar', 'Imaginación'];
-type PropiaDuracion = 'Una práctica' | '7 días' | '15 días' | '40 días';
-const propiaDuracionOptions: PropiaDuracion[] = ['Una práctica', '7 días', '15 días', '40 días'];
+type PropiaTema = 'Amor y relaciones' | 'Dinero y trabajo' | 'Salud y bienestar';
+const propiaTemaOptions: PropiaTema[] = ['Amor y relaciones', 'Dinero y trabajo', 'Salud y bienestar'];
+type PropiaDuracion = '7 días' | '15 días' | '30 días';
+const propiaDuracionOptions: PropiaDuracion[] = ['7 días', '15 días', '30 días'];
 type PropiaEditingField = 'tema' | 'duracion' | 'frecuencia' | null;
 
 function PropiaPracticaPanel({ user, onBack, onNavigate, onRead }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (reader: ReaderContent) => void }) {
@@ -1418,7 +1468,7 @@ function PropiaPracticaPanel({ user, onBack, onNavigate, onRead }: { user: User;
   const [message, setMessage] = useState('');
   const [confirmed, setConfirmed] = useState(false);
 
-  const needsSchedule = duracion === '7 días' || duracion === '15 días' || duracion === '40 días';
+  const needsSchedule = Boolean(duracion);
 
   const submit = async () => {
     const nextErrors: { tema?: string; duracion?: string } = {};
@@ -1902,6 +1952,9 @@ export default function App() {
         setFullName(inserted?.full_name ?? null);
       } else {
         setFullName(profile.full_name ?? null);
+        void supabase.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('id', user.id).then(({ error: seenError }) => {
+          if (seenError) console.error('Error al actualizar última actividad:', seenError);
+        });
       }
     } catch (err) {
       console.error('Error en syncProfile:', err);
