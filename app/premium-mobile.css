@@ -358,6 +358,33 @@ html:has(.profile-section), body:has(.profile-section), .app-shell:has(.profile-
   border-color:#29292d !important;
 }
 
+/* Contraste global de interiores oscuros: ningún título/label hereda tinta de tema claro. */
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body h1,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body h2,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body h3,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body b,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body strong,
+.app-shell.section-app:not(.welcome-carousel-screen) .ios-card .ios-row-label,
+.app-shell.section-app:not(.welcome-carousel-screen) .subscription-card b,
+.app-shell.section-app:not(.welcome-carousel-screen) .library-card-copy h3,
+.app-shell.section-app:not(.welcome-carousel-screen) .library-card-copy b {
+  color:#f5f5f7 !important;
+}
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body p,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body small,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body span,
+.app-shell.section-app:not(.welcome-carousel-screen) .workshop-hint,
+.app-shell.section-app:not(.welcome-carousel-screen) .workshop-notifications-warning {
+  color:#d1d1d6;
+}
+.app-shell.section-app:not(.welcome-carousel-screen) .ios-row-value--muted { color:#d1d1d6 !important; }
+.app-shell.section-app:not(.welcome-carousel-screen) .delivery-seen { color:#d1d1d6 !important; }
+
+/* Los controles de configuración del taller son píldoras oscuras. */
+.app-shell.section-app:not(.welcome-carousel-screen) .workshop-pills-card { background:transparent !important; border:0 !important; padding:0 !important; }
+.app-shell.section-app:not(.welcome-carousel-screen) .workshop-pill { background:#1c1c1e; color:#f5f5f7; border-color:#2c2c2e; border-radius:999px; }
+.app-shell.section-app:not(.welcome-carousel-screen) .workshop-pill.active { background:#b4232f; color:#fff; border-color:#b4232f; }
+
 /* Favoritos sobre fondo negro: icono/card sin superficie blanca. */
 .app-shell.section-app:not(.welcome-carousel-screen) .favorite-content-card > span:first-child,
 .app-shell.section-app:not(.welcome-carousel-screen) .favorite-content-card .card-image {
