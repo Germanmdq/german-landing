@@ -713,7 +713,7 @@ function AudiobookLibraryPanel({ entries, loading, error, onBack, onNavigate, on
   const collectionTitles = ['Revisión — Cambiar el pasado desde el presente', 'Persistir — Hasta que se vuelva natural', 'Vivir desde el final', 'La imaginación aplicada', 'El arte de asumir'];
   const revisionChapters: AudiobookChapter[] = [
     'Prólogo', 'Qué es la revisión', 'El perdón real', 'Cómo funciona', 'El método paso a paso', 'La revisión diaria', 'Revisión de eventos lejanos', 'Revisar por otros', 'Los muebles de tu mente', 'La carta que no querés recibir', 'Revisar las conversaciones internas', 'Errores comunes', 'Revisión y relaciones', 'La revisión y la salud', 'Revisión instantánea', 'La libertad está en el perdón'
-  ].map((title, index) => ({ title, anchor: index === 0 ? 'prologo' : `capitulo-${index}`, order: index + 1 }));
+  ].map((title, index) => ({ title, anchor: index === 0 ? 'prologo' : `capitulo-${index}`, order: index }));
   const revisionPrologue = `Prólogo\n\nHay cosas que creemos terminadas simplemente porque ya ocurrieron. Una conversación que salió mal, una decisión que todavía lamentamos, una noticia que no queríamos recibir, una relación que tomó un rumbo distinto al que deseábamos. Las llamamos pasado y suponemos que, precisamente por pertenecer al pasado, ya no podemos hacer nada con ellas.\n\nPero seguimos llevándolas con nosotros.\n\nLas recordamos, hablamos de ellas, reaccionamos emocionalmente ante ellas y, muchas veces sin advertirlo, continuamos dándoles vida en nuestra imaginación.\n\nLa revisión parte de una idea completamente diferente: lo ocurrido no tiene por qué seguir determinando lo que viene.\n\nRevisar no significa negar una experiencia ni fingir que nunca sucedió. Significa dejar de aceptar como definitiva la versión que seguimos reproduciendo interiormente. Es volver a una escena y darle, en la imaginación, el desenlace que hubiéramos querido vivir.\n\nNeville Goddard convirtió esta práctica en una de las aplicaciones más profundas de la Ley de Asunción. No como un ejercicio ocasional, sino como una manera diferente de relacionarnos con nuestra propia historia.\n\nPorque aquello que mantenemos vivo interiormente continúa teniendo consecuencias. Y aquello que somos capaces de transformar en nuestra imaginación deja de ocupar el mismo lugar dentro de nosotros.\n\nEste libro está dedicado enteramente a esa práctica.\n\nA comprender qué significa revisar, cómo hacerlo, cómo aplicarlo a acontecimientos recientes y lejanos, a nuestras relaciones, a nuestras conversaciones internas y a esas experiencias que todavía parecen acompañarnos muchos años después.\n\nNo podemos volver físicamente a ayer.\n\nPero podemos decidir qué versión de ayer llevamos con nosotros hacia mañana.\n\nY ahí comienza la revisión.\n\n${revisionChapters.slice(1).map((chapter) => chapter.title).join('\n\n')}`;
   const collection = collectionTitles.map((title, index) => {
     const existing = entries.find((entry) => entry.title.toLocaleLowerCase('es').trim() === title.toLocaleLowerCase('es').trim());
@@ -763,15 +763,15 @@ function AudiobookReader({ book, onBack, onNavigate }: { book: AudiobookEntry; o
     <article className="reader-body audiobook-reader">
       {book.audioUrl ? <AudiobookPlayer title={book.title} author={book.author} audioUrl={book.audioUrl} durationSeconds={book.durationSeconds} /> : null}
       <section className="audiobook-index" aria-labelledby="audiobook-chapters-title">
-        <div className="audiobook-section-title"><small>ÍNDICE</small><h2 id="audiobook-chapters-title">Capítulos</h2><span>{book.chapters.length} secciones</span></div>
+        <div className="audiobook-section-title"><small>ÍNDICE</small><h2 id="audiobook-chapters-title">Capítulos</h2><span>{book.chapters.length > 0 && book.chapters[0]?.anchor === 'prologo' ? `${book.chapters.length - 1} capítulos + prólogo` : `${book.chapters.length} capítulos`}</span></div>
         <nav aria-label="Capítulos de Sinfonía de susurros">
-          {book.chapters.map((chapter) => <button type="button" key={chapter.anchor} onClick={() => goToChapter(chapter.anchor)}><span>{String(chapter.order).padStart(2, '0')}</span><b>{chapter.title}</b><ChevronDown size={17} aria-hidden="true" /></button>)}
+          {book.chapters.map((chapter) => <button type="button" key={chapter.anchor} onClick={() => goToChapter(chapter.anchor)}><span>{chapter.anchor === 'prologo' ? '—' : String(chapter.order).padStart(2, '0')}</span><b>{chapter.anchor === 'prologo' ? 'Prólogo' : `Capítulo ${chapter.order} — ${chapter.title}`}</b><ChevronDown size={17} aria-hidden="true" /></button>)}
         </nav>
       </section>
       <section className="audiobook-text" aria-label={`Texto completo de ${book.title}`}>
         {sections.map((section) => <section key={section.anchor} id={`chapter-${section.anchor}`} className="audiobook-chapter">
-          <small>SECCIÓN {String(section.order).padStart(2, '0')}</small>
-          <h2>{section.title}</h2>
+          <small>{section.anchor === 'prologo' ? 'PRÓLOGO' : `CAPÍTULO ${section.order}`}</small>
+          <h2>{section.anchor === 'prologo' ? 'Prólogo' : section.title}</h2>
           {section.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
         </section>)}
       </section>
