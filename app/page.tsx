@@ -488,20 +488,10 @@ function NotificationsPanel({ user, onBack, onNavigate }: { user: User; onBack: 
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [permissionMessage, setPermissionMessage] = useState('');
   const [permissionBusy, setPermissionBusy] = useState(false);
-  const [editingTime, setEditingTime] = useState<'morning' | 'noon' | 'afternoon' | 'night' | null>(null);
-  const timeLabels = { morning: 'Mañana', noon: 'Mediodía', afternoon: 'Tarde', night: 'Noche' };
-  const [times, setTimes] = useState({ morning: '07:50', noon: '12:30', afternoon: '17:00', night: '22:45' });
   useEffect(() => {
     if (!('Notification' in window)) setPermission('unsupported');
     else setPermission(Notification.permission);
-    const stored = localStorage.getItem('german-notification-times');
-    if (stored) setTimes(JSON.parse(stored));
   }, []);
-  const updateTime = (key: keyof typeof times, value: string) => {
-    const next = { ...times, [key]: value };
-    setTimes(next);
-    localStorage.setItem('german-notification-times', JSON.stringify(next));
-  };
   const requestPermission = async () => {
     if (!('Notification' in window)) return;
     setPermissionBusy(true);
@@ -512,13 +502,12 @@ function NotificationsPanel({ user, onBack, onNavigate }: { user: User; onBack: 
     if (result.error) setPermissionMessage(result.error);
   };
   return <section className="reader-section profile-section">
-    <FixedHeader eyebrow="NOTIFICACIONES" title="Horarios locales" subtitle="Esta preferencia se guarda en este dispositivo." onBack={onBack} onNavigate={onNavigate} />
+    <FixedHeader eyebrow="MI PERFIL" title="Notificaciones" subtitle="Permiso de avisos en este dispositivo." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body notification-settings">
       {permission !== 'unsupported' && <ShimmerButton className="notification-permission" onClick={requestPermission} disabled={permissionBusy || permission === 'denied'}><Bell size={18} />{permissionBusy ? 'Activando…' : permission === 'granted' ? 'Notificaciones activadas' : permission === 'denied' ? 'Permiso bloqueado en el navegador' : 'Activar notificaciones'}</ShimmerButton>}
       {permission === 'denied' && <p className="notification-help">Para activarlas, habilitá las notificaciones de Germán desde los Ajustes de tu teléfono y volvé a abrir la app.</p>}
       {permissionMessage && <p className="account-message" role="alert">{permissionMessage}</p>}
-      {(Object.keys(timeLabels) as (keyof typeof times)[]).map((key) => <button key={key} className="notification-time-row" onClick={() => setEditingTime(key)} aria-label={`Cambiar horario de ${timeLabels[key]}: ${times[key]}`} aria-haspopup="dialog"><span>{timeLabels[key]}</span><span className="notification-time-value">{times[key]}<ChevronRight size={17} /></span></button>)}
-      {editingTime && <TimePicker label={timeLabels[editingTime]} value={times[editingTime]} onCancel={() => setEditingTime(null)} onSave={(value) => { updateTime(editingTime, value); setEditingTime(null); }} />}
+      <p className="notification-help">Los horarios se configuran dentro de cada práctica activa.</p>
     </div>
   </section>;
 }
