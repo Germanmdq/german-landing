@@ -370,9 +370,8 @@ html:has(.profile-section), body:has(.profile-section), .app-shell:has(.profile-
 .app-shell.section-app:not(.welcome-carousel-screen) .library-card-copy b {
   color:#f5f5f7 !important;
 }
-.app-shell.section-app:not(.welcome-carousel-screen) .reader-body p,
-.app-shell.section-app:not(.welcome-carousel-screen) .reader-body small,
-.app-shell.section-app:not(.welcome-carousel-screen) .reader-body span,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body > p,
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body > small,
 .app-shell.section-app:not(.welcome-carousel-screen) .workshop-hint,
 .app-shell.section-app:not(.welcome-carousel-screen) .workshop-notifications-warning {
   color:#d1d1d6;
