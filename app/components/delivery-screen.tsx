@@ -58,7 +58,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     void (async () => {
       const { data: row, error: queryError } = await supabase
         .from('taller_deliveries')
-        .select('id,user_id,day_number,delivery_type,message_index,content_id,asset_id,delivered_at,seen_at,content_items(title,body),content_assets(source_url)')
+        .select('id,user_id,day_number,delivery_type,message_index,content_id,asset_id,delivered_at,seen_at,content_items(title,body),content_assets(source_url,storage_path)')
         .eq('id', deliveryId)
         .eq('user_id', session.user.id)
         .maybeSingle();
@@ -68,10 +68,15 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
         return;
       }
       const item = row.content_items as unknown as { title: string; body: string } | null;
-      const asset = row.content_assets as unknown as { source_url: string } | null;
+      const asset = row.content_assets as unknown as { source_url: string; storage_path?: string } | null;
+      const audioUrl = asset?.source_url && !asset.source_url.startsWith('storage://')
+        ? asset.source_url
+        : asset?.storage_path
+          ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/${asset.storage_path}`
+          : undefined;
       const deliveryType = row.delivery_type as TallerDeliveryType;
       const paragraphs = extractDeliveryParagraphs(item?.body || '', deliveryType, row.message_index);
-      if (!paragraphs?.length && !asset?.source_url) {
+      if (!paragraphs?.length && !audioUrl) {
         const reason = deliveryType === 'intermediate_message'
           ? `No encontramos el mensaje numerado ${row.message_index ?? 'sin índice'} dentro del contenido asociado.`
           : 'No encontramos texto ni audio para esta entrega.';
@@ -84,7 +89,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
         title: item?.title || deliveryTypeLabels[deliveryType],
         deliveredAt: row.delivered_at,
         paragraphs: paragraphs || [],
-        audioUrl: asset?.source_url,
+        audioUrl,
       });
       if (!row.seen_at) {
         const { error: seenError } = await supabase.from('taller_deliveries').update({ seen_at: new Date().toISOString() }).eq('id', row.id).eq('user_id', session.user.id);

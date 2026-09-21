@@ -1055,7 +1055,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
         console.log('[workshop] buscando taller_deliveries…');
         const { data: deliveryRows, error: deliveryError } = await supabase
           .from('taller_deliveries')
-          .select('id,day_number,delivery_type,delivered_at,seen_at,message_index,content_items(title,body),content_assets(source_url)')
+          .select('id,day_number,delivery_type,delivered_at,seen_at,message_index,content_items(title,body),content_assets(source_url,storage_path)')
           .eq('enrollment_id', enrollment.id)
           .order('delivered_at', { ascending: false });
         if (cancelled) return;
@@ -1064,7 +1064,12 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
 
         const mapped = (deliveryRows || []).map((row) => {
           const item = row.content_items as unknown as { title: string; body: string } | null;
-          const asset = row.content_assets as unknown as { source_url: string } | null;
+          const asset = row.content_assets as unknown as { source_url: string; storage_path?: string } | null;
+          const audioUrl = asset?.source_url && !asset.source_url.startsWith('storage://')
+            ? asset.source_url
+            : asset?.storage_path
+              ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/${asset.storage_path}`
+              : undefined;
           const deliveryType = row.delivery_type as TallerDeliveryType;
           const body = item?.body || '';
           const paragraphs = extractDeliveryParagraphs(body, deliveryType, row.message_index);
@@ -1076,7 +1081,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
             seenAt: row.seen_at,
             title: item?.title || `Día ${row.day_number}`,
             paragraphs: paragraphs || [],
-            audioUrl: asset?.source_url,
+            audioUrl,
           } as TallerDelivery;
         });
         setDeliveries(mapped);
