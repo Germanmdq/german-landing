@@ -85,7 +85,7 @@ const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
     { icon: '👤', title: 'Mi cuenta', detail: 'Nombre, mail, suscripción y acceso.', tone: palette[0], accountPanel: true },
     { icon: '⭐', title: 'Favoritos', detail: 'Prácticas, audios y lecturas guardadas.', tone: palette[1] },
     { icon: '📈', title: 'Mi avance', detail: 'Tu progreso en las prácticas guiadas.', tone: palette[2] },
-    { icon: '🔔', title: 'Notificaciones', detail: 'Activá o desactivá los avisos.', tone: palette[3] },
+    { icon: '🔔', title: 'Notificaciones', detail: 'Activá o desactivá los avisos.', tone: palette[3], notificationPanel: true },
   ] },
 });
 
