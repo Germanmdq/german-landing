@@ -187,6 +187,18 @@ async function getMomentAsset(contentId: string, moment: MeditationMoment) {
   return data.id as string;
 }
 
+async function getIntermediateAsset(contentId: string, messageIndex: number) {
+  const { data, error } = await supabase
+    .from('content_assets')
+    .select('id')
+    .eq('content_id', contentId)
+    .eq('asset_type', 'audio/intermediate')
+    .eq('sort_order', messageIndex)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data.id as string;
+}
+
 async function deliveryExists(enrollmentId: string, dayNumber: number, deliveryType: DeliveryType, messageIndex: number | null) {
   const base = supabase
     .from('taller_deliveries')
@@ -367,12 +379,17 @@ async function processIntermediateMessage(enrollment: ProgramEnrollmentRow, mess
     }));
     return;
   }
+  const assetId = await getIntermediateAsset(dayContent.id, messageIndex);
+  if (!assetId) {
+    console.warn(JSON.stringify({ event: 'missing-intermediate-audio', enrollmentId: enrollment.id, day: enrollment.current_day, requestedIndex: messageIndex }));
+    return;
+  }
 
   const inserted = await reserveDelivery({
     enrollment_id: enrollment.id,
     user_id: enrollment.user_id,
     content_id: dayContent.id,
-    asset_id: null,
+    asset_id: assetId,
     day_number: enrollment.current_day,
     delivery_type: 'intermediate_message',
     message_index: messageIndex,
