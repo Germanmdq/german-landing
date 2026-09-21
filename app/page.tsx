@@ -270,7 +270,7 @@ function FixedHeader({ eyebrow, title, subtitle, onBack, onNavigate }: { eyebrow
     <div className="header-top-row">
       <button type="button" className="header-back" onClick={onBack}><ChevronLeft size={22} strokeWidth={2.4} />Volver</button>
     </div>
-    <button type="button" className="header-menu" onClick={() => setMenuOpen(true)} aria-label="Más opciones" aria-haspopup="dialog"><MoreHorizontal size={18} /></button>
+    <button type="button" className="header-menu" onClick={() => setMenuOpen(true)} aria-label="Menú" aria-haspopup="dialog"><Menu size={24} /></button>
     <p>{eyebrow}</p><h1>{title}</h1><small>{subtitle}</small>
     {menuOpen && <NavMenuSheet onSelect={(target) => { setMenuOpen(false); onNavigate(target); }} onCancel={() => setMenuOpen(false)} />}
   </header>;
