@@ -1633,13 +1633,22 @@ export default function App() {
       setShowVideo(false);
       setPendingDeliveryId(deliveryId);
     };
-    document.addEventListener('visibilitychange', syncPushDeepLink);
+    const requestLastPush = () => {
+      navigator.serviceWorker?.ready
+        .then((registration) => registration.active?.postMessage({ type: 'GET_LAST_PUSH' }))
+        .catch(() => undefined);
+    };
+    const onVisibilityChange = () => {
+      syncPushDeepLink();
+      if (document.visibilityState === 'visible') requestLastPush();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
     navigator.serviceWorker?.addEventListener('message', onSwMessage);
-    navigator.serviceWorker?.ready.then((registration) => registration.active?.postMessage({ type: 'GET_LAST_PUSH' })).catch(() => undefined);
+    requestLastPush();
     return () => {
       window.removeEventListener('pageshow', syncPushDeepLink);
       window.removeEventListener('popstate', syncPushDeepLink);
-      document.removeEventListener('visibilitychange', syncPushDeepLink);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       navigator.serviceWorker?.removeEventListener('message', onSwMessage);
     };
   }, []);
