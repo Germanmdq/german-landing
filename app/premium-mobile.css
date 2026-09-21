@@ -473,8 +473,11 @@ html:has(.meditaciones-photo-screen),
 body:has(.meditaciones-photo-screen),
 .app-shell.section-app.meditaciones-photo-screen,
 .app-shell.section-app.meditaciones-photo-screen .day-one-section {
-  background:#fff !important;
+  background:#000 !important;
   color:#18181b !important;
+}
+.app-shell.section-app.meditaciones-photo-screen .day-one-section {
+  background:linear-gradient(to bottom, #fff 0, #fff calc(100% - 105px), #000 calc(100% - 105px), #000 100%) !important;
 }
 .app-shell.section-app.meditaciones-photo-screen .feature-header,
 .app-shell.section-app.meditaciones-photo-screen .feature-header h1,
