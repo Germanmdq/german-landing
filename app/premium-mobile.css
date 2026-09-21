@@ -635,6 +635,24 @@ body:has(.meditaciones-photo-screen),
 .workshop-schedule-pill .ios-row-value--muted { color:#d1d1d6 !important; font-size:14px; }
 .workshop-schedule-pill svg { color:#f5f5f7 !important; flex:0 0 auto; }
 .workshop-schedule-pill:active { transform:scale(.98); background:#242426; }
+.workshop-schedule-action { margin:22px 0 30px; }
+.workshop-schedule-action .workshop-schedule-pill { margin:0; }
+
+/* Taller 40 días: historial agrupado por día, compacto y desplegable. */
+.workshop-days-list { display:flex; flex-direction:column; gap:14px; margin:0 0 26px; }
+.workshop-day-group { border:1px solid #202024; border-radius:26px; background:#0b0b0d; overflow:hidden; }
+.workshop-day-toggle {
+  width:100%; min-height:72px; padding:0 20px; border:0; background:transparent; color:#f5f5f7;
+  display:flex; align-items:center; justify-content:space-between; gap:16px; text-align:left;
+}
+.workshop-day-toggle > span { display:flex; flex-direction:column; gap:3px; }
+.workshop-day-toggle b { color:#f5f5f7; font-size:18px; line-height:1.15; letter-spacing:-.02em; }
+.workshop-day-toggle small { color:#8e8e93; font-size:12px; }
+.workshop-day-toggle svg { color:#8e8e93; transition:transform 180ms ease; }
+.workshop-day-group.is-open .workshop-day-toggle svg { transform:rotate(180deg); }
+.workshop-day-deliveries { padding:0 10px 12px; display:flex; flex-direction:column; gap:8px; }
+.workshop-day-deliveries .library-content-card { background:#151517 !important; }
+@media (prefers-reduced-motion: reduce) { .workshop-day-toggle svg { transition:none; } }
 
 /* Tu propia práctica: un solo lenguaje visual, todo en píldoras. */
 .propia-schedule-pills { display:flex; flex-direction:column; gap:12px; margin:0 0 16px; }

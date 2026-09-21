@@ -1039,6 +1039,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
   const [saveError, setSaveError] = useState('');
   const [loadError, setLoadError] = useState('');
   const [confirmingAbandon, setConfirmingAbandon] = useState(false);
+  const [openDeliveryDays, setOpenDeliveryDays] = useState<Record<number, boolean>>({});
   const notifications = useNotificationsToggle(user);
 
   useEffect(() => {
@@ -1342,16 +1343,24 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
         <div className="ios-row"><span className="ios-row-label">Notificaciones</span>{notifications.loading ? <span className="ios-toggle-placeholder" aria-hidden="true" /> : <ToggleSwitch checked={notifications.active} onChange={notifications.toggle} disabled={notifications.busy} label="Notificaciones" />}</div>
       </div>
       {!notifications.loading && !notifications.active && <p className="workshop-notifications-warning">Sin notificaciones no vas a recibir las prácticas.</p>}
-      <button type="button" className="workshop-schedule-pill" onClick={() => { setSaveError(''); setStage('edit-schedule'); }}><span className="ios-row-label">Cambiar horarios</span><span className="ios-row-value">{schedule.morning} · {schedule.noon} · {schedule.afternoon} · {schedule.night}<ChevronRight size={17} /></span></button>
+      <div className="workshop-schedule-action">
+        <button type="button" className="workshop-schedule-pill" onClick={() => { setSaveError(''); setStage('edit-schedule'); }}><span className="ios-row-label">Cambiar horarios</span><span className="ios-row-value">{schedule.morning} · {schedule.noon} · {schedule.afternoon} · {schedule.night}<ChevronRight size={17} /></span></button>
+      </div>
       {!deliveries.length && <p className="library-empty">Tu taller comienza pronto. Vas a recibir tu primera práctica en tu próximo horario configurado.</p>}
-      {!!deliveries.length && <div className="library-content-list">{deliveries.map((delivery) => <MagicCard key={delivery.id} className="library-content-card" onClick={() => openDelivery(delivery)}>
-        <div>
-          <p>DÍA {delivery.dayNumber} · {deliveryTypeLabels[delivery.deliveryType].toUpperCase()}</p>
-          <b className="card-title">{deliveryTypeLabels[delivery.deliveryType]}</b>
-          <em className="card-subtitle">Recibido {formatDeliveredAt(delivery.deliveredAt)}</em>
-        </div>
-        <span className="library-card-actions">{delivery.seenAt ? <i className="delivery-seen" aria-label="Ya visto"><Check size={16} /></i> : <i className="delivery-unseen" aria-label="Sin ver" />}<i><ChevronRight size={19} /></i></span>
-      </MagicCard>)}</div>}
+      {!!deliveries.length && <div className="workshop-days-list">{Array.from(new Set(deliveries.map((delivery) => delivery.dayNumber))).sort((a, b) => b - a).map((dayNumber) => {
+        const dayDeliveries = deliveries.filter((delivery) => delivery.dayNumber === dayNumber);
+        const isOpen = openDeliveryDays[dayNumber] ?? dayNumber === currentDay;
+        return <section key={dayNumber} className={`workshop-day-group${isOpen ? ' is-open' : ''}`}>
+          <button type="button" className="workshop-day-toggle" aria-expanded={isOpen} onClick={() => setOpenDeliveryDays((current) => ({ ...current, [dayNumber]: !isOpen }))}>
+            <span><b>Día {dayNumber}</b><small>{dayDeliveries.length} {dayDeliveries.length === 1 ? 'entrega' : 'entregas'}</small></span>
+            <ChevronDown size={20} aria-hidden="true" />
+          </button>
+          {isOpen && <div className="library-content-list workshop-day-deliveries">{dayDeliveries.map((delivery) => <MagicCard key={delivery.id} className="library-content-card" onClick={() => openDelivery(delivery)}>
+            <div><p>{deliveryTypeLabels[delivery.deliveryType].toUpperCase()}</p><b className="card-title">{deliveryTypeLabels[delivery.deliveryType]}</b><em className="card-subtitle">Recibido {formatDeliveredAt(delivery.deliveredAt)}</em></div>
+            <span className="library-card-actions">{delivery.seenAt ? <i className="delivery-seen" aria-label="Ya visto"><Check size={16} /></i> : <i className="delivery-unseen" aria-label="Sin ver" />}<i><ChevronRight size={19} /></i></span>
+          </MagicCard>)}</div>}
+        </section>;
+      })}</div>}
       {saveError && <p className="account-message" role="alert">{saveError}</p>}
       <button type="button" className="workshop-abandon" onClick={() => setConfirmingAbandon(true)}>Abandonar programa</button>
     </div>
