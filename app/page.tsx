@@ -63,12 +63,21 @@ const planNodes: DeckItem[] = [
   { icon: '🌿', title: 'Salud y bienestar', detail: 'Recorrido completo de 7 días.', tone: palette[2], programPanel: { slug: 'practica-7-dias-salud', title: 'Salud y bienestar', subtitle: '7 días con meditaciones y mensajes intermedios.' } },
 ];
 
+const emptyGuidedThemes = (): DeckItem[] => [
+  { icon: '💞', title: 'Amor y relaciones', detail: '', tone: palette[0], children: [] },
+  { icon: '💫', title: 'Dinero y trabajo', detail: '', tone: palette[1], children: [] },
+  { icon: '🌿', title: 'Salud y bienestar', detail: '', tone: palette[2], children: [] },
+];
+
+const sevenDayEmptyThemes = emptyGuidedThemes();
+const fifteenDayEmptyThemes = emptyGuidedThemes();
+
 const momentIcons = ['🎯', '🌬️', '🌙', '💬', '📰', '🧭', '🤍', '🌧️', '🎤', '🫶', '☀️', '🌆', '🛡️', '🙏', '✨'] as const;
 
 const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
   talleres: { eyebrow: 'PRÁCTICAS GUIADAS', title: 'Elegí una práctica', subtitle: 'Recorridos preparados para acompañarte paso a paso.', items: [
-    { icon: '🌱', title: 'Prácticas de 7 días', detail: 'Amor, salud y dinero.', tone: palette[0], children: planNodes },
-    { icon: '🌿', title: 'Prácticas de 15 días', detail: 'Recorrido completo de 15 días.', tone: palette[1], children: planNodes },
+    { icon: '🌱', title: 'Prácticas de 7 días', detail: 'Amor, salud y dinero.', tone: palette[0], children: sevenDayEmptyThemes },
+    { icon: '🌿', title: 'Prácticas de 15 días', detail: 'Amor, salud y dinero.', tone: palette[1], children: fifteenDayEmptyThemes },
     { icon: '🌳', title: 'Prácticas de 40 días', detail: 'Autoconcepto y control de la imaginación.', tone: palette[2], programPanel: { slug: 'taller-40-dias', title: 'Taller de 40 días', subtitle: 'Autoconcepto y control de la imaginación.' } },
   ] },
   // "Tu propia práctica" ya no es un deck navegable: es un formulario único
