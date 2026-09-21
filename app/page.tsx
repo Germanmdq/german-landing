@@ -71,6 +71,7 @@ const emptyGuidedThemes = (): DeckItem[] => [
 
 const sevenDayEmptyThemes = emptyGuidedThemes();
 const fifteenDayEmptyThemes = emptyGuidedThemes();
+const thirtyDayEmptyThemes = emptyGuidedThemes();
 
 const momentIcons = ['🎯', '🌬️', '🌙', '💬', '📰', '🧭', '🤍', '🌧️', '🎤', '🫶', '☀️', '🌆', '🛡️', '🙏', '✨'] as const;
 
@@ -78,7 +79,8 @@ const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
   talleres: { eyebrow: 'PRÁCTICAS GUIADAS', title: 'Elegí una práctica', subtitle: 'Recorridos preparados para acompañarte paso a paso.', items: [
     { icon: '🌱', title: 'Prácticas de 7 días', detail: 'Amor, salud y dinero.', tone: palette[0], children: sevenDayEmptyThemes },
     { icon: '🌿', title: 'Prácticas de 15 días', detail: 'Amor, salud y dinero.', tone: palette[1], children: fifteenDayEmptyThemes },
-    { icon: '🌳', title: 'Prácticas de 40 días', detail: 'Autoconcepto y control de la imaginación.', tone: palette[2], programPanel: { slug: 'taller-40-dias', title: 'Taller de 40 días', subtitle: 'Autoconcepto y control de la imaginación.' } },
+    { icon: '🪴', title: 'Prácticas de 30 días', detail: 'Amor, salud y dinero.', tone: palette[2], children: thirtyDayEmptyThemes },
+    { icon: '🌳', title: 'Prácticas de 40 días', detail: 'Autoconcepto y control de la imaginación.', tone: palette[3], programPanel: { slug: 'taller-40-dias', title: 'Taller de 40 días', subtitle: 'Autoconcepto y control de la imaginación.' } },
   ] },
   // "Tu propia práctica" ya no es un deck navegable: es un formulario único
   // (PropiaPracticaPanel) que intercepta la pestaña 'propia' directamente.
@@ -103,7 +105,7 @@ const mainCategories: Array<[Tab, string, string, string, string]> = [
   ['espacio', '👋', 'Mi perfil', 'Tu cuenta, favoritos y configuración.', palette[0]],
   ['biblioteca', '📚', 'Biblioteca', 'Audios, lecturas y conferencias.', palette[1]],
   ['audiolibros', '🎧', 'Audiolibros de Germán', 'Libros completos narrados por Germán.', palette[2]],
-  ['talleres', '✨', 'Prácticas guiadas', 'Recorridos de 7, 15 y 40 días.', palette[2]],
+  ['talleres', '✨', 'Prácticas guiadas', 'Recorridos de 7, 15, 30 y 40 días.', palette[2]],
   ['propia', '🧩', 'Tu propia práctica', 'Armá un camino para lo que hoy necesitás.', palette[3]],
   ['meditaciones', '🧘‍♂️', 'Meditaciones para ahora', 'Elegí una práctica según tu momento.', palette[0]],
   ['consultas', '💭', 'Consultas', 'Preguntá lo que te está pasando.', palette[1]],
