@@ -1668,6 +1668,73 @@ export default function App() {
       .catch(() => { if (!cancelled) setAccessState('error'); });
     return () => { cancelled = true; };
   }, [session?.access_token]);
+
+  // iOS puede conservar el permiso pero perder/rotar la suscripción WebPush.
+  // Si el permiso ya fue concedido, reparamos el endpoint al abrir o volver al
+  // primer plano sin mostrar ningún prompt al usuario.
+  useEffect(() => {
+    if (!session?.user || typeof Notification === 'undefined') return;
+    const repairPush = () => {
+      if (document.visibilityState !== 'visible' || Notification.permission !== 'granted') return;
+      void ensurePushSubscription(session.user).then((result) => {
+        if (result.error) console.error('[push] autorreparación falló:', result.error);
+      });
+    };
+    repairPush();
+    document.addEventListener('visibilitychange', repairPush);
+    return () => document.removeEventListener('visibilitychange', repairPush);
+  }, [session?.user]);
+
+  // Red de seguridad mientras la PWA está realmente activa. Si el backend creó
+  // una entrega pero el evento WebPush no llegó al dispositivo, comprobamos las
+  // entregas recientes y mostramos la notificación local una sola vez. El SW
+  // guarda un recibo por deliveryId cuando sí recibió el push, evitando duplicados.
+  useEffect(() => {
+    if (!session?.user || accessState !== 'active' || typeof Notification === 'undefined') return;
+    let cancelled = false;
+    const receiptCacheName = 'german-push-receipts-v1';
+    const checkRecentDeliveries = async () => {
+      if (cancelled || document.visibilityState !== 'visible' || Notification.permission !== 'granted' || !('serviceWorker' in navigator) || !('caches' in window)) return;
+      const cutoff = new Date(Date.now() - 20 * 60_000).toISOString();
+      const { data, error } = await supabase
+        .from('taller_deliveries')
+        .select('id,day_number,delivery_type,delivered_at,seen_at')
+        .eq('user_id', session.user.id)
+        .is('seen_at', null)
+        .gte('delivered_at', cutoff)
+        .order('delivered_at', { ascending: true })
+        .limit(20);
+      if (error || cancelled || !data?.length) return;
+      const registration = await navigator.serviceWorker.ready;
+      const cache = await caches.open(receiptCacheName);
+      for (const delivery of data) {
+        if (cancelled) return;
+        const receiptKey = `/__push_receipt__/${delivery.id}`;
+        if (await cache.match(receiptKey)) continue;
+        const tag = `delivery-${delivery.id}`;
+        const existing = await registration.getNotifications({ tag });
+        if (!existing.length) {
+          await registration.showNotification('Mensaje de Germán', {
+            body: 'Germán te dejó una práctica.',
+            icon: '/images/german-welcome.png',
+            badge: '/images/german-welcome.png',
+            tag,
+            data: { url: `/delivery/${delivery.id}` },
+          });
+        }
+        await cache.put(receiptKey, new Response(JSON.stringify({ at: Date.now(), fallback: true })));
+      }
+    };
+    void checkRecentDeliveries();
+    const timer = window.setInterval(() => { void checkRecentDeliveries(); }, 30_000);
+    const onVisible = () => { if (document.visibilityState === 'visible') void checkRecentDeliveries(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [session?.user, accessState]);
   const [fullName, setFullName] = useState<string | null>(null);
   const [mainMenu, setMainMenu] = useState(true);
   const [tab, setTab] = useState<Tab>('biblioteca');

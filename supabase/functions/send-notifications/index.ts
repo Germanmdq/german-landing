@@ -25,6 +25,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 webpush.setVapidDetails(`mailto:${VAPID_EMAIL}`, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
 const MATCH_WINDOW_MINUTES = 2;
+const PUSH_RETRY_WINDOW_MINUTES = 30;
+const PUSH_RETRY_MIN_INTERVAL_SECONDS = 90;
+const PUSH_RETRY_MAX_ATTEMPTS = 6;
 
 type MeditationMoment = 'morning' | 'noon' | 'afternoon' | 'night';
 type DeliveryType = 'meditation_morning' | 'meditation_noon' | 'meditation_afternoon' | 'meditation_night' | 'intermediate_message';
@@ -64,6 +67,14 @@ type ProgramEnrollmentRow = {
   timezone: string | null;
   message_interval_minutes: number | null;
   current_day: number;
+};
+
+type DeliveryPushRow = {
+  id: string;
+  user_id: string;
+  day_number: number;
+  delivery_type: DeliveryType;
+  message_index: number | null;
 };
 
 // --- Helpers de tiempo -----------------------------------------------------
@@ -276,11 +287,27 @@ async function sendPush(device: PushDeviceRow, payload: Record<string, unknown>)
   }
 }
 
-async function sendToActiveDevices(enrollment: ProgramEnrollmentRow, deliveryId: string, payload: Record<string, unknown>) {
+function deliveryPushPayload(delivery: DeliveryPushRow, retry = false) {
+  return {
+    title: 'Mensaje de Germán',
+    body: '',
+    url: `/delivery/${delivery.id}`,
+    deliveryId: delivery.id,
+    tag: `delivery-${delivery.id}`,
+    data: {
+      type: delivery.delivery_type,
+      day: delivery.day_number,
+      ...(delivery.message_index == null ? {} : { index: delivery.message_index }),
+      ...(retry ? { retry: true } : {}),
+    },
+  };
+}
+
+async function sendToActiveDevices(userId: string, deliveryId: string, payload: Record<string, unknown>) {
   const { data, error } = await supabase
     .from('push_subscriptions')
     .select('id,user_id,endpoint,p256dh,auth_key,is_active')
-    .eq('user_id', enrollment.user_id)
+    .eq('user_id', userId)
     .eq('is_active', true);
   if (error) {
     await supabase.from('taller_deliveries').update({ push_status: 'failed', push_error: error.message.slice(0, 500) }).eq('id', deliveryId);
@@ -294,6 +321,36 @@ async function sendToActiveDevices(enrollment: ProgramEnrollmentRow, deliveryId:
     push_status: sent ? 'sent' : 'failed',
     push_error: errors.length ? errors.join('; ').slice(0, 500) : (sent ? null : 'No hay dispositivos push activos'),
   }).eq('id', deliveryId);
+}
+
+async function attemptDeliveryPush(delivery: DeliveryPushRow, retry = false) {
+  const { data: claimed, error: claimError } = await supabase.rpc('claim_delivery_push_attempt', {
+    p_delivery_id: delivery.id,
+    p_min_interval_seconds: PUSH_RETRY_MIN_INTERVAL_SECONDS,
+    p_max_attempts: PUSH_RETRY_MAX_ATTEMPTS,
+  });
+  if (claimError) throw claimError;
+  if (!claimed) return false;
+  await sendToActiveDevices(delivery.user_id, delivery.id, deliveryPushPayload(delivery, retry));
+  return true;
+}
+
+async function retryRecentUnsentDeliveries(now: Date) {
+  const cutoff = new Date(now.getTime() - PUSH_RETRY_WINDOW_MINUTES * 60_000).toISOString();
+  const { data, error } = await supabase
+    .from('taller_deliveries')
+    .select('id,user_id,day_number,delivery_type,message_index,push_status,push_attempts,push_last_attempt_at,delivered_at')
+    .in('push_status', ['pending', 'failed'])
+    .gte('delivered_at', cutoff)
+    .order('delivered_at', { ascending: true })
+    .limit(100);
+  if (error) throw error;
+
+  const results = await Promise.allSettled((data || []).map((row) => attemptDeliveryPush(row as DeliveryPushRow, true)));
+  const attempted = results.filter((result) => result.status === 'fulfilled' && result.value === true).length;
+  const failed = results.filter((result) => result.status === 'rejected').length;
+  if (attempted || failed) console.info(JSON.stringify({ event: 'push-retry-pass', candidates: data?.length || 0, attempted, failed }));
+  return { candidates: data?.length || 0, attempted, failed };
 }
 
 async function hasActiveDevice(userId: string) {
@@ -345,13 +402,12 @@ async function processMeditation(enrollment: ProgramEnrollmentRow, moment: Medit
   });
   if (!inserted) return;
 
-  await sendToActiveDevices(enrollment, inserted.id, {
-    title: 'Mensaje de Germán',
-    body: '',
-    url: `/delivery/${inserted.id}`,
-    deliveryId: inserted.id,
-    tag: `delivery-${inserted.id}`,
-    data: { type: deliveryType, day: enrollment.current_day },
+  await attemptDeliveryPush({
+    id: inserted.id,
+    user_id: enrollment.user_id,
+    day_number: enrollment.current_day,
+    delivery_type: deliveryType,
+    message_index: null,
   });
 
   if (moment === 'night') {
@@ -399,13 +455,12 @@ async function processIntermediateMessage(enrollment: ProgramEnrollmentRow, mess
   });
   if (!inserted) return;
 
-  await sendToActiveDevices(enrollment, inserted.id, {
-    title: 'Mensaje de Germán',
-    body: '',
-    url: `/delivery/${inserted.id}`,
-    deliveryId: inserted.id,
-    tag: `delivery-${inserted.id}`,
-    data: { type: 'intermediate_message', day: enrollment.current_day, index: messageIndex },
+  await attemptDeliveryPush({
+    id: inserted.id,
+    user_id: enrollment.user_id,
+    day_number: enrollment.current_day,
+    delivery_type: 'intermediate_message',
+    message_index: messageIndex,
   });
 }
 
@@ -516,6 +571,11 @@ Deno.serve(async (req) => {
   }
 
   const now = new Date();
+  const retrySummary = await retryRecentUnsentDeliveries(now).catch((reason: unknown) => {
+    const message = reason instanceof Error ? reason.message : String(reason);
+    console.error(JSON.stringify({ event: 'push-retry-pass-error', error: message.slice(0, 500) }));
+    return { candidates: 0, attempted: 0, failed: 1 };
+  });
   const { data: enrollments, error } = await supabase
     .from('program_enrollments')
     .select('*')
@@ -534,6 +594,6 @@ Deno.serve(async (req) => {
     console.error(JSON.stringify({ event: 'scheduled-push-error', error: message.slice(0, 500) }));
   });
 
-  console.info(JSON.stringify({ event: 'scheduled-push-run', processed: enrollments?.length || 0, failed }));
-  return jsonResponse({ ok: true, processed: enrollments?.length || 0, failed });
+  console.info(JSON.stringify({ event: 'scheduled-push-run', processed: enrollments?.length || 0, failed, retries: retrySummary }));
+  return jsonResponse({ ok: true, processed: enrollments?.length || 0, failed, retries: retrySummary });
 });
