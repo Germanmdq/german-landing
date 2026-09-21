@@ -106,44 +106,47 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
   }, [deliveryId, session?.user, accessChecked, hasAccess]);
 
   useEffect(() => {
-    if (!delivery) return;
-    try {
-      const saved = JSON.parse(localStorage.getItem('german-favorites') || '[]') as Array<{ id?: string }>;
-      setFavorite(saved.some((item) => item.id === `delivery:${deliveryId}`));
-    } catch {
-      setFavorite(false);
-    }
-  }, [delivery, deliveryId]);
+    if (!delivery || !session?.user) return;
+    let active = true;
+    void supabase
+      .from('user_favorites')
+      .select('favorite_id')
+      .eq('user_id', session.user.id)
+      .eq('favorite_id', `delivery:${deliveryId}`)
+      .maybeSingle()
+      .then(({ data }) => { if (active) setFavorite(Boolean(data)); });
+    return () => { active = false; };
+  }, [delivery, deliveryId, session?.user]);
 
   const toggleFavorite = () => {
-    if (!delivery) return;
-    try {
-      const current = JSON.parse(localStorage.getItem('german-favorites') || '[]') as Array<Record<string, unknown>>;
-      const id = `delivery:${deliveryId}`;
-      const exists = current.some((item) => item.id === id);
-      const next = exists
-        ? current.filter((item) => item.id !== id)
-        : [{
-            id,
-            title: delivery.title,
-            detail: `Día ${delivery.dayNumber} · ${deliveryTypeLabels[delivery.deliveryType]}`,
-            icon: '🎧',
-            tone: '#D92D35',
-            reader: {
-              title: delivery.title,
-              eyebrow: 'AUDIO',
-              detail: `Día ${delivery.dayNumber}`,
-              paragraphs: [],
-              audioUrl: delivery.audioUrl,
-            },
-          }, ...current];
-      localStorage.setItem('german-favorites', JSON.stringify(next));
-      setFavorite(!exists);
-    } catch {
-      // Si localStorage no está disponible, no interrumpimos la reproducción.
-    }
+    if (!delivery || !session?.user) return;
+    const id = `delivery:${deliveryId}`;
+    const payload = {
+      id,
+      title: delivery.title,
+      detail: `Día ${delivery.dayNumber} · ${deliveryTypeLabels[delivery.deliveryType]}`,
+      icon: '🎧',
+      tone: '#D92D35',
+      reader: {
+        title: delivery.title,
+        eyebrow: 'AUDIO',
+        detail: `Día ${delivery.dayNumber}`,
+        paragraphs: [],
+        audioUrl: delivery.audioUrl,
+      },
+    };
+    const next = !favorite;
+    setFavorite(next);
+    void (next
+      ? supabase.from('user_favorites').upsert({ user_id: session.user.id, favorite_id: id, payload, updated_at: new Date().toISOString() }, { onConflict: 'user_id,favorite_id' })
+      : supabase.from('user_favorites').delete().eq('user_id', session.user.id).eq('favorite_id', id)
+    ).then(({ error }) => {
+      if (error) {
+        console.error('[delivery favorite]', error);
+        setFavorite(!next);
+      }
+    });
   };
-
   if (!sessionChecked) return <main className="delivery-screen"><p className="delivery-loading">Abriendo tu entrega…</p></main>;
   if (!session) return <LoginGate redirectPath={`/delivery/${encodeURIComponent(deliveryId)}`} />;
   if (!accessChecked) return <main className="delivery-screen"><p className="delivery-loading">Comprobando tu acceso…</p></main>;

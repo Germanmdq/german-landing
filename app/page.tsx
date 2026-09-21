@@ -55,6 +55,7 @@ const formatMediaTime = (seconds: number) => {
 };
 const deckFavorite = (item: DeckItem): FavoriteRecord => ({ id: `deck:${item.title}`, title: item.title, detail: item.detail, icon: item.icon, tone: item.tone, reader: item.reader });
 const libraryFavorite = (entry: LibraryEntry): FavoriteRecord => ({ id: `library:${entry.id}`, title: entry.title, detail: entry.excerpt || 'Biblioteca', icon: entry.audioUrl ? '🎙️' : '📖', tone: palette[0], reader: { title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration } });
+const touchContentProgress = (userId: string, contentKey: string, contentType: string, progress: Record<string, unknown> = {}) => { void supabase.from('user_content_progress').upsert({ user_id: userId, content_key: contentKey, content_type: contentType, progress, last_opened_at: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: 'user_id,content_key' }).then(({ error }) => { if (error) console.error('[progress] sync error:', error); }); };
 
 const planNodes: DeckItem[] = [
   { icon: '💞', title: 'Amor y relaciones', detail: 'Recorrido completo de 7 días.', tone: palette[0], programPanel: { slug: 'practica-7-dias-amor', title: 'Amor y relaciones', subtitle: '7 días con meditaciones y mensajes intermedios.' } },
@@ -136,7 +137,7 @@ function Deck({ items, onSelect, favorites, onToggleFavorite }: { items: DeckIte
   return <div className="feature-list">{items.map((entry, index) => <DeckCard key={entry.title} item={entry} index={index} last={index === items.length - 1} onClick={() => onSelect(entry)} favorite={entry.reader ? favorites.some((favorite) => favorite.id === deckFavorite(entry).id) : undefined} onFavorite={entry.reader ? () => onToggleFavorite(deckFavorite(entry)) : undefined} />)}<div className="deck-end-space" aria-hidden="true" /></div>;
 }
 
-function PreguntamePanel({ onBack, onNavigate }: { onBack: () => void; onNavigate: (target: NavTarget) => void }) {
+function PreguntamePanel({ user, onBack, onNavigate }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   const [prompt, setPrompt] = useState('');
   const [listening, setListening] = useState(false);
   const [working, setWorking] = useState(false);
@@ -185,15 +186,17 @@ function PreguntamePanel({ onBack, onNavigate }: { onBack: () => void; onNavigat
     } catch { setNotice('No pude acceder al micrófono. Permití el micrófono para esta app en el iPhone y probá de nuevo.'); }
   };
 
-  const submit = () => {
-    if (!prompt.trim() || working) return;
+  const submit = async () => {
+    const question = prompt.trim();
+    if (!question || working) return;
     setWorking(true); setElapsed(0); setNotice('');
     timerRef.current = setInterval(() => setElapsed((value) => value + 1), 1000);
-    window.setTimeout(() => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      timerRef.current = null; setWorking(false);
-      setNotice('La caja de Preguntame ya está funcionando. Ahora conectamos tus respuestas para que Germán responda desde tu contenido.');
-    }, 1500);
+    const { error } = await supabase.from('user_consultations').insert({ user_id: user.id, question, source: 'text', status: 'pending' });
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null; setWorking(false);
+    if (error) { setNotice(`No pudimos guardar tu consulta: ${error.message}`); return; }
+    setPrompt('');
+    setNotice('Consulta guardada en tu cuenta.');
   };
 
   return <section className="preguntame-panel">
@@ -1436,8 +1439,10 @@ function PropiaPracticaPanel({ user, onBack, onNavigate, onRead }: { user: User;
         setMessage(result.error);
         return;
       }
-      localStorage.setItem('german-propia-practica', JSON.stringify({ tema, duracion, frequency, schedule, timezone, savedAt: new Date().toISOString() }));
-      console.log('[propia] guardado localmente y notificaciones activas');
+      const { error: enrollmentError } = await supabase.rpc('start_custom_program', { p_morning: schedule.morning, p_noon: schedule.noon, p_afternoon: schedule.afternoon, p_night: schedule.night, p_timezone: timezone, p_message_interval_minutes: frequency, p_custom_config: { tema, duracion } });
+      if (enrollmentError) { setMessage(enrollmentError.code === '23505' ? 'Ya tenés un taller de práctica activo. Para comenzar otro, primero tenés que finalizar o abandonar el actual.' : enrollmentError.message); return; }
+      localStorage.removeItem('german-propia-practica');
+      console.log('[propia] inscripción guardada en Supabase');
       setConfirmed(true);
     } catch (err) {
       console.error('[propia] excepción al guardar la práctica:', err);
@@ -1654,6 +1659,13 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!session?.user) { setFavorites([]); return; }
+    let cancelled = false;
+    void supabase.from('user_favorites').select('payload').eq('user_id', session.user.id).order('created_at', { ascending: false }).then(({ data, error }) => { if (cancelled) return; if (error) { console.error('[favorites] load error:', error); return; } setFavorites((data || []).map((row) => row.payload as FavoriteRecord)); });
+    return () => { cancelled = true; };
+  }, [session?.user?.id]);
+
+  useEffect(() => {
     if (!session?.access_token) { setAccessState('checking'); return; }
     let cancelled = false;
     setAccessState('checking');
@@ -1854,7 +1866,9 @@ export default function App() {
     setFavorites((currentFavorites) => {
       const exists = currentFavorites.some((item) => item.id === favorite.id);
       const next = exists ? currentFavorites.filter((item) => item.id !== favorite.id) : [favorite, ...currentFavorites];
-      localStorage.setItem('german-favorites', JSON.stringify(next));
+      if (session?.user) {
+        void (exists ? supabase.from('user_favorites').delete().eq('user_id', session.user.id).eq('favorite_id', favorite.id) : supabase.from('user_favorites').upsert({ user_id: session.user.id, favorite_id: favorite.id, payload: favorite, updated_at: new Date().toISOString() }, { onConflict: 'user_id,favorite_id' })).then(({ error }) => { if (error) console.error('[favorites] sync error:', error); });
+      }
       return next;
     });
   };
@@ -1897,10 +1911,8 @@ export default function App() {
 
   useEffect(() => {
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((registration) => registration.update().catch(() => undefined)).catch(() => undefined);
-    const savedFavorites = localStorage.getItem('german-favorites');
-    if (savedFavorites) {
-      try { setFavorites(JSON.parse(savedFavorites) as FavoriteRecord[]); } catch { localStorage.removeItem('german-favorites'); }
-    }
+    localStorage.removeItem('german-propia-practica');
+    localStorage.removeItem('german-favorites');
 
     // La sesión de Supabase se restaura desde almacenamiento local. No
     // bloqueamos la primera pintura esperando perfil/red: eso hacía que una
@@ -2205,14 +2217,14 @@ export default function App() {
   if (workshopOpen) return <main className="app-shell app-main section-app"><WorkshopPanel user={session.user} program={programConfig} onBack={back} onNavigate={navigateTo} onRead={setReader} />{dock}</main>;
   if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (configurationOpen) return <main className="app-shell app-main section-app"><ConfigurationPanel user={session.user} onBack={back} onNavigate={navigateTo} onOpenNotifications={() => setNotificationsOpen(true)} />{dock}</main>;
-  if (preguntameOpen) return <main className="app-shell app-main section-app preguntame-shell"><PreguntamePanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
+  if (preguntameOpen) return <main className="app-shell app-main section-app preguntame-shell"><PreguntamePanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'audiolibros' && !trail.length) {
-    return <main className="app-shell app-main section-app"><AudiobookLibraryPanel entries={audiobookItems} loading={audiobooksLoading} error={audiobooksError} onBack={back} onNavigate={navigateTo} onOpen={setSelectedAudiobook} />{dock}</main>;
+    return <main className="app-shell app-main section-app"><AudiobookLibraryPanel entries={audiobookItems} loading={audiobooksLoading} error={audiobooksError} onBack={back} onNavigate={navigateTo} onOpen={(entry) => { touchContentProgress(session.user.id, `audiobook:${entry.id}`, 'audiobook'); setSelectedAudiobook(entry); }} />{dock}</main>;
   }
   if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry, searchQuery, mode) => setReader({ title: entry.title, eyebrow: mode === 'audio' ? 'AUDIO' : mode === 'text' ? 'TEXTO' : entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: mode === 'audio' ? [] : cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: mode === 'text' ? undefined : entry.audioUrl, duration: entry.duration, highlightQuery: searchQuery })} />{dock}</main>;
   if (showProgress) return <main className="app-shell app-main section-app"><ProgressScreen user={session.user} onBack={() => setShowProgress(false)} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} showInstall={!standalone} onInstall={() => { setInstallDismissed(false); setInstallOpen(true); }} onSelect={select} onBack={back} onNavigate={navigateTo} onOpenProgress={() => setShowProgress(true)} />{dock}</main>;
-  if (tab === 'consultas' && !trail.length) return <main className="app-shell app-main section-app preguntame-shell"><PreguntamePanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
+  if (tab === 'consultas' && !trail.length) return <main className="app-shell app-main section-app preguntame-shell"><PreguntamePanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'propia' && !trail.length) return <main className="app-shell app-main section-app"><PropiaPracticaPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} />{dock}</main>;
   if (tab === 'talleres' && !trail.length) return <main className="app-shell app-main section-app"><section className="reader-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><div className="reader-body guided-folder-stage"><FolderFloat items={screen.items.map((item) => ({ label: item.title, value: item.title }))} label="Prácticas guiadas" sublabel="3 recorridos" trigger="click" closeOnSelect physics drift={0.5} onSelect={(value) => { const item = screen.items.find((entry) => entry.title === value); if (item) select(item); }} folderColor="#3f3f46" frontColor="#52525b" paperColor="#f5f5f5" itemColor="#f5f5f5" itemTextColor="#18181b" labelColor="#f5f5f7" width={200} height={148} radius={14} spread={205} lift={52} tilt={8} flapAngle={34} restAngle={16} openDuration={520} stagger={45} bounce={0.3} /></div></section>{dock}</main>;
   if (current?.title === 'Día 1') {
