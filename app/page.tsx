@@ -1018,7 +1018,7 @@ const shiftHours = (time: string, hours: number) => {
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 };
 
-type WorkshopStage = 'loading' | 'onboarding' | 'conflict' | 'confirmed' | 'days' | 'error';
+type WorkshopStage = 'loading' | 'onboarding' | 'conflict' | 'confirmed' | 'days' | 'edit-schedule' | 'error';
 type WorkshopOnboardingStep = 'intro' | 'schedule' | 'frequency' | 'summary';
 type ActiveProgramEnrollment = { id: string; collection_id: string; current_day: number; morning: string; noon: string; afternoon: string; night: string; timezone: string; message_interval_minutes: number; collections: { title: string } | null };
 
@@ -1145,6 +1145,38 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
     setEnrollmentId((enrollment as { id: string }).id);
     setCurrentDay(1);
     setStage('confirmed');
+  };
+
+  const saveActiveSchedule = async () => {
+    if (!enrollmentId) return;
+    setSaving(true);
+    setSaveError('');
+    const { error } = await supabase
+      .from('program_enrollments')
+      .update({
+        morning: schedule.morning,
+        noon: schedule.noon,
+        afternoon: schedule.afternoon,
+        night: schedule.night,
+        timezone,
+        message_interval_minutes: messageInterval,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', enrollmentId)
+      .eq('user_id', user.id)
+      .eq('status', 'active');
+    setSaving(false);
+    if (error) { setSaveError(error.message); return; }
+    setActiveProgram((current) => current ? {
+      ...current,
+      morning: schedule.morning,
+      noon: schedule.noon,
+      afternoon: schedule.afternoon,
+      night: schedule.night,
+      timezone,
+      message_interval_minutes: messageInterval,
+    } : current);
+    setStage('days');
   };
 
   const abandonProgram = async () => {
@@ -1276,6 +1308,25 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
     </div>
   </section>;
 
+  if (stage === 'edit-schedule') return <section className="reader-section workshop-section">
+    <FixedHeader eyebrow="TALLER DE 40 DÍAS" title="Cambiar horarios" subtitle="Los cambios se aplican desde ahora. Tu día y tu progreso no se modifican." onBack={() => { setSaveError(''); setStage('days'); }} onNavigate={onNavigate} />
+    <div className="reader-body workshop-browser">
+      <div className="workshop-schedule-pills">
+        <button className="workshop-schedule-pill" onClick={() => setEditingTimezone(true)} aria-haspopup="dialog"><span className="ios-row-label">Zona horaria</span><span className="ios-row-value ios-row-value--muted">{timezone.replace(/_/g, ' ')}<ChevronRight size={17} /></span></button>
+        {workshopMomentKeys.map((key) => <button key={key} className="workshop-schedule-pill" onClick={() => setEditingMoment(key)} aria-label={`Cambiar horario de ${workshopMomentPickerLabels[key]}: ${schedule[key]}`} aria-haspopup="dialog"><span className="ios-row-label">{workshopMomentPickerLabels[key]}</span><span className="ios-row-value">{schedule[key]}<ChevronRight size={17} /></span></button>)}
+      </div>
+      <div className="ios-card workshop-pills-card">
+        <p className="workshop-hint">Mensajes durante el día</p>
+        <div className="workshop-pills">{workshopIntervalOptions.map((minutes) => <button key={minutes} type="button" className={`workshop-pill${messageInterval === minutes ? ' active' : ''}`} onClick={() => setMessageInterval(minutes)}>{workshopIntervalLabel(minutes)}</button>)}</div>
+      </div>
+      <p className="workshop-hint">No se reinicia el taller y no se vuelven a enviar entregas ya recibidas.</p>
+      {saveError && <p className="account-message" role="alert">{saveError}</p>}
+      <ShimmerButton type="button" className="account-save" onClick={() => void saveActiveSchedule()} disabled={saving}>{saving ? 'Guardando…' : 'Guardar cambios'}</ShimmerButton>
+    </div>
+    {editingMoment && <TimePicker label={workshopMomentPickerLabels[editingMoment]} value={schedule[editingMoment]} onCancel={() => setEditingMoment(null)} onSave={(value) => { setSchedule((current) => ({ ...current, [editingMoment]: value })); setEditingMoment(null); }} />}
+    {editingTimezone && <TimezonePicker value={timezone} onCancel={() => setEditingTimezone(false)} onSave={(zone) => { setTimezone(zone); setEditingTimezone(false); }} />}
+  </section>;
+
   if (stage === 'confirmed') return <section className="reader-section">
     <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="¡Listo!" subtitle="Ya está todo configurado." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body">
@@ -1291,6 +1342,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
         <div className="ios-row"><span className="ios-row-label">Notificaciones</span>{notifications.loading ? <span className="ios-toggle-placeholder" aria-hidden="true" /> : <ToggleSwitch checked={notifications.active} onChange={notifications.toggle} disabled={notifications.busy} label="Notificaciones" />}</div>
       </div>
       {!notifications.loading && !notifications.active && <p className="workshop-notifications-warning">Sin notificaciones no vas a recibir las prácticas.</p>}
+      <button type="button" className="workshop-schedule-pill" onClick={() => { setSaveError(''); setStage('edit-schedule'); }}><span className="ios-row-label">Cambiar horarios</span><span className="ios-row-value">{schedule.morning} · {schedule.noon} · {schedule.afternoon} · {schedule.night}<ChevronRight size={17} /></span></button>
       {!deliveries.length && <p className="library-empty">Tu taller comienza pronto. Vas a recibir tu primera práctica en tu próximo horario configurado.</p>}
       {!!deliveries.length && <div className="library-content-list">{deliveries.map((delivery) => <MagicCard key={delivery.id} className="library-content-card" onClick={() => openDelivery(delivery)}>
         <div>
