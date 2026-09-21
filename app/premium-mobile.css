@@ -551,6 +551,20 @@ body:has(.meditaciones-photo-screen),
 .propia-choice-pills { flex-direction:column !important; gap:12px !important; }
 .propia-choice-pill { width:100% !important; flex:none !important; }
 
+/* Taller: horarios editables en píldoras oscuras, no tabla iOS. */
+.workshop-schedule-pills { display:flex; flex-direction:column; gap:12px; margin:0 0 24px; }
+.workshop-schedule-pill {
+  width:100%; min-height:66px; padding:0 22px; border:1px solid #2c2c2e;
+  border-radius:999px; background:#1c1c1e; color:#f5f5f7;
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  box-shadow:none; text-align:left;
+}
+.workshop-schedule-pill .ios-row-label { color:#f5f5f7 !important; font-size:16px; font-weight:600; }
+.workshop-schedule-pill .ios-row-value { color:#ff3b4d !important; font-size:17px; font-weight:650; min-width:0; }
+.workshop-schedule-pill .ios-row-value--muted { color:#d1d1d6 !important; font-size:14px; }
+.workshop-schedule-pill svg { color:#f5f5f7 !important; flex:0 0 auto; }
+.workshop-schedule-pill:active { transform:scale(.98); background:#242426; }
+
 /* Tu propia práctica: un solo lenguaje visual, todo en píldoras. */
 .propia-schedule-pills { display:flex; flex-direction:column; gap:12px; margin:0 0 16px; }
 .propia-schedule-pill {
