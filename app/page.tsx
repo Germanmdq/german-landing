@@ -1438,7 +1438,10 @@ function hasOAuthCallbackParams() {
 
 function getDeliveryIdFromUrl() {
   if (typeof window === 'undefined') return null;
-  return new URLSearchParams(window.location.search).get('delivery');
+  const queryId = new URLSearchParams(window.location.search).get('delivery');
+  if (queryId) return queryId;
+  const pathMatch = window.location.pathname.match(/^\/delivery\/([^/]+)$/);
+  return pathMatch ? decodeURIComponent(pathMatch[1]) : null;
 }
 
 function VideoIntro({ onFinish }: { onFinish: () => void }) {
@@ -1971,7 +1974,7 @@ export default function App() {
         console.log('[deep-link] abriendo entrega', deliveryId);
         const { data: row, error } = await supabase
           .from('taller_deliveries')
-          .select('id,day_number,delivery_type,delivered_at,seen_at,message_index,content_items(title,body),content_assets(source_url)')
+          .select('id,day_number,delivery_type,delivered_at,seen_at,message_index,content_items(title,body),content_assets(source_url,storage_path)')
           .eq('id', deliveryId)
           .maybeSingle();
         if (cancelled) return;
@@ -1980,15 +1983,20 @@ export default function App() {
           return;
         }
         const item = row.content_items as unknown as { title: string; body: string } | null;
-        const asset = row.content_assets as unknown as { source_url: string } | null;
+        const asset = row.content_assets as unknown as { source_url: string; storage_path?: string } | null;
+        const audioUrl = asset?.source_url && !asset.source_url.startsWith('storage://')
+          ? asset.source_url
+          : asset?.storage_path
+            ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/${asset.storage_path}`
+            : undefined;
         const deliveryType = row.delivery_type as TallerDeliveryType;
         const body = item?.body || '';
         const paragraphs = extractDeliveryParagraphs(body, deliveryType, row.message_index);
-        if (!item?.body) {
+        if (!item?.body && !audioUrl) {
           showDeliveryError('La entrega no tiene contenido asociado.');
           return;
         }
-        if (!paragraphs?.length) {
+        if (!paragraphs?.length && !audioUrl) {
           const messageReference = deliveryType === 'intermediate_message'
             ? ` No se encontró el mensaje numerado ${row.message_index ?? 'sin índice'} en el contenido del Día ${row.day_number}.`
             : ` No se encontró la sección correspondiente a ${deliveryTypeLabels[deliveryType]}.`;
@@ -2000,8 +2008,8 @@ export default function App() {
           title: `Día ${row.day_number} · ${deliveryTypeLabels[deliveryType]}`,
           eyebrow: 'PRÁCTICA GUIADA',
           detail: `Recibido ${formatDeliveredAt(row.delivered_at)}.`,
-          paragraphs,
-          audioUrl: asset?.source_url,
+          paragraphs: paragraphs ?? [],
+          audioUrl,
         });
         openedSuccessfully = true;
         if (!row.seen_at) {
