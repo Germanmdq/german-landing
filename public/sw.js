@@ -1,4 +1,4 @@
-const CACHE_NAME = 'german-app-v12';
+const CACHE_NAME = 'german-app-v13';
 const LAST_PUSH_CACHE = 'german-last-push-v1';
 
 self.addEventListener('install', () => self.skipWaiting());
@@ -35,11 +35,18 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const targetUrl = new URL(event.notification.data?.url || '/', self.location.origin).href;
   event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (windows) => {
-    await caches.delete(LAST_PUSH_CACHE);
     const existing = windows.find((client) => new URL(client.url).origin === self.location.origin) || windows[0];
     if (existing) {
-      const navigated = await existing.navigate(targetUrl);
-      return (navigated || existing).focus();
+      // En iOS una PWA ya abierta puede volver al frente sin respetar navigate().
+      // Enviamos además una orden explícita a la app para abrir la entrega.
+      await existing.focus();
+      existing.postMessage({ type: 'OPEN_PUSH', url: targetUrl });
+      try {
+        const navigated = await existing.navigate(targetUrl);
+        return (navigated || existing).focus();
+      } catch {
+        return existing.focus();
+      }
     }
     return clients.openWindow(targetUrl);
   }));

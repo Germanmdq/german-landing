@@ -1621,7 +1621,7 @@ export default function App() {
     window.addEventListener('pageshow', syncPushDeepLink);
     window.addEventListener('popstate', syncPushDeepLink);
     const onSwMessage = (event: MessageEvent) => {
-      if (event.data?.type !== 'LAST_PUSH' || typeof event.data.url !== 'string') return;
+      if (!['LAST_PUSH', 'OPEN_PUSH'].includes(event.data?.type) || typeof event.data.url !== 'string') return;
       const pushUrl = new URL(event.data.url, window.location.origin);
       const deliveryPathMatch = pushUrl.pathname.match(/^\/delivery\/[^/]+$/);
       if (deliveryPathMatch) {
