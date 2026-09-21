@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { AlertCircle, ArrowLeft, Headphones } from 'lucide-react';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { LoginGate } from './login-gate';
+import VoicePill from './VoicePill';
 import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, type TallerDeliveryType } from '../lib/taller-delivery';
 
 type DeliveryView = {
@@ -17,6 +18,8 @@ type DeliveryView = {
 };
 
 export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [accessChecked, setAccessChecked] = useState(false);
@@ -111,7 +114,31 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
   return <main className="delivery-screen"><article className="delivery-article">
     <a className="delivery-back" href="/" aria-label="Volver al Asistente"><ArrowLeft size={20}/></a>
     <header><p>TALLER 40 DÍAS</p><h1>Día {delivery.dayNumber}</h1><span>{deliveryTypeLabels[delivery.deliveryType]} · {formatDeliveredAt(delivery.deliveredAt)}</span></header>
-    {delivery.audioUrl && <section className="delivery-audio"><Headphones size={24}/><div><b>Escuchá tu práctica</b><span>Audio de esta entrega</span></div><audio src={delivery.audioUrl} controls preload="metadata" playsInline /></section>}
+    {delivery.audioUrl && <section className="delivery-audio-modern">
+      <audio
+        ref={audioRef}
+        src={delivery.audioUrl}
+        preload="metadata"
+        playsInline
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+      />
+      <VoicePill
+        className="delivery-audio-pill"
+        size={40}
+        mode="toggle"
+        reactive="simulated"
+        showTime
+        waveform
+        slideToCancel={false}
+        active={playing}
+        onStart={() => { void audioRef.current?.play(); }}
+        onStop={() => { audioRef.current?.pause(); }}
+        ariaLabel={playing ? 'Pausar audio' : 'Escuchar audio'}
+      />
+      <b>Escuchá tu práctica</b>
+    </section>}
     {delivery.paragraphs.length > 0 && <div className="delivery-copy">{delivery.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div>}
   </article></main>;
 }
