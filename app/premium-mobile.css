@@ -9,7 +9,13 @@
 .home-quick-access span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .day-one-screen .day-one-section { padding-bottom: calc(82px + env(safe-area-inset-bottom)) !important; }
 .reader-body { padding-bottom: calc(115px + env(safe-area-inset-bottom)) !important; }
-.day-one-screen .feature-header .header-menu { width: 44px; height: 44px; right: 14px; top: max(12px, env(safe-area-inset-top)); }
+.day-one-screen .feature-header .header-menu {
+  width:44px; height:44px; right:14px; top:max(12px, env(safe-area-inset-top));
+  background:transparent !important; color:#fff !important; border:0 !important;
+  border-radius:0 !important; box-shadow:none !important;
+}
+.day-one-screen .feature-header .header-menu svg { color:#fff !important; stroke:#fff !important; width:24px; height:24px; stroke-width:2.6; }
+.day-one-screen .feature-header .header-menu:active { background:transparent !important; opacity:.65; }
 .day-one-screen .feature-header .header-back { min-height: 44px; }
 .nav-menu-sheet { z-index: 100; }
 .nav-menu-row, .nav-menu-cancel, .time-sheet header button, .timezone-option, .notification-time-row { transition: background-color .16s ease, transform .16s ease; }
