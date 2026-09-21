@@ -385,6 +385,37 @@ html:has(.profile-section), body:has(.profile-section), .app-shell:has(.profile-
 .app-shell.section-app:not(.welcome-carousel-screen) .workshop-pill { background:#1c1c1e; color:#f5f5f7; border-color:#2c2c2e; border-radius:999px; }
 .app-shell.section-app:not(.welcome-carousel-screen) .workshop-pill.active { background:#b4232f; color:#fff; border-color:#b4232f; }
 
+/* Regla visual global: en interiores oscuros, las filas de opciones son píldoras,
+   nunca tablas/cards agrupadas. Los sheets claros quedan excluidos. */
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body > .ios-card {
+  display:flex !important;
+  flex-direction:column !important;
+  gap:12px !important;
+  background:transparent !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  overflow:visible !important;
+}
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body > .ios-card > .ios-row {
+  min-height:62px !important;
+  padding:0 22px !important;
+  border:1px solid #2c2c2e !important;
+  border-radius:999px !important;
+  background:#1c1c1e !important;
+  color:#f5f5f7 !important;
+}
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body > .ios-card > .ios-row:first-child {
+  border:1px solid #2c2c2e !important;
+}
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body > .ios-card > .ios-row .ios-row-label {
+  color:#f5f5f7 !important;
+  font-weight:600;
+}
+.app-shell.section-app:not(.welcome-carousel-screen) .reader-body > .ios-card > .ios-row .ios-row-value--muted {
+  color:#d1d1d6 !important;
+}
+
 /* Favoritos sobre fondo negro: icono/card sin superficie blanca. */
 .app-shell.section-app:not(.welcome-carousel-screen) .favorite-content-card > span:first-child,
 .app-shell.section-app:not(.welcome-carousel-screen) .favorite-content-card .card-image {
