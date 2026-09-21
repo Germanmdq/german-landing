@@ -181,6 +181,7 @@ async function getMomentAsset(contentId: string, moment: MeditationMoment) {
     .from('content_assets')
     .select('id')
     .eq('content_id', contentId)
+    .eq('asset_type', 'audio')
     .eq('sort_order', momentSortOrder[moment])
     .maybeSingle();
   if (error || !data) return null;
