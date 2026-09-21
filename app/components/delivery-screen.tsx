@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { AlertCircle, ArrowLeft } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Heart } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { LoginGate } from './login-gate';
 import VoicePill from './VoicePill';
-import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, type TallerDeliveryType } from '../lib/taller-delivery';
+import { deliveryTypeLabels, extractDeliveryParagraphs, type TallerDeliveryType } from '../lib/taller-delivery';
 
 type DeliveryView = {
   dayNumber: number;
@@ -20,6 +20,7 @@ type DeliveryView = {
 export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
+  const [favorite, setFavorite] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [accessChecked, setAccessChecked] = useState(false);
@@ -104,6 +105,45 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     return () => { active = false; };
   }, [deliveryId, session?.user, accessChecked, hasAccess]);
 
+  useEffect(() => {
+    if (!delivery) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem('german-favorites') || '[]') as Array<{ id?: string }>;
+      setFavorite(saved.some((item) => item.id === `delivery:${deliveryId}`));
+    } catch {
+      setFavorite(false);
+    }
+  }, [delivery, deliveryId]);
+
+  const toggleFavorite = () => {
+    if (!delivery) return;
+    try {
+      const current = JSON.parse(localStorage.getItem('german-favorites') || '[]') as Array<Record<string, unknown>>;
+      const id = `delivery:${deliveryId}`;
+      const exists = current.some((item) => item.id === id);
+      const next = exists
+        ? current.filter((item) => item.id !== id)
+        : [{
+            id,
+            title: delivery.title,
+            detail: `Día ${delivery.dayNumber} · ${deliveryTypeLabels[delivery.deliveryType]}`,
+            icon: '🎧',
+            tone: '#D92D35',
+            reader: {
+              title: delivery.title,
+              eyebrow: 'AUDIO',
+              detail: `Día ${delivery.dayNumber}`,
+              paragraphs: [],
+              audioUrl: delivery.audioUrl,
+            },
+          }, ...current];
+      localStorage.setItem('german-favorites', JSON.stringify(next));
+      setFavorite(!exists);
+    } catch {
+      // Si localStorage no está disponible, no interrumpimos la reproducción.
+    }
+  };
+
   if (!sessionChecked) return <main className="delivery-screen"><p className="delivery-loading">Abriendo tu entrega…</p></main>;
   if (!session) return <LoginGate redirectPath={`/delivery/${encodeURIComponent(deliveryId)}`} />;
   if (!accessChecked) return <main className="delivery-screen"><p className="delivery-loading">Comprobando tu acceso…</p></main>;
@@ -113,7 +153,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
 
   return <main className="delivery-screen"><article className="delivery-article">
     <a className="delivery-back" href="/" aria-label="Volver al Asistente"><ArrowLeft size={20}/></a>
-    <header><p>TALLER 40 DÍAS</p><h1>Día {delivery.dayNumber}</h1><span>{deliveryTypeLabels[delivery.deliveryType]} · {formatDeliveredAt(delivery.deliveredAt)}</span></header>
+    <button type="button" className={`delivery-favorite${favorite ? ' is-favorite' : ''}`} onClick={toggleFavorite} aria-label={favorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}><Heart size={21} fill={favorite ? 'currentColor' : 'none'} /></button>
     {delivery.audioUrl && <section className="delivery-audio-modern">
       <audio
         ref={audioRef}
@@ -137,8 +177,6 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
         onStop={() => { audioRef.current?.pause(); }}
         ariaLabel={playing ? 'Pausar audio' : 'Escuchar audio'}
       />
-      <b>Escuchá tu práctica</b>
     </section>}
-    {delivery.paragraphs.length > 0 && <div className="delivery-copy">{delivery.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div>}
   </article></main>;
 }
