@@ -565,12 +565,13 @@ body:has(.meditaciones-photo-screen),
 .nav-menu-row {
   min-height:58px !important; padding:0 20px !important; border:0 !important;
   border-radius:999px !important; background:#f2f2f7 !important;
-  gap:14px !important;
+  gap:14px !important; color:#1c1c1e !important;
 }
+.nav-menu-row span, .nav-menu-row svg { color:#1c1c1e !important; }
 .nav-menu-row:first-child { border:0 !important; }
 .nav-menu-cancel {
   min-height:58px !important; border:0 !important; border-radius:999px !important;
-  background:#f2f2f7 !important;
+  background:#f2f2f7 !important; color:#b4232f !important;
 }
 
 /* Biblioteca: buscador compacto; se expande sólo al tocar la lupa. */
