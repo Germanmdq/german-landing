@@ -1205,14 +1205,14 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
     </div>
   </section>;
 
+  // Los cuatro momentos del taller son parte de la programación automática.
+  // No hacemos que el alumno configure mañana/mediodía/tarde/noche uno por uno.
   if (stage === 'onboarding' && step === 'schedule') return <section className="reader-section">
-    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Elegí tus horarios" subtitle="¿A qué hora querés recibir cada meditación?" onBack={onBack} onNavigate={onNavigate} />
+    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Configurá tu día" subtitle="Elegí tu zona horaria. El taller organiza automáticamente las prácticas." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body">
       <div className="ios-card">
         <button className="ios-row" onClick={() => setEditingTimezone(true)} aria-haspopup="dialog"><span className="ios-row-label">Zona horaria</span><span className="ios-row-value ios-row-value--muted">{timezone.replace(/_/g, ' ')}<ChevronRight size={17} /></span></button>
-        {workshopMomentKeys.map((key) => <button key={key} className="ios-row" onClick={() => setEditingMoment(key)} aria-label={`Cambiar horario de ${workshopMomentPickerLabels[key]}: ${schedule[key]}`} aria-haspopup="dialog"><span className="ios-row-label">{workshopMomentPickerLabels[key]}</span><span className="ios-row-value">{schedule[key]}<ChevronRight size={17} /></span></button>)}
       </div>
-      {editingMoment && <TimePicker label={workshopMomentPickerLabels[editingMoment]} value={schedule[editingMoment]} onCancel={() => setEditingMoment(null)} onSave={(value) => { setSchedule((current) => ({ ...current, [editingMoment]: value })); setEditingMoment(null); }} />}
       {editingTimezone && <TimezonePicker value={timezone} onCancel={() => setEditingTimezone(false)} onSave={(zone) => { setTimezone(zone); setEditingTimezone(false); }} />}
       <ShimmerButton type="button" className="account-save" onClick={() => setStep('frequency')}>Siguiente →</ShimmerButton>
     </div>
@@ -1234,10 +1234,6 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
     <div className="reader-body">
       <div className="ios-card">
         <div className="ios-row"><span className="ios-row-label">Zona horaria</span><span className="ios-row-value ios-row-value--muted">{timezone.replace(/_/g, ' ')}</span></div>
-        <div className="ios-row"><span className="ios-row-label">Meditación de la mañana</span><span className="ios-row-value">{schedule.morning}</span></div>
-        <div className="ios-row"><span className="ios-row-label">Meditación del mediodía</span><span className="ios-row-value">{schedule.noon}</span></div>
-        <div className="ios-row"><span className="ios-row-label">Meditación de la tarde</span><span className="ios-row-value">{schedule.afternoon}</span></div>
-        <div className="ios-row"><span className="ios-row-label">Meditación de la noche</span><span className="ios-row-value">{schedule.night}</span></div>
         <div className="ios-row"><span className="ios-row-label">Mensajes intermedios</span><span className="ios-row-value ios-row-value--muted">{workshopIntervalLabel(messageInterval)}</span></div>
         <div className="ios-row"><span className="ios-row-label">Duración</span><span className="ios-row-value ios-row-value--muted">40 días</span></div>
       </div>
