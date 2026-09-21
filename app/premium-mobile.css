@@ -449,21 +449,22 @@ html:has(.profile-section), body:has(.profile-section), .app-shell:has(.profile-
   color:#f5f5f7 !important;
 }
 
-/* Interior definitivo: negro de borde a borde, incluido dock inferior. */
-html:has(.app-shell.section-app:not(.welcome-carousel-screen)),
-body:has(.app-shell.section-app:not(.welcome-carousel-screen)),
-.app-shell.section-app:not(.welcome-carousel-screen),
-.app-shell.section-app:not(.welcome-carousel-screen) > section,
-.app-shell.section-app:not(.welcome-carousel-screen) .reader-section,
-.app-shell.section-app:not(.welcome-carousel-screen) .reader-body,
-.app-shell.section-app:not(.welcome-carousel-screen) .day-one-section,
-.app-shell.section-app:not(.welcome-carousel-screen) .feature-section,
-.app-shell.section-app:not(.welcome-carousel-screen) .categories-section {
+/* Interior definitivo: negro de borde a borde, incluido dock inferior.
+   Meditaciones para ahora es la única pantalla interna deliberadamente clara. */
+html:has(.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen)),
+body:has(.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen)),
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen),
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) > section,
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) .reader-section,
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) .reader-body,
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) .day-one-section,
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) .feature-section,
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) .categories-section {
   background:#000 !important;
 }
-.app-shell.section-app:not(.welcome-carousel-screen) .bottom-dock,
-.app-shell.section-app:not(.welcome-carousel-screen) .app-dock,
-.app-shell.section-app:not(.welcome-carousel-screen) nav[aria-label="Navegación principal"] {
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) .bottom-dock,
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) .app-dock,
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) nav[aria-label="Navegación principal"] {
   background:#000 !important;
   border-color:#1c1c1e !important;
 }
@@ -485,9 +486,9 @@ body:has(.meditaciones-photo-screen),
   background:#fff !important;
 }
 .app-shell.section-app.meditaciones-photo-screen .main-navigation-dock {
-  background:#000 !important;
-  border-top:0 !important;
-  box-shadow:none !important;
+  background:#fffffff2 !important;
+  border-top:1px solid #e3e3e9 !important;
+  box-shadow:0 -7px 22px #1d1d1f0a !important;
 }
 .app-shell.section-app.meditaciones-photo-screen .feature-header,
 .app-shell.section-app.meditaciones-photo-screen .feature-header h1,
