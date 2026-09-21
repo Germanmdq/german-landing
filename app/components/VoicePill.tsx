@@ -23,6 +23,7 @@ export type VoicePillStopReason =
   | 'disabled'
   | 'mic-denied'
   | 'cancel'
+  | 'external'
   | 'unmount';
 
 export interface VoicePillProps {
@@ -49,6 +50,7 @@ export interface VoicePillProps {
   ariaLabel?: string;
   onStart?: (info: { source: VoicePillSource }) => void;
   onStop?: (info: { reason: VoicePillStopReason; duration: number }) => void;
+  active?: boolean;
   className?: string;
 }
 
@@ -243,6 +245,7 @@ const VoicePill: React.FC<VoicePillProps> = ({
   ariaLabel = 'Dictate',
   onStart,
   onStop,
+  active,
   className = ''
 }) => {
   const [listening, setListening] = useState(false);
@@ -432,6 +435,10 @@ const VoicePill: React.FC<VoicePillProps> = ({
     if (disabled) end('disabled');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [disabled]);
+  useEffect(() => {
+    if (active === false && st.current.listening) end('external');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
   useEffect(() => {
     const s = st.current;
     return () => {
