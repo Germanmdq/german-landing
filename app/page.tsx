@@ -1417,18 +1417,6 @@ function PropiaPracticaPanel({ user, onBack, onNavigate, onRead }: { user: User;
     if (Object.keys(nextErrors).length) return;
     setMessage('');
 
-    if (duracion === 'Una práctica') {
-      const plan = planNodes.find((node) => node.title === tema);
-      const firstDay = plan?.children?.[0];
-      const firstPractice = firstDay?.children?.find((item) => item.reader);
-      console.log('[propia] "Una práctica" ->', tema, '-> encontrado:', Boolean(firstPractice?.reader));
-      if (!firstPractice?.reader) {
-        setMessage('No encontramos contenido para este tema todavía.');
-        return;
-      }
-      onRead(firstPractice.reader);
-      return;
-    }
 
     setSubmitting(true);
     try {
