@@ -1392,6 +1392,10 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
   return <section className="reader-section workshop-section">
     <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle={currentDay != null ? `Vas por el día ${currentDay} de 40.` : 'Autoconcepto y control de la imaginación.'} onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body workshop-browser">
+      {currentDay != null && <section className="workshop-progress-preview" aria-label={`Día ${currentDay} de 40`}>
+        <div className="workshop-progress-copy"><span>Tu recorrido</span><b>Día {currentDay} de 40</b><small>{Math.max(0, 40 - currentDay)} días por delante</small></div>
+        <div className="workshop-progress-track" aria-hidden="true"><span style={{ width: `${Math.min(100, Math.max(0, (currentDay / 40) * 100))}%` }} /></div>
+      </section>}
       <div className="ios-card">
         <div className="ios-row"><span className="ios-row-label">Notificaciones</span>{notifications.loading ? <span className="ios-toggle-placeholder" aria-hidden="true" /> : <ToggleSwitch checked={notifications.active} onChange={notifications.toggle} disabled={notifications.busy} label="Notificaciones" />}</div>
       </div>
