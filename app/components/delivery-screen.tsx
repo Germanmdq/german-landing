@@ -118,7 +118,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     return () => { active = false; };
   }, [delivery, deliveryId, session?.user]);
 
-  const toggleFavorite = () => {
+  const toggleFavorite = async () => {
     if (!delivery || !session?.user) return;
     const id = `delivery:${deliveryId}`;
     const payload = {
@@ -136,16 +136,15 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
       },
     };
     const next = !favorite;
-    setFavorite(next);
-    void (next
+    const result = await (next
       ? supabase.from('user_favorites').upsert({ user_id: session.user.id, favorite_id: id, payload, updated_at: new Date().toISOString() }, { onConflict: 'user_id,favorite_id' })
       : supabase.from('user_favorites').delete().eq('user_id', session.user.id).eq('favorite_id', id)
-    ).then(({ error }) => {
-      if (error) {
-        console.error('[delivery favorite]', error);
-        setFavorite(!next);
-      }
-    });
+    );
+    if (result.error) {
+      console.error('[delivery favorite]', result.error);
+      return;
+    }
+    setFavorite(next);
   };
   if (!sessionChecked) return <main className="delivery-screen"><p className="delivery-loading">Abriendo tu entrega…</p></main>;
   if (!session) return <LoginGate redirectPath={`/delivery/${encodeURIComponent(deliveryId)}`} />;

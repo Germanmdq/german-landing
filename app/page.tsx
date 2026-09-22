@@ -1918,15 +1918,28 @@ export default function App() {
     if (selected.children) setTrail((value) => [...value, selected]);
   };
 
-  const toggleFavorite = (favorite: FavoriteRecord) => {
-    setFavorites((currentFavorites) => {
-      const exists = currentFavorites.some((item) => item.id === favorite.id);
-      const next = exists ? currentFavorites.filter((item) => item.id !== favorite.id) : [favorite, ...currentFavorites];
-      if (session?.user) {
-        void (exists ? supabase.from('user_favorites').delete().eq('user_id', session.user.id).eq('favorite_id', favorite.id) : supabase.from('user_favorites').upsert({ user_id: session.user.id, favorite_id: favorite.id, payload: favorite, updated_at: new Date().toISOString() }, { onConflict: 'user_id,favorite_id' })).then(({ error }) => { if (error) console.error('[favorites] sync error:', error); });
-      }
-      return next;
-    });
+  const toggleFavorite = async (favorite: FavoriteRecord) => {
+    if (!session?.user) return;
+    const exists = favorites.some((item) => item.id === favorite.id);
+    const result = exists
+      ? await supabase.from('user_favorites').delete().eq('user_id', session.user.id).eq('favorite_id', favorite.id)
+      : await supabase.from('user_favorites').upsert({
+          user_id: session.user.id,
+          favorite_id: favorite.id,
+          payload: favorite,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,favorite_id' });
+
+    if (result.error) {
+      console.error('[favorites] sync error:', result.error);
+      return;
+    }
+
+    setFavorites((currentFavorites) => exists
+      ? currentFavorites.filter((item) => item.id !== favorite.id)
+      : currentFavorites.some((item) => item.id === favorite.id)
+        ? currentFavorites
+        : [favorite, ...currentFavorites]);
   };
 
   const syncProfile = async (user: User) => {
