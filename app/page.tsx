@@ -1649,6 +1649,135 @@ function VideoIntro({ onFinish }: { onFinish: () => void }) {
   </div>;
 }
 
+type HomeEnrollment = {
+  id: string;
+  collection_id: string;
+  current_day: number;
+  morning: string;
+  noon: string;
+  afternoon: string;
+  night: string;
+  timezone: string;
+  collections: { title?: string; slug?: string } | null;
+};
+
+function totalDaysForHome(enrollment: HomeEnrollment | null) {
+  const slug = enrollment?.collections?.slug || '';
+  if (slug.includes('40')) return 40;
+  if (slug.includes('30')) return 30;
+  if (slug.includes('15')) return 15;
+  if (slug.includes('7')) return 7;
+  return 40;
+}
+
+function nextMeditationForHome(enrollment: HomeEnrollment | null) {
+  if (!enrollment) return { label: 'Elegí una práctica', time: '' };
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: enrollment.timezone || 'America/Argentina/Buenos_Aires',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(new Date());
+  const hour = Number(parts.find((part) => part.type === 'hour')?.value || 0) % 24;
+  const minute = Number(parts.find((part) => part.type === 'minute')?.value || 0);
+  const nowMinutes = hour * 60 + minute;
+  const moments = [
+    { label: 'Meditación de la mañana', value: enrollment.morning },
+    { label: 'Meditación del mediodía', value: enrollment.noon },
+    { label: 'Meditación de la tarde', value: enrollment.afternoon },
+    { label: 'Meditación de la noche', value: enrollment.night },
+  ].filter((moment) => Boolean(moment.value));
+  const parsed = moments.map((moment) => {
+    const [h, m] = moment.value.split(':').map(Number);
+    return { ...moment, minutes: h * 60 + m, time: moment.value.slice(0, 5) };
+  });
+  return parsed.find((moment) => moment.minutes > nowMinutes) || parsed[0] || { label: 'Meditación', time: '' };
+}
+
+function HomeDashboard({ user, fullName, onNavigate, onContinue }: { user: User; fullName: string | null; onNavigate: (target: NavTarget) => void; onContinue: (enrollment: HomeEnrollment | null) => void }) {
+  const [enrollment, setEnrollment] = useState<HomeEnrollment | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    void supabase
+      .from('program_enrollments')
+      .select('id,collection_id,current_day,morning,noon,afternoon,night,timezone,collections(title,slug)')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) console.error('[home] active enrollment:', error);
+        setEnrollment((data as unknown as HomeEnrollment | null) || null);
+        setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [user.id]);
+
+  const firstName = (fullName || user.user_metadata?.full_name || user.user_metadata?.name || '').trim().split(/\s+/)[0] || 'Germán';
+  const totalDays = totalDaysForHome(enrollment);
+  const currentDay = enrollment ? Math.min(enrollment.current_day, totalDays) : 1;
+  const remainingDays = Math.max(0, totalDays - currentDay);
+  const progress = enrollment ? Math.min(100, Math.round((currentDay / totalDays) * 100)) : 0;
+  const nextMeditation = nextMeditationForHome(enrollment);
+
+  return <section className="home-dashboard">
+    <header className="home-dashboard-header">
+      <small>ASISTENTE GERMÁN</small>
+      <h1>Buenos días, <strong>{firstName}</strong></h1>
+      <p>Un día más para practicar desde adentro.</p>
+    </header>
+
+    <section className="home-practice-hero" aria-label="Tu práctica de hoy">
+      <div className="home-practice-copy">
+        <span>TU PRÁCTICA DE HOY</span>
+        {loading ? <h2>Cargando tu recorrido…</h2> : enrollment ? <>
+          <h2>Día {currentDay} de {totalDays}</h2>
+          <div className="home-progress-track" aria-label={`${progress}% del recorrido`}><i style={{ width: `${progress}%` }} /></div>
+          <p>{remainingDays === 0 ? 'Recorrido completado' : `${remainingDays} días por delante`}</p>
+        </> : <>
+          <h2>Empezá tu práctica</h2>
+          <p>Elegí un recorrido guiado para hoy.</p>
+        </>}
+        <button type="button" onClick={() => onContinue(enrollment)}>{enrollment ? 'Continuar' : 'Elegir práctica'}<ArrowRight size={19} /></button>
+      </div>
+    </section>
+
+    <div className="home-focus-list">
+      <button type="button" onClick={() => onContinue(enrollment)}>
+        <span className="home-focus-icon"><Moon size={21} /></span>
+        <span><b>Próxima meditación</b><small>{enrollment ? nextMeditation.label : 'Configurala al comenzar una práctica'}</small></span>
+        {nextMeditation.time && <em>{nextMeditation.time}</em>}
+        <ChevronRight size={18} />
+      </button>
+      <button type="button" onClick={() => onNavigate('audiolibros')}>
+        <span className="home-focus-icon"><Play size={20} /></span>
+        <span><b>Seguir escuchando</b><small>Audiolibros de Germán</small></span>
+        <ChevronRight size={18} />
+      </button>
+      <button type="button" onClick={() => onNavigate('favorites')}>
+        <span className="home-focus-icon"><Heart size={20} /></span>
+        <span><b>Favoritos</b><small>Tus prácticas y contenidos guardados</small></span>
+        <ChevronRight size={18} />
+      </button>
+    </div>
+
+    <section className="home-explore">
+      <div className="home-explore-heading"><h2>Explorar</h2><button type="button" onClick={() => onNavigate('biblioteca')}>Ver todo <ChevronRight size={16} /></button></div>
+      <div className="home-explore-grid">
+        <button type="button" onClick={() => onNavigate('biblioteca')}><BookOpen size={23} /><b>Biblioteca</b><small>Meditaciones, lecturas y conferencias</small></button>
+        <button type="button" onClick={() => onNavigate('curso')}><Sparkles size={23} /><b>Taller 365</b><small>Un año de práctica</small></button>
+        <button type="button" onClick={() => onNavigate('consultas')}><MessageCircle size={23} /><b>Consultas</b><small>Preguntame lo que necesites</small></button>
+      </div>
+    </section>
+  </section>;
+}
+
 export default function App() {
   // El splash se salta al volver de OAuth y al abrir una entrega desde push.
   // El deep-link debe llevar al contenido inmediatamente, incluso si primero
@@ -2253,11 +2382,19 @@ export default function App() {
   const dock = <MainNavigationDock current={mainMenu ? "home" : configurationOpen ? "configuracion" : tab} onSelect={navigateTo} />;
 
   if (mainMenu) {
-    const courseCard = { target: 'curso' as const, title: 'Taller de 365 días', detail: 'Ley de Asunción · recorrido completo.', image: '/images/german-reunion.webp' };
-    const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/german-perfil.png' : target === 'biblioteca' ? '/images/german-biblioteca.png' : target === 'audiolibros' ? '/images/german-audiolibros.webp' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
-    const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
-    const items = [...welcomeItems.slice(0, meditIndex + 1), courseCard, ...welcomeItems.slice(meditIndex + 1)];
-    return <><main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'curso') { setCourseOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section>{dock}</main>{installOpen && !standalone && !pendingDeliveryId && <InstallOnboarding suggestedPlatform={installPlatform} nativePromptAvailable={installPromptAvailable} onClose={() => { setInstallOpen(false); setInstallDismissed(true); }} onInstallAndroid={promptNativeInstallation} onRecheckInstallation={() => { const installed = isRunningStandalone(); setStandalone(installed); return installed; }} />}</>;
+    return <><main className="app-shell app-main section-app welcome-carousel-screen home-dashboard-screen"><HomeDashboard
+      user={session.user}
+      fullName={fullName}
+      onNavigate={navigateTo}
+      onContinue={(enrollment) => {
+        if (!enrollment) { navigateTo('talleres'); return; }
+        const title = enrollment.collections?.title || 'Práctica guiada';
+        const slug = enrollment.collections?.slug || 'taller-40-dias';
+        setProgramConfig({ slug, title, subtitle: 'Tu práctica activa.' });
+        setWorkshopOpen(true);
+        setMainMenu(false);
+      }}
+    />{dock}</main>{installOpen && !standalone && !pendingDeliveryId && <InstallOnboarding suggestedPlatform={installPlatform} nativePromptAvailable={installPromptAvailable} onClose={() => { setInstallOpen(false); setInstallDismissed(true); }} onInstallAndroid={promptNativeInstallation} onRecheckInstallation={() => { const installed = isRunningStandalone(); setStandalone(installed); return installed; }} />}</>;
   }
   if (interactiveBookOpen) return <main className="app-shell app-main section-app"><InteractiveBookIntro onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (courseOpen) return <main className="app-shell app-main section-app"><LawCoursePanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
