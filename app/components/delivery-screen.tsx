@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { AlertCircle, ArrowLeft, Heart } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Heart, Moon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { LoginGate } from './login-gate';
 import VoicePill from './VoicePill';
@@ -158,7 +158,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     <a className="delivery-back" href="/" aria-label="Volver al Asistente"><ArrowLeft size={20}/></a>
     <button type="button" className={`delivery-favorite${favorite ? ' is-favorite' : ''}`} onClick={toggleFavorite} aria-label={favorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}><Heart size={21} fill={favorite ? 'currentColor' : 'none'} /></button>
     {delivery.audioUrl && <section className="delivery-audio-modern">
-      {delivery.deliveryType !== 'intermediate_message' && <div className="delivery-audio-label">{deliveryTypeLabels[delivery.deliveryType]}</div>}
+      {delivery.deliveryType !== 'intermediate_message' && <div className="delivery-audio-label"><Moon size={14} strokeWidth={1.8} /><span>{deliveryTypeLabels[delivery.deliveryType]}</span></div>}
       <audio
         ref={audioRef}
         src={delivery.audioUrl}
