@@ -167,18 +167,22 @@ function matchIntermediateSlot(nowMinutes: number, morning: string, night: strin
   return null;
 }
 
-async function countMeditationsDelivered(enrollmentId: string, dayNumber: number) {
-  const { count, error } = await supabase
-    .from('taller_deliveries')
-    .select('id', { count: 'exact', head: true })
-    .eq('enrollment_id', enrollmentId)
-    .eq('day_number', dayNumber)
-    .in('delivery_type', ['meditation_morning', 'meditation_noon', 'meditation_afternoon', 'meditation_night']);
-  if (error) {
-    console.error('countMeditationsDelivered failed:', error);
-    return 0;
-  }
-  return count || 0;
+function countMeditationSlotsBeforeOrAt(enrollment: ProgramEnrollmentRow, baseSlot: number) {
+  if (!enrollment.morning || !enrollment.message_interval_minutes || baseSlot < 1) return 0;
+  const interval = enrollment.message_interval_minutes;
+  const firstIntermediate = minutesOfDay(enrollment.morning) + interval;
+  const currentIntermediate = firstIntermediate + (baseSlot - 1) * interval;
+  const meditationTimes = [enrollment.noon, enrollment.afternoon, enrollment.night].filter(Boolean) as string[];
+
+  return meditationTimes.reduce((count, value) => {
+    let target = minutesOfDay(value);
+    while (target < firstIntermediate) target += 1440;
+    if (target > currentIntermediate) return count;
+    // Solo resta una meditación si realmente ocupó uno de los slots del ritmo
+    // intermedio. La meditación de la mañana queda fuera porque ocurre antes del
+    // primer intermedio (ej.: 07:00 meditación, 07:30 audio 1).
+    return (target - firstIntermediate) % interval === 0 ? count + 1 : count;
+  }, 0);
 }
 
 // --- Acceso a datos ---------------------------------------------------------
@@ -479,7 +483,7 @@ async function processEnrollment(enrollment: ProgramEnrollmentRow, now: Date) {
   if (enrollment.morning && enrollment.night && enrollment.message_interval_minutes) {
     const baseSlot = matchIntermediateSlot(nowMinutes, enrollment.morning, enrollment.night, enrollment.message_interval_minutes);
     if (baseSlot != null) {
-      const meditationCount = await countMeditationsDelivered(enrollment.id, enrollment.current_day);
+      const meditationCount = countMeditationSlotsBeforeOrAt(enrollment, baseSlot);
       const messageIndex = baseSlot - meditationCount;
       if (messageIndex > 0) await processIntermediateMessage(enrollment, messageIndex);
     }
