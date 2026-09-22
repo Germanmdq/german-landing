@@ -158,6 +158,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     <a className="delivery-back" href="/" aria-label="Volver al Asistente"><ArrowLeft size={20}/></a>
     <button type="button" className={`delivery-favorite${favorite ? ' is-favorite' : ''}`} onClick={toggleFavorite} aria-label={favorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}><Heart size={21} fill={favorite ? 'currentColor' : 'none'} /></button>
     {delivery.audioUrl && <section className="delivery-audio-modern">
+      {delivery.deliveryType !== 'intermediate_message' && <div className="delivery-audio-label">{deliveryTypeLabels[delivery.deliveryType]}</div>}
       <audio
         ref={audioRef}
         src={delivery.audioUrl}

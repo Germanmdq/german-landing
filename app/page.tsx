@@ -1756,7 +1756,8 @@ export default function App() {
     const receiptCacheName = 'german-push-receipts-v1';
     const checkRecentDeliveries = async () => {
       if (cancelled || document.visibilityState !== 'visible' || Notification.permission !== 'granted' || !('serviceWorker' in navigator) || !('caches' in window)) return;
-      const cutoff = new Date(Date.now() - 20 * 60_000).toISOString();
+      const now = Date.now();
+      const cutoff = new Date(now - 20 * 60_000).toISOString();
       const { data, error } = await supabase
         .from('taller_deliveries')
         .select('id,day_number,delivery_type,delivered_at,seen_at')
@@ -1770,6 +1771,8 @@ export default function App() {
       const cache = await caches.open(receiptCacheName);
       for (const delivery of data) {
         if (cancelled) return;
+        const ageMs = now - new Date(delivery.delivered_at).getTime();
+        if (ageMs < 120_000) continue;
         const receiptKey = `/__push_receipt__/${delivery.id}`;
         if (await cache.match(receiptKey)) continue;
         const tag = `delivery-${delivery.id}`;

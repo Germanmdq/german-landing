@@ -151,17 +151,34 @@ function numberedMessageCount(body: string): number {
 // intermedios corresponde, dado el horario mañana/noche y el intervalo
 // elegido por el usuario. Devuelve null si "ahora" no cae cerca de ningún slot.
 function matchIntermediateSlot(nowMinutes: number, morning: string, night: string, intervalMinutes: number): number | null {
-  const start = minutesOfDay(morning);
+  // El primer intermedio va un intervalo DESPUÉS de la hora de levantarse.
+  // Ej.: levantarse 07:00 con intervalo 30 => audio 1 a las 07:30.
+  const start = minutesOfDay(morning) + intervalMinutes;
   let end = minutesOfDay(night);
   if (end <= start) end += 1440;
   let slot = start;
   let index = 1;
-  while (slot < end) {
+  // Incluimos el último slot. Ej.: 07:30..22:00 cada 30 min => slot base 30.
+  while (slot <= end) {
     if (withinWindow(nowMinutes, slot % 1440)) return index;
     slot += intervalMinutes;
     index += 1;
   }
   return null;
+}
+
+async function countMeditationsDelivered(enrollmentId: string, dayNumber: number) {
+  const { count, error } = await supabase
+    .from('taller_deliveries')
+    .select('id', { count: 'exact', head: true })
+    .eq('enrollment_id', enrollmentId)
+    .eq('day_number', dayNumber)
+    .in('delivery_type', ['meditation_morning', 'meditation_noon', 'meditation_afternoon', 'meditation_night']);
+  if (error) {
+    console.error('countMeditationsDelivered failed:', error);
+    return 0;
+  }
+  return count || 0;
 }
 
 // --- Acceso a datos ---------------------------------------------------------
@@ -446,19 +463,26 @@ async function processEnrollment(enrollment: ProgramEnrollmentRow, now: Date) {
   const nowMinutes = localMinutesNow(now, enrollment.timezone);
 
   const moments: MeditationMoment[] = ['morning', 'noon', 'afternoon', 'night'];
+  let meditationDueNow = false;
   for (const moment of moments) {
     const target = enrollment[moment];
     if (target && withinWindow(nowMinutes, minutesOfDay(target))) {
+      meditationDueNow = true;
       await processMeditation(enrollment, moment, now);
-      // No cortamos acá: los mensajes intermedios tienen su propia secuencia
-      // completa (1..N). Si un slot coincide con una meditación, corresponde
-      // registrar/enviar ambas piezas y no "comerse" ese número intermedio.
     }
   }
 
+  // Una meditación ocupa ese turno. No enviamos además un intermedio en el
+  // mismo slot y, por lo tanto, tampoco hacemos avanzar su numeración.
+  if (meditationDueNow) return;
+
   if (enrollment.morning && enrollment.night && enrollment.message_interval_minutes) {
-    const slot = matchIntermediateSlot(nowMinutes, enrollment.morning, enrollment.night, enrollment.message_interval_minutes);
-    if (slot != null) await processIntermediateMessage(enrollment, slot);
+    const baseSlot = matchIntermediateSlot(nowMinutes, enrollment.morning, enrollment.night, enrollment.message_interval_minutes);
+    if (baseSlot != null) {
+      const meditationCount = await countMeditationsDelivered(enrollment.id, enrollment.current_day);
+      const messageIndex = baseSlot - meditationCount;
+      if (messageIndex > 0) await processIntermediateMessage(enrollment, messageIndex);
+    }
   }
 }
 
