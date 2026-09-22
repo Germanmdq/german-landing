@@ -1,4 +1,4 @@
-const CACHE_NAME = 'german-app-v14';
+const CACHE_NAME = 'german-app-v15';
 const LAST_PUSH_CACHE = 'german-last-push-v1';
 const PUSH_RECEIPT_CACHE = 'german-push-receipts-v1';
 
@@ -14,11 +14,15 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
-  const url = data.url || '/';
   const deliveryId = data.deliveryId || null;
+  const rawUrl = data.url || '/';
+  const parsedUrl = new URL(rawUrl, self.location.origin);
+  const legacyDeliveryId = parsedUrl.searchParams.get('delivery');
+  const resolvedDeliveryId = deliveryId || legacyDeliveryId;
+  const url = resolvedDeliveryId ? `/delivery/${encodeURIComponent(resolvedDeliveryId)}` : `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
   // Cada entrega debe ser una notificación distinta. Reutilizar siempre el
   // mismo tag hace que iOS pueda reemplazar/coalescer avisos consecutivos.
-  const notificationTag = data.tag || `german-${data.deliveryId || Date.now()}`;
+  const notificationTag = data.tag || `german-${resolvedDeliveryId || Date.now()}`;
   event.waitUntil((async () => {
     await caches.open(LAST_PUSH_CACHE).then((cache) => cache.put('/__last_push__', new Response(JSON.stringify({ url, at: Date.now() }))));
     await self.registration.showNotification(data.title || 'Asistente Germán', {
@@ -32,8 +36,8 @@ self.addEventListener('push', (event) => {
     });
     // El recibo se escribe DESPUÉS de que showNotification resolvió. Si iOS
     // rechaza la notificación, la app todavía puede rescatarla por fallback.
-    if (deliveryId) {
-      await caches.open(PUSH_RECEIPT_CACHE).then((cache) => cache.put(`/__push_receipt__/${deliveryId}`, new Response(JSON.stringify({ at: Date.now() }))));
+    if (resolvedDeliveryId) {
+      await caches.open(PUSH_RECEIPT_CACHE).then((cache) => cache.put(`/__push_receipt__/${resolvedDeliveryId}`, new Response(JSON.stringify({ at: Date.now() }))));
     }
   })());
 });

@@ -2184,73 +2184,14 @@ export default function App() {
       }, (err: unknown) => console.error('[library] excepción cargando content_items:', err));
   }, []);
 
-  // Deep link desde una notificación push (sw.js abre /?delivery=<id>): en
-  // cuanto haya sesión, buscamos esa entrega puntual y vamos directo al
-  // Reader, saltando el carrusel de bienvenida.
+  // Compatibilidad con notificaciones antiguas que todavía abren /?delivery=<id>.
+  // Todas las entregas deben resolverse en la pantalla dedicada /delivery/<id>,
+  // nunca dentro del Reader/taller general.
   useEffect(() => {
     if (!session?.user || accessState !== 'active' || !pendingDeliveryId) return;
-    let cancelled = false;
-    (async () => {
-      const deliveryId = pendingDeliveryId;
-      let openedSuccessfully = false;
-      const showDeliveryError = (reason: string) => {
-        console.error('[deep-link] entrega no disponible:', { deliveryId, reason });
-        setMainMenu(false);
-        setReader({
-          title: 'No pudimos abrir este mensaje',
-          eyebrow: 'PRÁCTICA GUIADA',
-          detail: 'La entrega quedó identificada para que podamos revisarla.',
-          paragraphs: [reason, `Referencia de entrega: ${deliveryId}`],
-        });
-      };
-      try {
-        console.log('[deep-link] abriendo entrega', deliveryId);
-        const { data: row, error } = await supabase
-          .from('taller_deliveries')
-          .select('id,day_number,delivery_type,delivered_at,seen_at,message_index,content_items(title,body),content_assets(source_url,storage_path)')
-          .eq('id', deliveryId)
-          .maybeSingle();
-        if (cancelled) return;
-        if (error || !row) {
-          showDeliveryError(error ? `No se pudo consultar la entrega: ${error.message}` : 'La entrega no existe o no está disponible para esta cuenta.');
-          return;
-        }
-        const asset = row.content_assets as unknown as { source_url: string; storage_path?: string } | null;
-        const audioUrl = asset?.source_url && !asset.source_url.startsWith('storage://')
-          ? asset.source_url
-          : asset?.storage_path
-            ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/${asset.storage_path}`
-            : undefined;
-        const deliveryType = row.delivery_type as TallerDeliveryType;
-        // Las entregas del taller son audio. No mostramos ni dependemos de texto
-        // del body para abrir una notificación.
-        if (!audioUrl) {
-          showDeliveryError('La entrega no tiene audio asociado.');
-          return;
-        }
-        setMainMenu(false);
-        setReader({
-          title: `Día ${row.day_number} · ${deliveryTypeLabels[deliveryType]}`,
-          eyebrow: 'PRÁCTICA GUIADA',
-          detail: `Recibido ${formatDeliveredAt(row.delivered_at)}.`,
-          paragraphs: [],
-          audioUrl,
-        });
-        openedSuccessfully = true;
-        if (!row.seen_at) {
-          const { error: seenError } = await supabase.from('taller_deliveries').update({ seen_at: new Date().toISOString() }).eq('id', row.id);
-          if (seenError) console.error('[deep-link] no se pudo marcar seen_at:', seenError);
-        }
-      } catch (err) {
-        if (!cancelled) showDeliveryError(err instanceof Error ? `Ocurrió un error al abrir la entrega: ${err.message}` : 'Ocurrió un error inesperado al abrir la entrega.');
-      } finally {
-        if (!cancelled) {
-          setPendingDeliveryId(null);
-          if (openedSuccessfully && typeof window !== 'undefined') window.history.replaceState({}, '', window.location.pathname);
-        }
-      }
-    })();
-    return () => { cancelled = true; };
+    const deliveryId = pendingDeliveryId;
+    setPendingDeliveryId(null);
+    window.location.replace(`/delivery/${encodeURIComponent(deliveryId)}`);
   }, [session?.user, accessState, pendingDeliveryId]);
 
   // Esperamos a saber si hay sesión antes de decidir la siguiente pantalla
