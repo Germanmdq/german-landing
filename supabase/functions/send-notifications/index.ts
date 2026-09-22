@@ -25,7 +25,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 webpush.setVapidDetails(`mailto:${VAPID_EMAIL}`, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
 const MATCH_WINDOW_MINUTES = 2;
-const PUSH_RETRY_WINDOW_MINUTES = 30;
+// No acumulamos avisos viejos: si un push no salió cerca de su horario,
+// queda como fallo histórico y no reaparece mucho después junto con otros.
+const PUSH_RETRY_WINDOW_MINUTES = 5;
 const PUSH_RETRY_MIN_INTERVAL_SECONDS = 90;
 const PUSH_RETRY_MAX_ATTEMPTS = 6;
 
@@ -413,24 +415,10 @@ async function processIntermediateMessage(enrollment: ProgramEnrollmentRow, mess
 
   const dayContent = await getDayContent(enrollment.collection_id, enrollment.current_day);
   if (!dayContent) return;
-  const messageText = findNumberedMessageText(dayContent.body || '', messageIndex);
   const assetId = await getIntermediateAsset(dayContent.id, messageIndex);
   if (!assetId) {
     console.warn(JSON.stringify({ event: 'missing-intermediate-audio', enrollmentId: enrollment.id, day: enrollment.current_day, requestedIndex: messageIndex }));
     return;
-  }
-  if (!messageText) {
-    // Algunos días históricos tienen los audios completos pero el body quedó
-    // corto respecto del numerado real. Si el audio existe, no bloqueamos la
-    // entrega: la práctica debe seguir funcionando y el usuario puede abrir el
-    // audio normalmente. Dejamos el warning para poder completar el texto luego.
-    console.warn(JSON.stringify({
-      event: 'missing-intermediate-message-audio-present',
-      enrollmentId: enrollment.id,
-      day: enrollment.current_day,
-      requestedIndex: messageIndex,
-      availableMessages: numberedMessageCount(dayContent.body || ''),
-    }));
   }
 
   const inserted = await reserveDelivery({

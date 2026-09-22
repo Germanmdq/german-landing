@@ -1132,7 +1132,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
         console.log('[workshop] buscando taller_deliveries…');
         const { data: deliveryRows, error: deliveryError } = await supabase
           .from('taller_deliveries')
-          .select('id,day_number,delivery_type,delivered_at,seen_at,message_index,content_items(title,body),content_assets(source_url,storage_path)')
+          .select('id,day_number,delivery_type,delivered_at,seen_at,message_index,content_assets(source_url,storage_path)')
           .eq('enrollment_id', enrollment.id)
           .order('delivered_at', { ascending: false });
         if (cancelled) return;
@@ -2195,7 +2195,6 @@ export default function App() {
           showDeliveryError(error ? `No se pudo consultar la entrega: ${error.message}` : 'La entrega no existe o no está disponible para esta cuenta.');
           return;
         }
-        const item = row.content_items as unknown as { title: string; body: string } | null;
         const asset = row.content_assets as unknown as { source_url: string; storage_path?: string } | null;
         const audioUrl = asset?.source_url && !asset.source_url.startsWith('storage://')
           ? asset.source_url
@@ -2203,17 +2202,10 @@ export default function App() {
             ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/${asset.storage_path}`
             : undefined;
         const deliveryType = row.delivery_type as TallerDeliveryType;
-        const body = item?.body || '';
-        const paragraphs = extractDeliveryParagraphs(body, deliveryType, row.message_index);
-        if (!item?.body && !audioUrl) {
-          showDeliveryError('La entrega no tiene contenido asociado.');
-          return;
-        }
-        if (!paragraphs?.length && !audioUrl) {
-          const messageReference = deliveryType === 'intermediate_message'
-            ? ` No se encontró el mensaje numerado ${row.message_index ?? 'sin índice'} en el contenido del Día ${row.day_number}.`
-            : ` No se encontró la sección correspondiente a ${deliveryTypeLabels[deliveryType]}.`;
-          showDeliveryError(`El contenido existe, pero no pudimos extraerlo.${messageReference}`);
+        // Las entregas del taller son audio. No mostramos ni dependemos de texto
+        // del body para abrir una notificación.
+        if (!audioUrl) {
+          showDeliveryError('La entrega no tiene audio asociado.');
           return;
         }
         setMainMenu(false);
@@ -2221,7 +2213,7 @@ export default function App() {
           title: `Día ${row.day_number} · ${deliveryTypeLabels[deliveryType]}`,
           eyebrow: 'PRÁCTICA GUIADA',
           detail: `Recibido ${formatDeliveredAt(row.delivered_at)}.`,
-          paragraphs: paragraphs ?? [],
+          paragraphs: [],
           audioUrl,
         });
         openedSuccessfully = true;
