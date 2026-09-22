@@ -30,6 +30,17 @@ const MATCH_WINDOW_MINUTES = 2;
 const PUSH_RETRY_WINDOW_MINUTES = 5;
 const PUSH_RETRY_MIN_INTERVAL_SECONDS = 90;
 const PUSH_RETRY_MAX_ATTEMPTS = 6;
+// Las 4 meditaciones diarias tienen un único horario fijo por día, separado
+// por horas entre sí, así que este margen no puede pisar el turno siguiente.
+// Cubre una corrida de cron que falló, un timeout, o una carrera de inserción
+// (ver validate_active_program_delivery) sin dejar la meditación perdida para
+// siempre por haberse perdido el minuto exacto. deliveryExists()/el índice
+// único de taller_deliveries garantizan que esto nunca duplique un envío.
+const MEDITATION_CATCHUP_MINUTES = 20;
+// Un endpoint de push colgado no debe bloquear el resto del lote: sin timeout,
+// una sola suscripción lenta puede hacer que toda la invocación exceda el
+// minuto de cron y arrastre a otros usuarios fuera de su ventana de envío.
+const PUSH_SEND_TIMEOUT_MS = 10_000;
 
 type MeditationMoment = 'morning' | 'noon' | 'afternoon' | 'night';
 type DeliveryType = 'meditation_morning' | 'meditation_noon' | 'meditation_afternoon' | 'meditation_night' | 'intermediate_message';
@@ -109,6 +120,15 @@ function localDateKey(date: Date, timeZone: string): string {
 function withinWindow(nowMinutes: number, targetMinutes: number, windowMinutes = MATCH_WINDOW_MINUTES): boolean {
   const diff = Math.abs(nowMinutes - targetMinutes);
   return Math.min(diff, 1440 - diff) <= windowMinutes;
+}
+
+// Igual que withinWindow, pero además cubre un rezago acotado DESPUÉS del
+// horario (nunca antes). deliveryExists() ya hace que reintentar sea inofensivo,
+// así que ampliar la detección de "ahora toca" sólo reduce pérdidas silenciosas.
+function isMeditationMomentDue(nowMinutes: number, targetMinutes: number): boolean {
+  if (withinWindow(nowMinutes, targetMinutes)) return true;
+  const elapsed = ((nowMinutes - targetMinutes) % 1440 + 1440) % 1440;
+  return elapsed > MATCH_WINDOW_MINUTES && elapsed <= MEDITATION_CATCHUP_MINUTES;
 }
 
 // Réplica en Deno de la lógica de extracción de mensajes numerados usada en el
@@ -292,10 +312,13 @@ async function nightAlreadySentToday(enrollmentId: string, now: Date, timeZone: 
 // insertar la fila NO significa que el push haya llegado al teléfono.
 async function sendPush(device: PushDeviceRow, payload: Record<string, unknown>) {
   try {
-    await webpush.sendNotification(
-      { endpoint: device.endpoint, keys: { p256dh: device.p256dh, auth: device.auth_key } },
-      JSON.stringify(payload),
-    );
+    await Promise.race([
+      webpush.sendNotification(
+        { endpoint: device.endpoint, keys: { p256dh: device.p256dh, auth: device.auth_key } },
+        JSON.stringify(payload),
+      ),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('push send timeout')), PUSH_SEND_TIMEOUT_MS)),
+    ]);
     return true;
   } catch (err) {
     const statusCode = (err as { statusCode?: number })?.statusCode;
@@ -470,7 +493,7 @@ async function processEnrollment(enrollment: ProgramEnrollmentRow, now: Date) {
   let meditationDueNow = false;
   for (const moment of moments) {
     const target = enrollment[moment];
-    if (target && withinWindow(nowMinutes, minutesOfDay(target))) {
+    if (target && isMeditationMomentDue(nowMinutes, minutesOfDay(target))) {
       meditationDueNow = true;
       await processMeditation(enrollment, moment, now);
     }

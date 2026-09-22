@@ -114,7 +114,11 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
       .eq('user_id', session.user.id)
       .eq('favorite_id', `delivery:${deliveryId}`)
       .maybeSingle()
-      .then(({ data }) => { if (active) setFavorite(Boolean(data)); });
+      .then(({ data, error: queryError }) => {
+        if (!active) return;
+        if (queryError) console.error('[delivery favorite] no se pudo consultar el estado:', queryError);
+        setFavorite(Boolean(data));
+      });
     return () => { active = false; };
   }, [delivery, deliveryId, session?.user]);
 
@@ -131,7 +135,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
         title: delivery.title,
         eyebrow: 'AUDIO',
         detail: `Día ${delivery.dayNumber}`,
-        paragraphs: [],
+        paragraphs: delivery.paragraphs,
         audioUrl: delivery.audioUrl,
       },
     };
