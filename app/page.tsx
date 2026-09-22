@@ -1275,13 +1275,13 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
     setStage('confirmed');
   };
 
-  const openDelivery = (delivery: TallerDelivery) => {
-    onRead({ title: `Día ${delivery.dayNumber} · ${deliveryTypeLabels[delivery.deliveryType]}`, eyebrow: 'PRÁCTICA GUIADA', detail: ``, paragraphs: [], audioUrl: delivery.audioUrl });
+  const openDelivery = async (delivery: TallerDelivery) => {
     if (!delivery.seenAt) {
-      const seenAt = new Date().toISOString();
-      setDeliveries((current) => current.map((item) => item.id === delivery.id ? { ...item, seenAt } : item));
-      void supabase.from('taller_deliveries').update({ seen_at: seenAt }).eq('id', delivery.id);
+      const { data: seenAt, error } = await supabase.rpc('mark_taller_delivery_seen', { p_delivery_id: delivery.id });
+      if (error) console.error('[workshop] no se pudo marcar entrega como vista:', error);
+      else setDeliveries((current) => current.map((item) => item.id === delivery.id ? { ...item, seenAt: String(seenAt) } : item));
     }
+    onRead({ title: `Día ${delivery.dayNumber} · ${deliveryTypeLabels[delivery.deliveryType]}`, eyebrow: 'PRÁCTICA GUIADA', detail: ``, paragraphs: [], audioUrl: delivery.audioUrl });
   };
 
   if (stage === 'loading') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title={program.title} subtitle={program.subtitle} onBack={onBack} onNavigate={onNavigate} /><div className="reader-body workshop-browser"><p className="library-empty">Cargando el taller…</p></div></section>;

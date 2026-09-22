@@ -96,7 +96,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
         audioUrl,
       });
       if (!row.seen_at) {
-        const { error: seenError } = await supabase.from('taller_deliveries').update({ seen_at: new Date().toISOString() }).eq('id', row.id).eq('user_id', session.user.id);
+        const { error: seenError } = await supabase.rpc('mark_taller_delivery_seen', { p_delivery_id: row.id });
         if (seenError) console.error('[delivery] no se pudo marcar seen_at:', seenError);
       }
     })().catch((reason: unknown) => {
