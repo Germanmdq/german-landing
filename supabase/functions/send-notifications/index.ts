@@ -36,7 +36,16 @@ const PUSH_RETRY_MAX_ATTEMPTS = 6;
 // (ver validate_active_program_delivery) sin dejar la meditación perdida para
 // siempre por haberse perdido el minuto exacto. deliveryExists()/el índice
 // único de taller_deliveries garantizan que esto nunca duplique un envío.
-const MEDITATION_CATCHUP_MINUTES = 20;
+// Usa aritmética modular (mod 1440) a propósito: así sigue funcionando bien
+// para un horario cercano a la medianoche local, sin necesitar conocer la
+// fecha calendario. Ampliarlo más allá de ~30-40 min empieza a acercarse al
+// intervalo mínimo real entre mensajes intermedios (30 min hoy en producción)
+// y podría confundir "todavía no llegó la hora" con "se está recuperando".
+const MEDITATION_CATCHUP_MINUTES = 30;
+// Ventana corta, inmediatamente después de agotar el margen de recuperación,
+// para loguear (una vez, no todo el día) que una meditación programada quedó
+// vencida sin generar entrega — para enterarnos nosotros, no el usuario.
+const OVERDUE_ALERT_WINDOW_MINUTES = 5;
 // Un endpoint de push colgado no debe bloquear el resto del lote: sin timeout,
 // una sola suscripción lenta puede hacer que toda la invocación exceda el
 // minuto de cron y arrastre a otros usuarios fuera de su ventana de envío.
@@ -122,13 +131,12 @@ function withinWindow(nowMinutes: number, targetMinutes: number, windowMinutes =
   return Math.min(diff, 1440 - diff) <= windowMinutes;
 }
 
-// Igual que withinWindow, pero además cubre un rezago acotado DESPUÉS del
-// horario (nunca antes). deliveryExists() ya hace que reintentar sea inofensivo,
-// así que ampliar la detección de "ahora toca" sólo reduce pérdidas silenciosas.
-function isMeditationMomentDue(nowMinutes: number, targetMinutes: number): boolean {
-  if (withinWindow(nowMinutes, targetMinutes)) return true;
-  const elapsed = ((nowMinutes - targetMinutes) % 1440 + 1440) % 1440;
-  return elapsed > MATCH_WINDOW_MINUTES && elapsed <= MEDITATION_CATCHUP_MINUTES;
+// Minutos transcurridos desde la última vez que el reloj local pasó por
+// targetMinutes (0..1439). No distingue "todavía no llegó la hora de hoy" de
+// "ya pasó hace casi 24hs" — por eso sólo se usa acotado a una ventana corta
+// (catch-up / alerta), nunca para decidir "ya pasó hoy" sin límite.
+function minutesElapsedSince(nowMinutes: number, targetMinutes: number): number {
+  return ((nowMinutes - targetMinutes) % 1440 + 1440) % 1440;
 }
 
 // Réplica en Deno de la lógica de extracción de mensajes numerados usada en el
@@ -485,6 +493,23 @@ async function processIntermediateMessage(enrollment: ProgramEnrollmentRow, mess
   });
 }
 
+// Deja rastro DURABLE (no sólo en logs efímeros de la Edge Function) de que
+// una meditación programada venció sin generar entrega, incluso si el
+// catch-up todavía no la recuperó. Así nos enteramos nosotros, no el usuario.
+async function recordOverdueIncident(enrollment: ProgramEnrollmentRow, moment: MeditationMoment, minutesLate: number) {
+  const deliveryType = momentToDeliveryType[moment];
+  console.error(JSON.stringify({ event: 'meditation-overdue-uncaught', enrollmentId: enrollment.id, userId: enrollment.user_id, day: enrollment.current_day, moment, minutesLate }));
+  const { error } = await supabase.from('notification_incidents').insert({
+    enrollment_id: enrollment.id,
+    user_id: enrollment.user_id,
+    day_number: enrollment.current_day,
+    delivery_type: deliveryType,
+    kind: 'meditation_overdue_uncaught',
+    detail: { moment, minutesLate },
+  });
+  if (error) console.error('[notification_incidents] no se pudo registrar el incidente:', error);
+}
+
 async function processEnrollment(enrollment: ProgramEnrollmentRow, now: Date) {
   if (enrollment.status !== 'active' || !enrollment.timezone) return;
   const nowMinutes = localMinutesNow(now, enrollment.timezone);
@@ -493,9 +518,23 @@ async function processEnrollment(enrollment: ProgramEnrollmentRow, now: Date) {
   let meditationDueNow = false;
   for (const moment of moments) {
     const target = enrollment[moment];
-    if (target && isMeditationMomentDue(nowMinutes, minutesOfDay(target))) {
+    if (!target) continue;
+    const targetMinutes = minutesOfDay(target);
+    if (withinWindow(nowMinutes, targetMinutes)) {
       meditationDueNow = true;
       await processMeditation(enrollment, moment, now);
+      continue;
+    }
+    const elapsed = minutesElapsedSince(nowMinutes, targetMinutes);
+    if (elapsed > MATCH_WINDOW_MINUTES && elapsed <= MEDITATION_CATCHUP_MINUTES) {
+      meditationDueNow = true;
+      console.warn(JSON.stringify({ event: 'meditation-catchup-send', enrollmentId: enrollment.id, day: enrollment.current_day, moment, minutesLate: elapsed }));
+      await processMeditation(enrollment, moment, now);
+      continue;
+    }
+    if (elapsed > MEDITATION_CATCHUP_MINUTES && elapsed <= MEDITATION_CATCHUP_MINUTES + OVERDUE_ALERT_WINDOW_MINUTES) {
+      const exists = await deliveryExists(enrollment.id, enrollment.current_day, momentToDeliveryType[moment], null);
+      if (!exists) await recordOverdueIncident(enrollment, moment, elapsed);
     }
   }
 

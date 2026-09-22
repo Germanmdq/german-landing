@@ -2,6 +2,23 @@ const CACHE_NAME = 'german-app-v16';
 const LAST_PUSH_CACHE = 'german-last-push-v1';
 const PUSH_RECEIPT_CACHE = 'german-push-receipts-v1';
 
+// Señal server-side de "el service worker recibió el evento push", distinta
+// de push_status='sent' (que sólo prueba que el proveedor lo aceptó). Nunca
+// debe romper ni demorar la notificación: sólo un fetch best-effort.
+async function reportPushReceived(deliveryId) {
+  if (!deliveryId) return;
+  try {
+    await fetch('/api/push-received', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deliveryId }),
+    });
+  } catch {
+    // Sin conectividad justo al despertar el dispositivo, por ejemplo. La
+    // notificación ya se mostró igual; esto es sólo observabilidad.
+  }
+}
+
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
@@ -58,6 +75,7 @@ self.addEventListener('push', (event) => {
     // rechaza la notificación, la app todavía puede rescatarla por fallback.
     if (resolvedDeliveryId) {
       await caches.open(PUSH_RECEIPT_CACHE).then((cache) => cache.put(`/__push_receipt__/${resolvedDeliveryId}`, new Response(JSON.stringify({ at: Date.now() }))));
+      await reportPushReceived(resolvedDeliveryId);
     }
   })());
 });
