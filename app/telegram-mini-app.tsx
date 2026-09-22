@@ -1171,12 +1171,6 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
     if (!collectionId) return;
     setSaving(true);
     setSaveError('');
-    const subscribeResult = await subscribeToPush(user);
-    if (subscribeResult.error) {
-      setSaving(false);
-      setSaveError(subscribeResult.error);
-      return;
-    }
     const { data: enrollment, error: progressError } = await supabase.rpc('start_program', enrollmentParams()).single();
     setSaving(false);
     if (progressError) { setSaveError(progressError.message); return; }
@@ -1237,8 +1231,6 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
     if (!activeProgram || !collectionId) return;
     setSaving(true);
     setSaveError('');
-    const subscribeResult = await subscribeToPush(user);
-    if (subscribeResult.error) { setSaving(false); setSaveError(subscribeResult.error); return; }
     const { data: enrollment, error } = await supabase.rpc('switch_program', {
       p_current_enrollment_id: activeProgram.id,
       p_new_collection_id: collectionId,
@@ -1465,13 +1457,6 @@ function PropiaPracticaPanel({ user, onBack, onNavigate, onRead }: { user: User;
 
     setSubmitting(true);
     try {
-      console.log('[propia] activando notificaciones para', tema, duracion);
-      const result = await ensurePushSubscription(user);
-      if (result.error) {
-        console.error('[propia] no se pudo activar notificaciones:', result.error);
-        setMessage(result.error);
-        return;
-      }
       const { error: enrollmentError } = await supabase.rpc('start_custom_program', { p_morning: schedule.morning, p_noon: schedule.noon, p_afternoon: schedule.afternoon, p_night: schedule.night, p_timezone: timezone, p_message_interval_minutes: frequency, p_custom_config: { tema, duracion } });
       if (enrollmentError) { setMessage(enrollmentError.code === '23505' ? 'Ya tenés un taller de práctica activo. Para comenzar otro, primero tenés que finalizar o abandonar el actual.' : enrollmentError.message); return; }
       localStorage.removeItem('german-propia-practica');
@@ -1983,7 +1968,6 @@ export default function TelegramMiniApp() {
       setSession(data.session);
       setSessionChecked(true);
       if (data.session?.user) void syncProfile(data.session.user);
-      if (data.session?.user) void reconcilePushSubscription(data.session.user);
     }).catch((err) => {
       clearTimeout(sessionCheckTimeout);
       console.error('[auth] error obteniendo la sesión:', err);
@@ -1996,7 +1980,6 @@ export default function TelegramMiniApp() {
       setSessionChecked(true);
       if (nextSession?.user) {
         void syncProfile(nextSession.user);
-        if (event === 'SIGNED_IN') void reconcilePushSubscription(nextSession.user);
       } else {
         setFullName(null);
       }
