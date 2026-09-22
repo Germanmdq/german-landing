@@ -3,6 +3,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN')!;
+const APP_URL = 'https://german.elclubdelaimaginacion.com/telegram';
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 type TelegramUser = {
@@ -73,12 +74,13 @@ async function validateInitData(initData: string): Promise<TelegramUser | null> 
 async function getOrCreateUser(telegramUser: TelegramUser) {
   const { data: linked, error: linkedError } = await supabase
     .from('telegram_accounts')
-    .select('user_id')
+    .select('user_id,welcome_sent_at')
     .eq('telegram_user_id', telegramUser.id)
     .maybeSingle();
   if (linkedError) throw linkedError;
 
   let userId = linked?.user_id as string | undefined;
+  let welcomeSentAt = linked?.welcome_sent_at as string | null | undefined;
   if (!userId) {
     const email = `telegram-${telegramUser.id}@users.asistentegerman.app`;
     const { data: created, error: createError } = await supabase.auth.admin.createUser({
@@ -104,6 +106,7 @@ async function getOrCreateUser(telegramUser: TelegramUser) {
       language_code: telegramUser.language_code || null,
     });
     if (accountError) throw accountError;
+    welcomeSentAt = null;
   } else {
     const { error: updateError } = await supabase.from('telegram_accounts').update({
       chat_id: telegramUser.id,
@@ -114,6 +117,36 @@ async function getOrCreateUser(telegramUser: TelegramUser) {
       updated_at: new Date().toISOString(),
     }).eq('telegram_user_id', telegramUser.id);
     if (updateError) throw updateError;
+  }
+
+  if (!welcomeSentAt) {
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: telegramUser.id,
+          text: 'Tu espacio en Asistente Germán ya está listo.\n\nDesde este chat vas a recibir tus avisos y podés volver a entrar cuando quieras.',
+          reply_markup: {
+            inline_keyboard: [[{
+              text: 'Abrir Asistente Germán',
+              web_app: { url: APP_URL },
+            }]],
+          },
+        }),
+      });
+
+      const result = await response.json().catch(() => null) as { ok?: boolean; description?: string } | null;
+      if (!response.ok || !result?.ok) throw new Error(result?.description || `Telegram respondió ${response.status}`);
+
+      const { error: welcomeError } = await supabase
+        .from('telegram_accounts')
+        .update({ welcome_sent_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq('telegram_user_id', telegramUser.id);
+      if (welcomeError) console.error('[telegram-session] no se pudo marcar welcome_sent_at:', welcomeError);
+    } catch (error) {
+      console.error('[telegram-session] no se pudo enviar el mensaje de bienvenida:', error);
+    }
   }
 
   const { data: authUser, error: authUserError } = await supabase.auth.admin.getUserById(userId);
@@ -140,4 +173,3 @@ Deno.serve(async (request) => {
     return Response.json({ error: 'No pudimos abrir tu cuenta.' }, { status: 500, headers: corsHeaders });
   }
 });
-
