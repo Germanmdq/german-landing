@@ -414,22 +414,23 @@ async function processIntermediateMessage(enrollment: ProgramEnrollmentRow, mess
   const dayContent = await getDayContent(enrollment.collection_id, enrollment.current_day);
   if (!dayContent) return;
   const messageText = findNumberedMessageText(dayContent.body || '', messageIndex);
+  const assetId = await getIntermediateAsset(dayContent.id, messageIndex);
+  if (!assetId) {
+    console.warn(JSON.stringify({ event: 'missing-intermediate-audio', enrollmentId: enrollment.id, day: enrollment.current_day, requestedIndex: messageIndex }));
+    return;
+  }
   if (!messageText) {
-    // No fallar en silencio: esto deja una señal inequívoca en los logs cuando
-    // un día se queda corto de mensajes respecto de la ventana configurada.
+    // Algunos días históricos tienen los audios completos pero el body quedó
+    // corto respecto del numerado real. Si el audio existe, no bloqueamos la
+    // entrega: la práctica debe seguir funcionando y el usuario puede abrir el
+    // audio normalmente. Dejamos el warning para poder completar el texto luego.
     console.warn(JSON.stringify({
-      event: 'missing-intermediate-message',
+      event: 'missing-intermediate-message-audio-present',
       enrollmentId: enrollment.id,
       day: enrollment.current_day,
       requestedIndex: messageIndex,
       availableMessages: numberedMessageCount(dayContent.body || ''),
     }));
-    return;
-  }
-  const assetId = await getIntermediateAsset(dayContent.id, messageIndex);
-  if (!assetId) {
-    console.warn(JSON.stringify({ event: 'missing-intermediate-audio', enrollmentId: enrollment.id, day: enrollment.current_day, requestedIndex: messageIndex }));
-    return;
   }
 
   const inserted = await reserveDelivery({
@@ -461,7 +462,9 @@ async function processEnrollment(enrollment: ProgramEnrollmentRow, now: Date) {
     const target = enrollment[moment];
     if (target && withinWindow(nowMinutes, minutesOfDay(target))) {
       await processMeditation(enrollment, moment, now);
-      return; // una sola cosa por tick para esta suscripción
+      // No cortamos acá: los mensajes intermedios tienen su propia secuencia
+      // completa (1..N). Si un slot coincide con una meditación, corresponde
+      // registrar/enviar ambas piezas y no "comerse" ese número intermedio.
     }
   }
 

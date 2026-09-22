@@ -451,20 +451,20 @@ html:has(.profile-section), body:has(.profile-section), .app-shell:has(.profile-
 
 /* Interior definitivo: negro de borde a borde, incluido dock inferior.
    Meditaciones para ahora es la única pantalla interna deliberadamente clara. */
-html:has(.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen)),
-body:has(.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen)),
-.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen),
-.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) > section,
-.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) .reader-section,
-.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) .reader-body,
-.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) .day-one-section,
-.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) .feature-section,
-.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) .categories-section {
+html:has(.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen):not(.guided-photo-screen)),
+body:has(.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen):not(.guided-photo-screen)),
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen):not(.guided-photo-screen),
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen):not(.guided-photo-screen) > section,
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen):not(.guided-photo-screen) .reader-section,
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen):not(.guided-photo-screen) .reader-body,
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen):not(.guided-photo-screen) .day-one-section,
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen):not(.guided-photo-screen) .feature-section,
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen):not(.guided-photo-screen) .categories-section {
   background:#000 !important;
 }
-.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) .bottom-dock,
-.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) .app-dock,
-.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen) nav[aria-label="Navegación principal"] {
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen):not(.guided-photo-screen) .bottom-dock,
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen):not(.guided-photo-screen) .app-dock,
+.app-shell.section-app:not(.welcome-carousel-screen):not(.meditaciones-photo-screen):not(.guided-photo-screen) nav[aria-label="Navegación principal"] {
   background:#000 !important;
   border-color:#1c1c1e !important;
 }
@@ -500,6 +500,34 @@ body:has(.meditaciones-photo-screen),
 .app-shell.section-app.meditaciones-photo-screen .feature-header > p,
 .app-shell.section-app.meditaciones-photo-screen .feature-header > small {
   color:#6e6e73 !important;
+}
+
+/* Prácticas guiadas es también una subcategoría clara: selector blanco.
+   Al abrir un taller concreto se vuelve al tema negro del interior. */
+html:has(.guided-photo-screen),
+body:has(.guided-photo-screen),
+.app-shell.section-app.guided-photo-screen,
+.app-shell.section-app.guided-photo-screen .day-one-section,
+.app-shell.section-app.guided-photo-screen .day-one-carousel,
+.app-shell.section-app.guided-photo-screen .day-one-scroll,
+.app-shell.section-app.guided-photo-screen .day-one-controls,
+.app-shell.section-app.guided-photo-screen .feature-header {
+  background:#fff !important;
+  color:#18181b !important;
+}
+.app-shell.section-app.guided-photo-screen .feature-header h1,
+.app-shell.section-app.guided-photo-screen .feature-header h2,
+.app-shell.section-app.guided-photo-screen .feature-header button {
+  color:#18181b !important;
+}
+.app-shell.section-app.guided-photo-screen .feature-header > p,
+.app-shell.section-app.guided-photo-screen .feature-header > small {
+  color:#6e6e73 !important;
+}
+.app-shell.section-app.guided-photo-screen .main-navigation-dock {
+  background:#fffffff2 !important;
+  border-top:1px solid #e3e3e9 !important;
+  box-shadow:0 -7px 22px #1d1d1f0a !important;
 }
 
 /* Meditaciones para ahora: tema claro y controles en pildoras, sin bloques oscuros. */

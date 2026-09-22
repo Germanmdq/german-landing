@@ -2287,7 +2287,7 @@ export default function App() {
           ? { ...item, image: '/images/interno-40dias.webp' }
           : item);
     const guidedCarouselKey = 'talleres-guiadas';
-    return <main className="app-shell app-main section-app day-one-screen photo-cards-screen"><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><DayOneCarousel key={guidedCarouselKey} label="Prácticas guiadas" items={guidedItems} initialIndex={carouselIndicesRef.current[guidedCarouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[guidedCarouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[guidedCarouselKey] = index; select(item); }} /></section>{dock}</main>;
+    return <main className="app-shell app-main section-app day-one-screen photo-cards-screen guided-photo-screen"><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><DayOneCarousel key={guidedCarouselKey} label="Prácticas guiadas" items={guidedItems} initialIndex={carouselIndicesRef.current[guidedCarouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[guidedCarouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[guidedCarouselKey] = index; select(item); }} /></section>{dock}</main>;
   }
   if (current?.title === 'Día 1') {
     const carouselKey = `${tab}-${trail.map((item) => item.title).join('/')}-dia1`;
