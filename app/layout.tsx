@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import './animation.css';
 export const metadata: Metadata = {
@@ -39,7 +40,10 @@ export default function Layout({ children }: Readonly<{ children: React.ReactNod
         <link rel="preload" as="image" href="/images/german-biblioteca.webp" />
         <link rel="preload" as="image" href="/images/german-practicas.webp" />
       </head>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        {children}
+        <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
+      </body>
     </html>
   );
 }

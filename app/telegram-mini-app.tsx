@@ -2207,7 +2207,7 @@ export default function TelegramMiniApp() {
   // de entrega lo saltean desde el estado inicial.
   if (!sessionChecked) return null;
   if (showVideo && !getDeliveryIdFromUrl() && !pendingDeliveryId) return <VideoIntro onFinish={() => setShowVideo(false)} />;
-  if (!session) return <LoginGate />;
+  if (!session) return <LoginGate redirectPath="/telegram" />;
   if (accessState === 'checking') return <main className="app-shell app-main section-app"><div className="access-loading" role="status" aria-live="polite">Cargando tu espacio…</div></main>;
   if (accessState === 'error') return <main className="app-shell app-main section-app"><div className="access-loading"><p>No pudimos comprobar tu acceso.</p><button type="button" onClick={() => window.location.reload()}>Reintentar</button></div></main>;
   if (accessState === 'inactive') return null;
