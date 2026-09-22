@@ -81,7 +81,6 @@ const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
     { icon: '👤', title: 'Mi cuenta', detail: 'Nombre, mail, suscripción y acceso.', tone: palette[0], accountPanel: true },
     { icon: '⭐', title: 'Favoritos', detail: 'Prácticas, audios y lecturas guardadas.', tone: palette[1] },
     { icon: '📈', title: 'Mi avance', detail: 'Tu progreso en las prácticas guiadas.', tone: palette[2] },
-    { icon: '🔔', title: 'Notificaciones', detail: 'Activá o desactivá los avisos.', tone: palette[3], notificationPanel: true },
   ] },
 });
 
@@ -222,7 +221,6 @@ const navMenuItems: { target: NavTarget; icon: ReactNode; label: string }[] = [
   { target: 'espacio', icon: <UserRound size={21} />, label: 'Mi perfil' },
   { target: 'favorites', icon: <Heart size={21} />, label: 'Favoritos' },
   { target: 'configuracion', icon: <Settings2 size={21} />, label: 'Configuración' },
-  { target: 'notificaciones', icon: <Bell size={21} />, label: 'Notificaciones' },
 ];
 
 function NavMenuSheet({ onSelect, onCancel }: { onSelect: (target: NavTarget) => void; onCancel: () => void }) {
@@ -511,7 +509,6 @@ function NotificationsPanel({ user, onBack, onNavigate }: { user: User; onBack: 
 }
 
 function ProfileScreen({ user, items, showInstall, onInstall, onSelect, onBack, onNavigate, onOpenProgress }: { user: User; items: DeckItem[]; showInstall: boolean; onInstall: () => void; onSelect: (item: DeckItem) => void; onBack: () => void; onNavigate: (target: NavTarget) => void; onOpenProgress: () => void }) {
-  const notifications = useNotificationsToggle(user);
   return <section className="reader-section profile-section">
     <FixedHeader eyebrow="MI PERFIL" title="Tu espacio" subtitle="Tu cuenta y tus elecciones." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body profile-folder-stage">
@@ -525,18 +522,12 @@ function ProfileScreen({ user, items, showInstall, onInstall, onSelect, onBack, 
         drift={0.5}
         onSelect={(value) => {
           if (value === 'Mi avance') { onOpenProgress(); return; }
-          if (value === 'Notificaciones') {
-            const item = items.find((candidate) => candidate.title === value);
-            if (item) onSelect(item);
-            return;
-          }
           const item = items.find((candidate) => candidate.title === value);
           if (item) onSelect(item);
         }}
         folderColor="#3f3f46" frontColor="#52525b" paperColor="#f5f5f5" itemColor="#f5f5f5" itemTextColor="#18181b" labelColor="#f5f5f5"
         width={200} height={148} radius={14} spread={205} lift={52} tilt={8} flapAngle={34} restAngle={16} openDuration={520} stagger={45} bounce={0.3}
       />
-      {notifications.error && <p className="account-message">{notifications.error}</p>}
     </div>
   </section>;
 }
@@ -626,16 +617,9 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
 }
 
 function ConfigurationPanel({ user, onBack, onNavigate, onOpenNotifications }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void; onOpenNotifications: () => void }) {
-  const notifications = useNotificationsToggle(user);
   return <section className="reader-section">
     <FixedHeader eyebrow="MI PERFIL" title="Configuración" subtitle="Preferencias de la aplicación." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body configuration-settings">
-      <p className="settings-group-label">AVISOS</p>
-      <div className="ios-card">
-        <div className="ios-row"><span className="ios-row-label">Notificaciones push</span>{notifications.loading ? <span className="ios-toggle-placeholder" aria-hidden="true" /> : <ToggleSwitch checked={notifications.active} onChange={notifications.toggle} disabled={notifications.busy} label="Notificaciones push" />}</div>
-        <button type="button" className="ios-row" onClick={onOpenNotifications}><span className="ios-row-label">Notificaciones</span><span className="ios-row-value ios-row-value--muted"><ChevronRight size={17} /></span></button>
-      </div>
-      {notifications.error && <p className="account-message" role="alert">{notifications.error}</p>}
       <p className="settings-explanation">Las entregas de cada práctica siguen los horarios que elegiste al comenzarla.</p>
     </div>
   </section>;
@@ -1094,7 +1078,6 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
   const [loadError, setLoadError] = useState('');
   const [confirmingAbandon, setConfirmingAbandon] = useState(false);
   const [openDeliveryDays, setOpenDeliveryDays] = useState<Record<number, boolean>>({});
-  const notifications = useNotificationsToggle(user);
 
   useEffect(() => {
     let cancelled = false;
@@ -1397,10 +1380,6 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
         <div className="workshop-progress-copy"><span>Tu recorrido</span><b>Día {currentDay} de 40</b><small>{Math.max(0, 40 - currentDay)} días por delante</small></div>
         <div className="workshop-progress-track" aria-hidden="true"><span style={{ width: `${Math.min(100, Math.max(0, (currentDay / 40) * 100))}%` }} /></div>
       </section>}
-      <div className="ios-card">
-        <div className="ios-row"><span className="ios-row-label">Notificaciones</span>{notifications.loading ? <span className="ios-toggle-placeholder" aria-hidden="true" /> : <ToggleSwitch checked={notifications.active} onChange={notifications.toggle} disabled={notifications.busy} label="Notificaciones" />}</div>
-      </div>
-      {!notifications.loading && !notifications.active && <p className="workshop-notifications-warning">Sin notificaciones no vas a recibir las prácticas.</p>}
       <div className="workshop-schedule-action">
         <button type="button" className="workshop-schedule-pill" onClick={() => { setSaveError(''); setStage('edit-schedule'); }}><span className="ios-row-label">Cambiar horarios</span><span className="ios-row-value">{schedule.morning} · {schedule.noon} · {schedule.afternoon} · {schedule.night}<ChevronRight size={17} /></span></button>
       </div>
