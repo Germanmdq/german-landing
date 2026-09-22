@@ -5,7 +5,13 @@ export const metadata: Metadata = {
   title: 'Bienvenido · Germán Asistente',
   description: 'Tu imaginación, puesta en práctica.',
   manifest: '/manifest.webmanifest',
-  icons: { icon: '/images/german-welcome.png', apple: '/images/german-welcome.png' },
+  icons: {
+    icon: [
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
   appleWebApp: { capable: true, title: 'Germán Asistente', statusBarStyle: 'default' },
 };
 export const viewport: Viewport = {
