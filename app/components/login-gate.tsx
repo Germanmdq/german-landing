@@ -17,8 +17,8 @@ export function LoginGate({ redirectPath = '/' }: { redirectPath?: string }) {
     const initData = telegram?.initData || '';
     if (!initData) return;
 
-    telegram.ready?.();
-    telegram.expand?.();
+    telegram?.ready?.();
+    telegram?.expand?.();
     setBusy(true);
     setMessage('Abriendo tu espacio…');
 
