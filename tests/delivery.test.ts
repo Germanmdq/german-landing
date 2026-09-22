@@ -18,7 +18,7 @@ test('la extracción de meditaciones conserva su sección y admite br', () => {
 
 test('el service worker navega a la URL exacta y no la transforma en query', () => {
   const source = readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8');
-  assert.match(source, /german-app-v9/);
+  assert.match(source, /german-app-v11/);
   assert.match(source, /existing\.navigate\(targetUrl\)/);
   assert.match(source, /clients\.openWindow\(targetUrl\)/);
   assert.doesNotMatch(source, /new URL\(`\/\?delivery=/);
