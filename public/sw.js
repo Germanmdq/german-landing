@@ -1,4 +1,4 @@
-const CACHE_NAME = 'german-app-v15';
+const CACHE_NAME = 'german-app-v16';
 const LAST_PUSH_CACHE = 'german-last-push-v1';
 const PUSH_RECEIPT_CACHE = 'german-push-receipts-v1';
 
@@ -9,6 +9,26 @@ self.addEventListener('activate', (event) => {
     await self.clients.claim();
     const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     await Promise.all(windows.map((client) => client.navigate(client.url)));
+  })());
+});
+
+// Las imágenes de la app son estáticas. Guardarlas al primer uso evita que la
+// PWA vuelva a descargarlas en cada navegación y hace que los carruseles abran
+// prácticamente instantáneos después de la primera visita.
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (request.method !== 'GET' || request.destination !== 'image') return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(request);
+    if (cached) return cached;
+
+    const response = await fetch(request);
+    if (response.ok) await cache.put(request, response.clone());
+    return response;
   })());
 });
 
@@ -27,8 +47,8 @@ self.addEventListener('push', (event) => {
     await caches.open(LAST_PUSH_CACHE).then((cache) => cache.put('/__last_push__', new Response(JSON.stringify({ url, at: Date.now() }))));
     await self.registration.showNotification(data.title || 'Asistente Germán', {
       body: data.body || 'Germán te dejó una práctica.',
-      icon: data.icon || '/images/german-welcome.png',
-      badge: data.badge || '/images/german-welcome.png',
+      icon: data.icon || '/icons/icon-192.png',
+      badge: data.badge || '/icons/icon-192.png',
       tag: notificationTag,
       renotify: true,
       lang: 'es-AR',
