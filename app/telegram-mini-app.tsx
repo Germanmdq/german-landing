@@ -869,7 +869,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
     const hasAudio = Boolean(entry.audioUrl);
     const matchesFilter = !filter ||
       (filter === 'Conferencias' && isConference) ||
-      (filter === 'Audios' && isConference && hasAudio) ||
+      (filter === 'Audios' && isConference) ||
       (filter === 'Libros en texto' && isBook);
     return matchesQuery && matchesFilter;
   });
@@ -945,7 +945,6 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           drift={0.5}
           onSelect={(value) => {
             if (/Libros/.test(value) && !booksAllowed) { onBooksBlocked(); return; }
-            if (value === 'Libros en audio') { onNavigate('audiolibros'); return; }
             setFilter(value);
           }}
           folderColor="#3f3f46"
@@ -967,11 +966,16 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           bounce={0.3}
         />
       </div>}
+      {filter === 'Libros en audio' && !query && <div className="library-coming-soon">
+        <span>PRÓXIMAMENTE</span>
+        <b>Libros en audio</b>
+        <p>Estamos preparando los audiolibros. Próximamente van a estar disponibles narrados por Germán.</p>
+      </div>}
       {filter && !query && filter !== 'Libros en audio' && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p><div className="library-content-list">{conferenceGroups.map((group) => {
         const open = !group.label || openYears.has(group.label);
         return <section key={group.label || 'all'} className={`library-year-group${open ? ' is-open' : ''}`}>
           {group.label && <button type="button" className="library-year-toggle" onClick={() => toggleYear(group.label)} aria-expanded={open}><span>{group.label}</span><ChevronDown size={22} aria-hidden="true" /></button>}
-          {open && group.entries.map((entry,index) => <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index*.025,.2)} className="library-content-card" onClick={() => onRead(entry, undefined, filter === 'Audios' ? 'audio' : 'text')}><div><p>{filter === 'Audios' ? 'Audio' : 'Texto'}</p><b className="card-title">{entry.title}</b>{filter === 'Audios' ? <em className="card-subtitle">Escuchar conferencia</em> : <em className="card-subtitle">{entry.excerpt || 'Abrir conferencia'}</em>}</div><span className="library-card-actions"><i>{filter === 'Audios' ? <AnimatedInterfaceIcon name="ear" size={19} /> : <ChevronRight size={19}/>}</i></span></MagicCard></div>)}
+          {open && group.entries.map((entry,index) => <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index*.025,.2)} className={`library-content-card${filter === 'Audios' ? ' is-coming-soon' : ''}`} disabled={filter === 'Audios'} onClick={filter === 'Audios' ? undefined : () => onRead(entry, undefined, 'text')}><div><p>{filter === 'Audios' ? 'Audio' : 'Texto'}</p><b className="card-title">{entry.title}</b>{filter === 'Audios' ? <em className="card-subtitle">Próximamente · leída por Germán</em> : <em className="card-subtitle">{entry.excerpt || 'Abrir conferencia'}</em>}</div><span className="library-card-actions"><i>{filter === 'Audios' ? <AnimatedInterfaceIcon name="ear" size={19} /> : <ChevronRight size={19}/>}</i></span></MagicCard></div>)}
         </section>;
       })}</div></>}
       {query && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p>
