@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { AlertCircle, ArrowLeft, Heart, Moon } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Heart, MessageCircleMore, Moon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { LoginGate } from './login-gate';
 import { AccessPaywall } from './access-paywall';
 import { AudioWaveLoader } from './audio-wave-loader';
 import { AnimatedInterfaceIcon } from './animated-interface-icon';
-import { deliveryTypeLabels, type TallerDeliveryType } from '../lib/taller-delivery';
+import { deliveryTypeLabels, extractDeliveryParagraphs, type TallerDeliveryType } from '../lib/taller-delivery';
 
 type DeliveryView = {
   dayNumber: number;
@@ -67,7 +67,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     void (async () => {
       const { data: row, error: queryError } = await supabase
         .from('taller_deliveries')
-        .select('id,user_id,day_number,delivery_type,message_index,content_id,asset_id,delivered_at,seen_at,content_items(title),content_assets(source_url,storage_path)')
+        .select('id,user_id,day_number,delivery_type,message_index,content_id,asset_id,delivered_at,seen_at,content_items(title,body),content_assets(source_url,storage_path)')
         .eq('id', deliveryId)
         .eq('user_id', session.user.id)
         .maybeSingle();
@@ -76,7 +76,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
         setError(queryError ? `No pudimos consultar la entrega: ${queryError.message}` : 'La entrega no existe o no está disponible para esta cuenta.');
         return;
       }
-      const item = row.content_items as unknown as { title: string } | null;
+      const item = row.content_items as unknown as { title: string; body: string } | null;
       const asset = row.content_assets as unknown as { source_url: string; storage_path?: string } | null;
       const audioUrl = asset?.source_url && !asset.source_url.startsWith('storage://')
         ? asset.source_url
@@ -84,7 +84,14 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
           ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/${asset.storage_path}`
           : undefined;
       const deliveryType = row.delivery_type as TallerDeliveryType;
-      if (!audioUrl) {
+      const paragraphs = item?.body
+        ? extractDeliveryParagraphs(item.body, deliveryType, row.message_index) || []
+        : [];
+      if (deliveryType === 'intermediate_message' && !paragraphs.length && !audioUrl) {
+        setError('No encontramos el contenido para este mensaje.');
+        return;
+      }
+      if (deliveryType !== 'intermediate_message' && !audioUrl) {
         setError('No encontramos el audio para esta entrega.');
         return;
       }
@@ -94,7 +101,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
         messageIndex: row.message_index,
         title: item?.title || deliveryTypeLabels[deliveryType],
         deliveredAt: row.delivered_at,
-        paragraphs: [],
+        paragraphs,
         audioUrl,
       });
       if (!row.seen_at) {
@@ -128,6 +135,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     if (!delivery || !session?.user) return;
     const id = `delivery:${deliveryId}`;
     const isIntermediate = delivery.deliveryType === 'intermediate_message';
+    const isTextMessage = isIntermediate && delivery.paragraphs.length > 0;
     const favoriteTitle = isIntermediate
       ? `Mensaje ${delivery.messageIndex ?? '—'}`
       : deliveryTypeLabels[delivery.deliveryType];
@@ -135,13 +143,13 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
       id,
       title: favoriteTitle,
       detail: `Día ${delivery.dayNumber} · ${deliveryTypeLabels[delivery.deliveryType]}`,
-      icon: '🎧',
+      icon: isTextMessage ? '💬' : '🎧',
       tone: '#D92D35',
       reader: {
         title: favoriteTitle,
-        eyebrow: 'AUDIO',
+        eyebrow: isTextMessage ? 'TEXTO' : 'AUDIO',
         detail: `Día ${delivery.dayNumber} · ${deliveryTypeLabels[delivery.deliveryType]}`,
-        paragraphs: [],
+        paragraphs: delivery.paragraphs,
         audioUrl: delivery.audioUrl,
       },
     };
@@ -173,7 +181,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
   return <main className="delivery-screen"><article className="delivery-article">
     <a className="delivery-back" href="/telegram" aria-label="Volver al Asistente"><ArrowLeft size={20}/></a>
     <button type="button" className={`delivery-favorite${favorite ? ' is-favorite' : ''}`} onClick={toggleFavorite} aria-label={favorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}><Heart size={21} fill={favorite ? 'currentColor' : 'none'} /></button>
-    {delivery.audioUrl && <section className="delivery-audio-modern">
+    {delivery.audioUrl && !(delivery.deliveryType === 'intermediate_message' && delivery.paragraphs.length > 0) && <section className="delivery-audio-modern">
       {delivery.deliveryType !== 'intermediate_message' && <div className="delivery-audio-label"><Moon size={14} strokeWidth={1.8} /><span>{deliveryTypeLabels[delivery.deliveryType]}</span></div>}
       <audio
         ref={audioRef}
@@ -187,6 +195,16 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
       <button type="button" className={`delivery-audio-ear${playing ? ' is-playing' : ''}`} onClick={() => { void toggleAudio(); }} aria-label={playing ? 'Pausar audio' : 'Escuchar audio'} aria-pressed={playing}>
         <AnimatedInterfaceIcon name="ear" size={42} />
       </button>
+    </section>}
+    {delivery.deliveryType === 'intermediate_message' && delivery.paragraphs.length > 0 && <section className="delivery-text-modern">
+      <div className="delivery-text-card">
+        <div className="delivery-text-icon" aria-hidden="true"><span className="motion-icon motion-icon--message"><MessageCircleMore size={30} strokeWidth={1.8} /></span></div>
+        <p className="delivery-text-eyebrow">MENSAJE DE GERMÁN · DÍA {delivery.dayNumber}</p>
+        <h1>Recordatorio {delivery.messageIndex ?? ''}</h1>
+        <div className="delivery-text-body">
+          {delivery.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+        </div>
+      </div>
     </section>}
   </article></main>;
 }

@@ -247,6 +247,17 @@ async function getIntermediateAsset(contentId: string, messageIndex: number) {
   return data.id as string;
 }
 
+function getIntermediateText(body: string, messageIndex: number) {
+  const normalizedBody = body.replace(/<br\s*\/?>/gi, '\n').replace(/\r\n?/g, '\n');
+  const marker = new RegExp(`(?:^|\\n)\\s*0*${messageIndex}\\.\\s*`, 'm');
+  const match = marker.exec(normalizedBody);
+  if (!match) return null;
+  const afterMarker = normalizedBody.slice(match.index + match[0].length);
+  const nextMarkerIndex = afterMarker.search(/\n\s*0*\d+\.\s*/m);
+  const text = (nextMarkerIndex >= 0 ? afterMarker.slice(0, nextMarkerIndex) : afterMarker).trim();
+  return text || null;
+}
+
 async function deliveryExists(enrollmentId: string, dayNumber: number, deliveryType: DeliveryType, messageIndex: number | null) {
   const base = supabase
     .from('taller_deliveries')
@@ -321,7 +332,7 @@ async function sendTelegram(account: TelegramAccountRow, delivery: DeliveryTeleg
         text: telegramDeliveryText(delivery),
         reply_markup: {
           inline_keyboard: [[{
-            text: 'Abrir práctica',
+            text: delivery.delivery_type === 'intermediate_message' ? 'Abrir mensaje' : 'Abrir práctica',
             web_app: { url: `${TELEGRAM_APP_ORIGIN}/delivery/${encodeURIComponent(delivery.id)}` },
           }]],
         },
@@ -453,9 +464,10 @@ async function processIntermediateMessage(enrollment: ProgramEnrollmentRow, mess
 
   const dayContent = await getDayContent(enrollment.collection_id, enrollment.current_day);
   if (!dayContent) return;
-  const assetId = await getIntermediateAsset(dayContent.id, messageIndex);
-  if (!assetId) {
-    console.warn(JSON.stringify({ event: 'missing-intermediate-audio', enrollmentId: enrollment.id, day: enrollment.current_day, requestedIndex: messageIndex }));
+  const messageText = getIntermediateText(dayContent.body || '', messageIndex);
+  const assetId = messageText ? null : await getIntermediateAsset(dayContent.id, messageIndex);
+  if (!messageText && !assetId) {
+    console.warn(JSON.stringify({ event: 'missing-intermediate-content', enrollmentId: enrollment.id, day: enrollment.current_day, requestedIndex: messageIndex }));
     return;
   }
 

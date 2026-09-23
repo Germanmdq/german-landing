@@ -1104,8 +1104,8 @@ function FavoritesPanel({ favorites, onBack, onNavigate, onOpen, onRemove }: { f
 const workshopMomentKeys = ['morning', 'noon', 'afternoon', 'night'] as const;
 const workshopMomentPickerLabels: Record<typeof workshopMomentKeys[number], string> = { morning: 'Mañana', noon: 'Mediodía', afternoon: 'Tarde', night: 'Noche' };
 const defaultWorkshopSchedule: WorkshopSchedule = { morning: '07:00', noon: '12:00', afternoon: '17:00', night: '22:00' };
-const workshopIntervalOptions = [30, 40, 45, 60] as const;
-const workshopIntervalLabel = (minutes: number) => minutes === 60 ? 'Cada 1 hora' : `Cada ${minutes} min`;
+const workshopIntervalOptions = [30, 40, 50, 120] as const;
+const workshopIntervalLabel = (minutes: number) => minutes === 120 ? 'Cada 2 horas' : `Cada ${minutes} min`;
 const detectTimezone = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; } };
 const shiftHours = (time: string, hours: number) => {
   const [h, m] = time.split(':').map(Number);
@@ -1676,7 +1676,12 @@ export default function TelegramMiniApp() {
           ...favorite,
           title,
           detail,
-          reader: favorite.reader ? { ...favorite.reader, title, detail, paragraphs: [] } : favorite.reader,
+          reader: favorite.reader ? {
+            ...favorite.reader,
+            title,
+            detail,
+            paragraphs: delivery.delivery_type === 'intermediate_message' ? favorite.reader.paragraphs : [],
+          } : favorite.reader,
         };
       }));
     })();
