@@ -888,22 +888,40 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
     let cancelled = false;
     const timer = window.setTimeout(() => {
       const searchingBooks = filter === 'Libros en texto';
-      const queryBuilder = supabase
-        .from('content_items')
-        .select(searchingBooks ? 'id' : 'id,body')
-        .eq('is_published', true)
-        .eq('content_type', searchingBooks ? 'book' : 'conference')
-        .ilike('body', `%${q}%`)
-        .limit(1000);
-      void queryBuilder.then(({ data, error }) => {
+      void (async () => {
+        if (searchingBooks) {
+          const { data, error } = await supabase
+            .from('content_items')
+            .select('id')
+            .eq('is_published', true)
+            .eq('content_type', 'book')
+            .ilike('body', `%${q}%`)
+            .limit(1000);
           if (cancelled) return;
           if (error) {
-            console.error('[library] búsqueda en texto:', error);
+            console.error('[library] búsqueda en libros:', error);
             setBodyMatches(new Map());
             return;
           }
-          setBodyMatches(new Map((data || []).map((row) => [String(row.id), 'body' in row && typeof row.body === 'string' ? row.body : ''])));
-        });
+          setBodyMatches(new Map((data || []).map((row) => [String(row.id), ''])));
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('content_items')
+          .select('id,body')
+          .eq('is_published', true)
+          .eq('content_type', 'conference')
+          .ilike('body', `%${q}%`)
+          .limit(1000);
+        if (cancelled) return;
+        if (error) {
+          console.error('[library] búsqueda en conferencias:', error);
+          setBodyMatches(new Map());
+          return;
+        }
+        setBodyMatches(new Map((data || []).map((row) => [String(row.id), typeof row.body === 'string' ? row.body : ''])));
+      })();
     }, 280);
     return () => {
       cancelled = true;
