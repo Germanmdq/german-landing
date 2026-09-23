@@ -517,6 +517,14 @@ function practiceDuration(enrollment: ProgressEnrollment): number {
   return Math.max(1, enrollment.current_day);
 }
 
+function expectedDeliveriesPerDay(enrollment: ProgressEnrollment): number {
+  const slug = enrollment.collections?.slug || '';
+  // Las prácticas personalizadas de 7 días usan 4 meditaciones + 32 intermedios.
+  if (/^practica-7-dias-(amor|dinero|salud)$/.test(slug)) return 36;
+  // El resto de los recorridos actuales trabaja con 4 meditaciones + ~26 mensajes.
+  return 30;
+}
+
 function progressStatusLabel(status: ProgressEnrollment['status']) {
   if (status === 'completed') return 'Terminada';
   if (status === 'abandoned') return 'Abandonada';
@@ -527,6 +535,12 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
   const [history, setHistory] = useState<ProgressEnrollment[]>([]);
   const [deliveries, setDeliveries] = useState<ProgressDelivery[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openCards, setOpenCards] = useState<Set<string>>(new Set());
+  const toggleCard = (id: string) => setOpenCards((current) => {
+    const next = new Set(current);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -553,17 +567,25 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
       {!loading && !history.length && <p className="library-empty">Todavía no tenés prácticas en tu historial.</p>}
       {!loading && history.map((enrollment) => {
         const totalDays = practiceDuration(enrollment);
-        const pct = enrollment.status === 'completed' ? 100 : Math.min(100, Math.round((enrollment.current_day / totalDays) * 100));
         const ownDeliveries = deliveries.filter((delivery) => delivery.enrollment_id === enrollment.id);
+        const totalExpectedDeliveries = totalDays * expectedDeliveriesPerDay(enrollment);
+        const pct = enrollment.status === 'completed' ? 100 : Math.min(100, Math.round((ownDeliveries.length / totalExpectedDeliveries) * 100));
         const customTopic = typeof enrollment.custom_config?.tema === 'string' ? enrollment.custom_config.tema : '';
         const customDuration = typeof enrollment.custom_config?.duracion === 'string' ? enrollment.custom_config.duracion : '';
         const title = customTopic ? `${customTopic} · ${customDuration}` : enrollment.collections?.title || 'Práctica';
+        const open = openCards.has(enrollment.id);
         return <article className="progress-card" key={enrollment.id}>
-          <p>{title}</p>
-          <b>{progressStatusLabel(enrollment.status)} · Día {Math.min(enrollment.current_day, totalDays)} de {totalDays}</b>
-          <small>Comenzó {new Date(enrollment.started_at).toLocaleDateString('es-AR')}</small>
+          <button type="button" className="progress-card-toggle" onClick={() => toggleCard(enrollment.id)} aria-expanded={open}>
+            <span>
+              <p>{title}</p>
+              <b>{progressStatusLabel(enrollment.status)} · Día {Math.min(enrollment.current_day, totalDays)} de {totalDays}</b>
+            </span>
+            <ChevronDown size={22} aria-hidden="true" />
+          </button>
           <div className="progress-track" aria-label={`${pct}% del recorrido`}><span style={{ width: `${pct}%` }} /></div>
-          <small>{pct}% del recorrido</small>
+          <small>{pct}% del recorrido · {ownDeliveries.length} entregas recibidas</small>
+          {open && <div className="progress-card-details">
+          <small>Comenzó {new Date(enrollment.started_at).toLocaleDateString('es-AR')}</small>
           {ownDeliveries.length > 0 && <div className="progress-delivery-history">
             {ownDeliveries.map((delivery, index) => {
               const attention = attentionFromDelivery(delivery);
@@ -580,6 +602,7 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
                 <b className={`progress-attention progress-attention-${attention.toLowerCase()}`}>{attention}</b>
               </div>;
             })}
+          </div>}
           </div>}
         </article>;
       })}
@@ -1735,6 +1758,7 @@ export default function TelegramMiniApp() {
     setPreguntameOpen(false);
     setCourseOpen(false);
     setInteractiveBookOpen(false);
+    setShowProgress(false);
     setTrail([]);
     if (target === 'home') { setMainMenu(true); return; }
     setMainMenu(false);
