@@ -872,7 +872,12 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
     let cancelled = false;
     const timer = window.setTimeout(() => {
       void supabase
-        .rpc('search_library_content_snippets', { p_query: q })
+        .from('content_items')
+        .select('id,body')
+        .eq('is_published', true)
+        .in('content_type', ['conference', 'book'])
+        .ilike('body', `%${q}%`)
+        .limit(1000)
         .then(({ data, error }) => {
           if (cancelled) return;
           if (error) {
@@ -880,7 +885,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
             setBodyMatches(new Map());
             return;
           }
-          setBodyMatches(new Map((data || []).map((row) => [String(row.id), typeof row.snippet === 'string' ? row.snippet : ''])));
+          setBodyMatches(new Map((data || []).map((row) => [String(row.id), typeof row.body === 'string' ? row.body : ''])));
         });
     }, 280);
     return () => {
@@ -1002,7 +1007,8 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           if (contextText) {
             preview = highlightText(contextText, q);
           } else if (bodyMatches.has(entry.id)) {
-            preview = highlightText(bodyMatches.get(entry.id) || '', q);
+            const bodySnippet = snippetAround(bodyMatches.get(entry.id) || '', q, 44);
+            preview = bodySnippet ? highlightText(bodySnippet, q) : entry.excerpt || 'Abrí para leer o escuchar.';
           } else if (!titleHasMatch) {
             preview = entry.excerpt || 'Abrí para leer o escuchar.';
           }
