@@ -842,7 +842,7 @@ function snippetAround(text: string, q: string, radius = 26): string {
 
 function extractConferenceYear(item: Record<string, unknown>): number | undefined {
   const metadata = item.metadata && typeof item.metadata === 'object' && !Array.isArray(item.metadata) ? item.metadata as Record<string, unknown> : {};
-  const candidates = [metadata.year, metadata.conference_year, metadata.original_year, metadata.date, metadata.conference_date, metadata.original_date, item.title, item.excerpt];
+  const candidates = [metadata.year, metadata.conference_year, metadata.original_year, metadata.date, metadata.conference_date, metadata.original_date, item.published_at, item.title, item.excerpt];
   for (const value of candidates) {
     if (typeof value === 'number' && value >= 1900 && value <= 2099) return Math.trunc(value);
     if (typeof value === 'string') {
@@ -857,16 +857,46 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [bodyMatchIds, setBodyMatchIds] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setBodyMatchIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void supabase
+        .from('content_items')
+        .select('id')
+        .eq('is_published', true)
+        .in('content_type', ['conference', 'book'])
+        .ilike('body', `%${q}%`)
+        .limit(1000)
+        .then(({ data, error }) => {
+          if (cancelled) return;
+          if (error) {
+            console.error('[library] búsqueda en texto:', error);
+            setBodyMatchIds(new Set());
+            return;
+          }
+          setBodyMatchIds(new Set((data || []).map((row) => String(row.id))));
+        });
+    }, 280);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [query]);
   const visible = entries.filter((entry) => {
     const q = query.trim().toLocaleLowerCase();
     const matchesQuery = !q || (
       (entry.title && entry.title.toLocaleLowerCase().includes(q)) ||
       (entry.excerpt && entry.excerpt.toLocaleLowerCase().includes(q)) ||
-      (entry.body && entry.body.toLocaleLowerCase().includes(q))
+      bodyMatchIds.has(entry.id)
     );
     const isConference = /conference|conferencia/i.test(entry.type);
     const isBook = /book|libro/i.test(entry.type);
-    const hasAudio = Boolean(entry.audioUrl);
     const matchesFilter = !filter ||
       (filter === 'Conferencias' && isConference) ||
       (filter === 'Audios' && isConference) ||
@@ -880,18 +910,19 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
     if (filter === 'Conferencias' && ay !== by) return ay - by;
     return a.title.localeCompare(b.title, 'es', { sensitivity: 'base' });
   });
-  const conferenceGroups = filter === 'Conferencias'
+  const groupedByConferenceYear = filter === 'Conferencias' || filter === 'Audios';
+  const conferenceGroups = groupedByConferenceYear
     ? Array.from(new Set(ordered.map((entry) => entry.year ? String(entry.year) : 'Sin fecha'))).map((label) => ({ label, entries: ordered.filter((entry) => (entry.year ? String(entry.year) : 'Sin fecha') === label) }))
     : [{ label: '', entries: ordered }];
   const [openYears, setOpenYears] = useState<Set<string>>(new Set());
   useEffect(() => {
-    if (filter !== 'Conferencias') return;
+    if (!groupedByConferenceYear) return;
     if (q) {
       setOpenYears(new Set(conferenceGroups.map((group) => group.label)));
       return;
     }
     setOpenYears(new Set());
-  }, [filter, q, conferenceGroups.map((group) => group.label).join('|')]);
+  }, [groupedByConferenceYear, q, conferenceGroups.map((group) => group.label).join('|')]);
   const toggleYear = (label: string) => setOpenYears((current) => {
     const next = new Set(current);
     if (next.has(label)) next.delete(label); else next.add(label);
@@ -989,10 +1020,11 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
         if (q) {
           const titleHasMatch = entry.title?.toLocaleLowerCase().includes(q.toLocaleLowerCase());
           const excerptSnippet = snippetAround(entry.excerpt || '', q);
-          const bodySnippet = snippetAround(entry.body || '', q);
-          const contextText = excerptSnippet || bodySnippet;
+          const contextText = excerptSnippet;
           if (contextText) {
             preview = highlightText(contextText, q);
+          } else if (bodyMatchIds.has(entry.id)) {
+            preview = 'Coincidencia encontrada dentro del texto.';
           } else if (!titleHasMatch) {
             preview = entry.excerpt || 'Abrí para leer o escuchar.';
           }
@@ -1894,6 +1926,7 @@ export default function TelegramMiniApp() {
   }, []);
 
   useEffect(() => {
+    if (mainMenu || tab !== 'biblioteca' || libraryItems.length > 0) return;
     supabase
       .from('content_items')
       .select('id,title,body,metadata,content_assets(asset_type,source_url,storage_path,duration_seconds,sort_order)')
@@ -1978,7 +2011,7 @@ export default function TelegramMiniApp() {
   useEffect(() => {
     supabase
       .from('content_items')
-      .select('*,content_assets(asset_type,source_url,storage_path,duration_seconds,sort_order)')
+      .select('id,title,excerpt,content_type,metadata,published_at')
       .eq('is_published', true)
       .in('content_type', ['conference', 'book'])
       .order('published_at', { ascending: false })
@@ -1988,29 +2021,61 @@ export default function TelegramMiniApp() {
         if (!data) return;
         setLibraryItems(data.map((value) => {
           const item = value as Record<string, unknown>;
-          const assets = Array.isArray(item.content_assets) ? item.content_assets as Record<string, unknown>[] : [];
-          const asset = assets
-            .filter((candidate) => candidate.asset_type === 'audio')
-            .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))[0];
-          const source = firstText(asset || item, ['source_url', 'audio_url', 'audioUrl', 'media_url', 'mediaUrl', 'file_url', 'fileUrl']);
-          const path = firstText(asset || item, ['audio_path', 'audioPath', 'storage_path', 'storagePath']);
-          const bucket = firstText(item, ['audio_bucket', 'audioBucket', 'bucket']) || 'audios';
-          const audioUrl = source || (path ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/${bucket}/${path}` : undefined);
-          const durationSeconds = typeof asset?.duration_seconds === 'number' ? asset.duration_seconds : undefined;
           return {
             id: String(item.id),
             title: firstText(item, ['title', 'name']) || 'Sin título',
             excerpt: firstText(item, ['excerpt', 'description', 'summary']) || '',
-            body: firstText(item, ['body', 'content', 'text']) || '',
+            body: '',
             type: firstText(item, ['content_type', 'type', 'category']) || 'Contenido',
             tags: toTags(item.tags || item.tag_list || item.labels || item.topics),
-            audioUrl,
-            duration: durationSeconds ? `${Math.round(durationSeconds / 60)} min` : firstText(item, ['duration', 'audio_duration']),
             year: extractConferenceYear(item),
           };
         }));
       }, (err: unknown) => console.error('[library] excepción cargando content_items:', err));
-  }, []);
+  }, [mainMenu, tab, libraryItems.length]);
+
+  const openLibraryEntry = async (entry: LibraryEntry, searchQuery?: string, mode: 'audio' | 'text' = 'text') => {
+    if (mode === 'audio') {
+      setReader({
+        title: entry.title,
+        eyebrow: 'AUDIO',
+        detail: entry.excerpt || 'Biblioteca',
+        paragraphs: [],
+        audioUrl: entry.audioUrl,
+        duration: entry.duration,
+        highlightQuery: searchQuery,
+      });
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('content_items')
+      .select('body,excerpt')
+      .eq('id', entry.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[library] error cargando texto:', error);
+      setReader({
+        title: entry.title,
+        eyebrow: 'TEXTO',
+        detail: entry.excerpt || 'Biblioteca',
+        paragraphs: [entry.excerpt || 'No pudimos cargar este texto. Probá nuevamente.'],
+        highlightQuery: searchQuery,
+      });
+      return;
+    }
+
+    const body = typeof data?.body === 'string' ? data.body : '';
+    const excerpt = typeof data?.excerpt === 'string' ? data.excerpt : entry.excerpt;
+    setReader({
+      title: entry.title,
+      eyebrow: 'TEXTO',
+      detail: excerpt || 'Biblioteca',
+      paragraphs: cleanParagraphs(body || excerpt || ''),
+      highlightQuery: searchQuery,
+    });
+  };
 
   // Compatibilidad con notificaciones antiguas que todavía abren /?delivery=<id>.
   // Todas las entregas deben resolverse en la pantalla dedicada /delivery/<id>,
@@ -2054,7 +2119,7 @@ export default function TelegramMiniApp() {
   if (tab === 'audiolibros' && !trail.length) {
     return <main className="app-shell app-main section-app"><AudiobookLibraryPanel entries={audiobookItems} loading={audiobooksLoading} error={audiobooksError} onBack={back} onNavigate={navigateTo} onOpen={(entry) => { touchContentProgress(session.user.id, `audiobook:${entry.id}`, 'audiobook'); setSelectedAudiobook(entry); }} />{dock}</main>;
   }
-  if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} booksAllowed={accessPermissions.books !== false} onBooksBlocked={() => setBlockedSection('los libros y audiolibros')} onRead={(entry, searchQuery, mode) => setReader({ title: entry.title, eyebrow: mode === 'audio' ? 'AUDIO' : mode === 'text' ? 'TEXTO' : entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: mode === 'audio' ? [] : cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: mode === 'text' ? undefined : entry.audioUrl, duration: entry.duration, highlightQuery: searchQuery })} />{dock}</main>;
+  if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} booksAllowed={accessPermissions.books !== false} onBooksBlocked={() => setBlockedSection('los libros y audiolibros')} onRead={(entry, searchQuery, mode) => { void openLibraryEntry(entry, searchQuery, mode); }} />{dock}</main>;
   if (showProgress) return <main className="app-shell app-main section-app"><ProgressScreen user={session.user} onBack={() => setShowProgress(false)} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} onSelect={select} onBack={back} onNavigate={navigateTo} onOpenProgress={() => setShowProgress(true)} />{dock}</main>;
   if (tab === 'consultas' && !trail.length) return <main className="app-shell app-main section-app preguntame-shell"><PreguntamePanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
