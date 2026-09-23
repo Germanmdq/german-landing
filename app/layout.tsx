@@ -38,6 +38,12 @@ export default function Layout({ children }: Readonly<{ children: React.ReactNod
                 if (webApp.setBackgroundColor) webApp.setBackgroundColor('#0b0b0d');
                 if (webApp.setHeaderColor) webApp.setHeaderColor('#0b0b0d');
                 if (webApp.expand) webApp.expand();
+                if (webApp.onEvent && !window.__germanCloseOnTelegramDeactivate) {
+                  window.__germanCloseOnTelegramDeactivate = true;
+                  webApp.onEvent('deactivated', function () {
+                    try { if (webApp.close) webApp.close(); } catch (_) {}
+                  });
+                }
                 var revealAttempts = 0;
                 var revealWhenPaintable = function () {
                   var loader = document.querySelector('.ag-ripple-loader');
