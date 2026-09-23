@@ -120,6 +120,9 @@ function CategoryIcon({ item }: { item: DeckItem }) {
     : /día|recorrido|práctica/.test(title) ? Route01Icon
     : null;
   if (hugeIcon === Route01Icon) return <MotionIcon name="route" size={30}><HugeiconsIcon icon={hugeIcon} size={30} strokeWidth={1.6} /></MotionIcon>;
+  if (hugeIcon === HugeSlidersHorizontalIcon) return <MotionIcon name="sliders" size={30}><HugeiconsIcon icon={hugeIcon} size={30} strokeWidth={1.6} /></MotionIcon>;
+  if (hugeIcon === MessageCircleIcon) return <MotionIcon name="message" size={30}><HugeiconsIcon icon={hugeIcon} size={30} strokeWidth={1.6} /></MotionIcon>;
+  if (hugeIcon === Settings02Icon) return <MotionIcon name="settings" size={30}><HugeiconsIcon icon={hugeIcon} size={30} strokeWidth={1.6} /></MotionIcon>;
   if (hugeIcon) return <HugeiconsIcon icon={hugeIcon} size={30} strokeWidth={1.6} aria-hidden="true" />;
   const FallbackIcon = /noche/.test(title) ? Moon : /mañana/.test(title) ? Sun : item.reader ? BookOpen : Sparkles;
   return <FallbackIcon size={30} strokeWidth={1.6} aria-hidden="true" />;
@@ -221,23 +224,23 @@ function PreguntamePanel({ user, onBack, onNavigate }: { user: User; onBack: () 
 
 type NavTarget = 'home' | 'favorites' | 'biblioteca' | 'audiolibros' | 'meditaciones' | 'talleres' | 'propia' | 'consultas' | 'curso' | 'espacio' | 'configuracion' | 'notificaciones';
 
-function MotionIcon({ children, name, size = 21 }: { children: ReactNode; name: 'home' | 'route'; size?: number }) {
+function MotionIcon({ children, name, size = 21 }: { children: ReactNode; name: 'home' | 'route' | 'sliders' | 'message' | 'settings'; size?: number }) {
   return <span className={`motion-icon motion-icon--${name}`} style={{ width: size, height: size }} aria-hidden="true">{children}</span>;
 }
 
 const navMenuItems: { target: NavTarget; icon: ReactNode; label: string }[] = [
   { target: 'home', icon: <MotionIcon name="home"><HugeiconsIcon icon={Home01Icon} size={21} strokeWidth={1.8} /></MotionIcon>, label: 'Inicio' },
   { target: 'talleres', icon: <MotionIcon name="route"><HugeiconsIcon icon={Route01Icon} size={21} strokeWidth={1.8} /></MotionIcon>, label: 'Prácticas guiadas' },
-  { target: 'propia', icon: <HugeiconsIcon icon={HugeSlidersHorizontalIcon} size={21} strokeWidth={1.8} />, label: 'Tu propia práctica' },
+  { target: 'propia', icon: <MotionIcon name="sliders"><HugeiconsIcon icon={HugeSlidersHorizontalIcon} size={21} strokeWidth={1.8} /></MotionIcon>, label: 'Tu propia práctica' },
   { target: 'meditaciones', icon: <AnimatedInterfaceIcon name="brain" size={21} />, label: 'Meditaciones' },
   { target: 'biblioteca', icon: <AnimatedInterfaceIcon name="open-door" size={21} />, label: 'Biblioteca' },
   { target: 'audiolibros', icon: <AnimatedInterfaceIcon name="ear" size={21} />, label: 'Audiolibros de Germán' },
-  { target: 'consultas', icon: <HugeiconsIcon icon={MessageCircleIcon} size={21} strokeWidth={1.8} />, label: 'Consultas' },
+  { target: 'consultas', icon: <MotionIcon name="message"><HugeiconsIcon icon={MessageCircleIcon} size={21} strokeWidth={1.8} /></MotionIcon>, label: 'Consultas' },
   { target: 'curso', icon: <AnimatedInterfaceIcon name="calendar" size={21} />, label: 'Taller de 365 días' },
   { target: 'espacio', icon: <AnimatedInterfaceIcon name="profile" size={21} />, label: 'Mi perfil' },
   { target: 'favorites', icon: <AnimatedInterfaceIcon name="bookmark" size={21} />, label: 'Favoritos' },
   { target: 'notificaciones', icon: <AnimatedInterfaceIcon name="notification" size={21} />, label: 'Notificaciones' },
-  { target: 'configuracion', icon: <HugeiconsIcon icon={Settings02Icon} size={21} strokeWidth={1.8} />, label: 'Configuración' },
+  { target: 'configuracion', icon: <MotionIcon name="settings"><HugeiconsIcon icon={Settings02Icon} size={21} strokeWidth={1.8} /></MotionIcon>, label: 'Configuración' },
 ];
 
 function NavMenuSheet({ onSelect, onCancel }: { onSelect: (target: NavTarget) => void; onCancel: () => void }) {
