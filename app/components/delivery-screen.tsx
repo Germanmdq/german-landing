@@ -154,12 +154,19 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
       },
     };
     const next = !favorite;
-    const result = await (next
-      ? supabase.from('user_favorites').upsert({ user_id: session.user.id, favorite_id: id, payload, updated_at: new Date().toISOString() }, { onConflict: 'user_id,favorite_id' })
-      : supabase.from('user_favorites').delete().eq('user_id', session.user.id).eq('favorite_id', id)
-    );
+    const result = next
+      ? await supabase
+          .from('user_favorites')
+          .upsert({ user_id: session.user.id, favorite_id: id, payload, updated_at: new Date().toISOString() }, { onConflict: 'user_id,favorite_id' })
+          .select('favorite_id')
+          .single()
+      : await supabase.from('user_favorites').delete().eq('user_id', session.user.id).eq('favorite_id', id);
     if (result.error) {
       console.error('[delivery favorite]', result.error);
+      return;
+    }
+    if (next && (!('data' in result) || result.data?.favorite_id !== id)) {
+      console.error('[delivery favorite] el favorito no quedó persistido');
       return;
     }
     setFavorite(next);

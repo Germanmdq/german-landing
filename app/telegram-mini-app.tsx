@@ -1080,6 +1080,9 @@ function ConfirmDialog({ title = '¿Eliminar?', description, confirmLabel = 'Eli
 }
 
 function FavoriteContentIcon({ favorite }: { favorite: FavoriteRecord }) {
+  if (favorite.reader?.eyebrow === 'TEXTO' || /💬/.test(favorite.icon)) {
+    return <span className="motion-icon motion-icon--message"><MessageCircle size={30} strokeWidth={1.8} /></span>;
+  }
   if (favorite.id.startsWith('delivery:') || favorite.reader?.audioUrl || /🎧|🎙️/.test(favorite.icon)) {
     return <AnimatedInterfaceIcon name="ear" size={30} />;
   }
@@ -1604,6 +1607,8 @@ export default function TelegramMiniApp() {
   const [fullyBlocked, setFullyBlocked] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [pendingDeliveryId, setPendingDeliveryId] = useState(initialDeliveryId);
+  const [favoritesOpen, setFavoritesOpen] = useState(false);
+  const [favorites, setFavorites] = useState<FavoriteRecord[]>([]);
 
   // Telegram abre la Mini App con ?delivery=<id>. Si la misma instancia ya estaba
   // abierta, sincronizamos el deep-link al volver a primer plano sin depender de
@@ -1645,19 +1650,23 @@ export default function TelegramMiniApp() {
         .map((row) => typeof row.favorite_id === 'string' && row.favorite_id.startsWith('delivery:') ? row.favorite_id.slice('delivery:'.length) : null)
         .filter((id): id is string => Boolean(id));
 
-      let deliveryMap = new Map<string, { day_number: number; delivery_type: TallerDeliveryType; message_index: number | null }>();
+      let deliveryMap = new Map<string, { day_number: number; delivery_type: TallerDeliveryType; message_index: number | null; body: string }>();
       if (deliveryIds.length) {
         const { data: deliveryRows, error: deliveryError } = await supabase
           .from('taller_deliveries')
-          .select('id,day_number,delivery_type,message_index')
+          .select('id,day_number,delivery_type,message_index,content_items(body)')
           .eq('user_id', session.user.id)
           .in('id', deliveryIds);
         if (deliveryError) console.error('[favorites] no se pudieron completar los números de entrega:', deliveryError);
-        else deliveryMap = new Map((deliveryRows || []).map((delivery) => [delivery.id, {
-          day_number: delivery.day_number,
-          delivery_type: delivery.delivery_type as TallerDeliveryType,
-          message_index: delivery.message_index,
-        }]));
+        else deliveryMap = new Map((deliveryRows || []).map((delivery) => {
+          const item = delivery.content_items as unknown as { body: string } | null;
+          return [delivery.id, {
+            day_number: delivery.day_number,
+            delivery_type: delivery.delivery_type as TallerDeliveryType,
+            message_index: delivery.message_index,
+            body: item?.body || '',
+          }];
+        }));
       }
 
       if (cancelled) return;
@@ -1672,21 +1681,28 @@ export default function TelegramMiniApp() {
           ? `Mensaje ${delivery.message_index ?? '—'}`
           : label;
         const detail = `Día ${delivery.day_number} · ${label}`;
+        const textParagraphs = delivery.delivery_type === 'intermediate_message' && delivery.message_index != null
+          ? extractDeliveryParagraphs(delivery.body, delivery.delivery_type, delivery.message_index) || []
+          : [];
+        const isTextMessage = delivery.delivery_type === 'intermediate_message' && textParagraphs.length > 0;
         return {
           ...favorite,
           title,
           detail,
-          reader: favorite.reader ? {
-            ...favorite.reader,
+          icon: isTextMessage ? '💬' : favorite.icon,
+          reader: favorite.reader || delivery.delivery_type === 'intermediate_message' ? {
+            ...(favorite.reader || {}),
             title,
+            eyebrow: isTextMessage ? 'TEXTO' : (favorite.reader?.eyebrow || 'AUDIO'),
             detail,
-            paragraphs: delivery.delivery_type === 'intermediate_message' ? favorite.reader.paragraphs : [],
-          } : favorite.reader,
+            paragraphs: isTextMessage ? textParagraphs : (favorite.reader?.paragraphs || []),
+            ...(isTextMessage ? { audioUrl: undefined } : { audioUrl: favorite.reader?.audioUrl }),
+          } : undefined,
         };
       }));
     })();
     return () => { cancelled = true; };
-  }, [session?.user?.id]);
+  }, [session?.user?.id, favoritesOpen]);
 
   useEffect(() => {
     if (!session?.access_token) { setAccessState('checking'); return; }
@@ -1714,13 +1730,11 @@ export default function TelegramMiniApp() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [configurationOpen, setConfigurationOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const [favoritesOpen, setFavoritesOpen] = useState(false);
   const [workshopOpen, setWorkshopOpen] = useState(false);
   const [showProgress, setShowProgress] = useState(false);
   const [programConfig, setProgramConfig] = useState<ProgramPanelConfig>({ slug: 'taller-40-dias', title: 'Taller de 40 días', subtitle: 'Autoconcepto y control de la imaginación.' });
   const [courseOpen, setCourseOpen] = useState(false);
   const [interactiveBookOpen, setInteractiveBookOpen] = useState(false);
-  const [favorites, setFavorites] = useState<FavoriteRecord[]>([]);
   const [preguntameOpen, setPreguntameOpen] = useState(false);
   const [blockedSection, setBlockedSection] = useState<string | null>(null);
   const [libraryItems, setLibraryItems] = useState<LibraryEntry[]>([]);
