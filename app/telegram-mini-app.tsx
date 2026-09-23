@@ -857,30 +857,30 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [bodyMatchIds, setBodyMatchIds] = useState<Set<string>>(new Set());
+  const [bodyMatches, setBodyMatches] = useState<Map<string, string>>(new Map());
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const blurSearch = () => {
+    searchInputRef.current?.blur();
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  };
   useEffect(() => {
     const q = query.trim();
     if (q.length < 2) {
-      setBodyMatchIds(new Set());
+      setBodyMatches(new Map());
       return;
     }
     let cancelled = false;
     const timer = window.setTimeout(() => {
       void supabase
-        .from('content_items')
-        .select('id')
-        .eq('is_published', true)
-        .in('content_type', ['conference', 'book'])
-        .ilike('body', `%${q}%`)
-        .limit(1000)
+        .rpc('search_library_content_snippets', { p_query: q })
         .then(({ data, error }) => {
           if (cancelled) return;
           if (error) {
             console.error('[library] búsqueda en texto:', error);
-            setBodyMatchIds(new Set());
+            setBodyMatches(new Map());
             return;
           }
-          setBodyMatchIds(new Set((data || []).map((row) => String(row.id))));
+          setBodyMatches(new Map((data || []).map((row) => [String(row.id), typeof row.snippet === 'string' ? row.snippet : ''])));
         });
     }, 280);
     return () => {
@@ -893,7 +893,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
     const matchesQuery = !q || (
       (entry.title && entry.title.toLocaleLowerCase().includes(q)) ||
       (entry.excerpt && entry.excerpt.toLocaleLowerCase().includes(q)) ||
-      bodyMatchIds.has(entry.id)
+      bodyMatches.has(entry.id)
     );
     const isConference = /conference|conferencia/i.test(entry.type);
     const isBook = /book|libro/i.test(entry.type);
@@ -915,10 +915,12 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
         <div className="library-search-toolbar">
           {!searchOpen && !query ? <button type="button" className="library-search-trigger" onClick={() => setSearchOpen(true)} aria-label="Buscar en la biblioteca"><Search size={21} /></button> : <div className="search-input-pill">
             <input
+              ref={searchInputRef}
               autoFocus
               type="text"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => { if (event.key === 'Enter') blurSearch(); }}
               placeholder="Buscar"
               aria-label="Buscar en la biblioteca"
             />
@@ -926,7 +928,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
               <button
                 type="button"
                 className="search-clear-btn"
-                onClick={() => { setQuery(''); setSearchOpen(false); }}
+                onClick={() => { blurSearch(); setQuery(''); setSearchOpen(false); }}
                 aria-label="Cerrar búsqueda"
               >
                 <X size={16} strokeWidth={2.4} />
@@ -938,7 +940,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
             )}
           </div>}
         </div>
-        {filter && <button type="button" className="library-folders-back" onClick={() => { setFilter(null); setQuery(''); }}><ChevronLeft size={16} /> Biblioteca</button>}
+        {filter && <button type="button" className="library-folders-back" onClick={() => { blurSearch(); setFilter(null); setQuery(''); setSearchOpen(false); }}><ChevronLeft size={16} /> Biblioteca</button>}
       </section>
       {!filter && !query && <div className="library-folder-float-stage">
         <FolderFloat
@@ -999,13 +1001,13 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           const contextText = excerptSnippet;
           if (contextText) {
             preview = highlightText(contextText, q);
-          } else if (bodyMatchIds.has(entry.id)) {
-            preview = 'Coincidencia encontrada dentro del texto.';
+          } else if (bodyMatches.has(entry.id)) {
+            preview = highlightText(bodyMatches.get(entry.id) || '', q);
           } else if (!titleHasMatch) {
             preview = entry.excerpt || 'Abrí para leer o escuchar.';
           }
         }
-        return <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index * .025, .2)} className="library-content-card" onClick={() => onRead(entry, q)}>
+        return <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index * .025, .2)} className="library-content-card" onClick={() => { blurSearch(); onRead(entry, q); }}>
           <div>
             <p>{entry.type || 'Contenido'}</p>
             <b className="card-title">{q ? highlightText(entry.title, q) : entry.title}</b>
