@@ -3,15 +3,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
+import { useRouter } from 'next/navigation';
 import { Settings2, MessageCircle, SlidersHorizontal, Route, Sun, Moon, X, Sparkles, BookOpen, ChevronRight, ChevronLeft, ChevronDown, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, ArrowUp, Download, House, Lock, Mic, Square } from 'lucide-react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import {
+  Home01Icon,
+  MessageCircleIcon,
+  Route01Icon,
+  Settings02Icon,
+  SlidersHorizontalIcon as HugeSlidersHorizontalIcon,
+} from '@hugeicons/core-free-icons';
 import { supabase } from './lib/supabase';
-import { subscribeToPush, ensurePushSubscription, reconcilePushSubscription, disablePushSubscription, disableCurrentBrowserPushSubscription, getPushSubscriptionActive, getCurrentBrowserPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
-import { detectInstallPlatform, hasNativeInstallPrompt, isRunningStandalone, listenForPwaInstallation, promptNativeInstallation } from './lib/pwa';
-import { InstallOnboarding, NotificationOnboarding } from './components/experience-onboarding';
 import { MagicCard, ShimmerButton } from './components/magic-ui';
 import './magic-ui.css';
 import './modern-ui.css';
-import './components/experience-onboarding.css';
 import './components/day-one-carousel.css';
 import { DayOneCarousel } from './components/day-one-carousel';
 import { TimePicker } from './components/time-picker';
@@ -24,8 +29,9 @@ import BranchedMenu from './components/BranchedMenu';
 import VoicePill from './components/VoicePill';
 import './components/sona/sona.css';
 import './premium-mobile.css';
-import { hasActiveAccess, type Entitlement } from './lib/payments';
 import { LoginGate } from './components/login-gate';
+import { AccessPaywall } from './components/access-paywall';
+import { AudioWaveLoader } from './components/audio-wave-loader';
 import { AnimatedInterfaceIcon, type AnimatedInterfaceIconName } from './components/animated-interface-icon';
 import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, type TallerDeliveryType } from './lib/taller-delivery';
 
@@ -39,9 +45,11 @@ type AudiobookEntry = { id: string; slug: string; title: string; author: string;
 type FavoriteRecord = { id: string; title: string; detail: string; icon: string; tone: string; reader?: ReaderContent };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
 type TallerDelivery = { id: string; dayNumber: number; deliveryType: TallerDeliveryType; deliveredAt: string; seenAt: string | null; title: string; paragraphs: string[]; audioUrl?: string };
+type WorkshopSchedule = { morning: string; noon: string; afternoon: string; night: string };
+type SectionPermissionKey = 'books' | 'course365' | 'consultations';
+type AccessPermissions = Partial<Record<'all' | SectionPermissionKey, boolean>>;
 
 const palette = ['#D92D35', '#E5484D', '#F2555A', '#FF6B6F'];
-const isTelegramMiniApp = () => typeof window !== 'undefined' && Boolean((window as typeof window & { Telegram?: { WebApp?: { initData?: string } } }).Telegram?.WebApp?.initData);
 const cleanParagraphs = (text: string) => text.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
 const toTags = (value: unknown): string[] => Array.isArray(value) ? value.filter((tag): tag is string => typeof tag === 'string') : typeof value === 'string' ? value.split(',').map((tag) => tag.trim()).filter(Boolean) : [];
 const firstText = (record: Record<string, unknown>, keys: string[]) => keys.map((key) => record[key]).find((value): value is string => typeof value === 'string' && value.length > 0);
@@ -79,7 +87,7 @@ const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
   audiolibros: { eyebrow: 'AUDIOLIBROS DE GERMÁN', title: 'Libros para escuchar', subtitle: 'Audiolibros narrados por Germán.', items: [] },
   consultas: { eyebrow: 'CONSULTAS', title: 'Hablemos de lo que te pasa', subtitle: 'Contame qué te está pasando.', items: [] },
   espacio: { eyebrow: 'MI PERFIL', title: 'Tu espacio', subtitle: 'Tu cuenta y tus elecciones.', items: [
-    { icon: '👤', title: 'Mi cuenta', detail: 'Nombre, mail, suscripción y acceso.', tone: palette[0], accountPanel: true },
+    { icon: '👤', title: 'Mi cuenta', detail: 'Nombre, mail y acceso.', tone: palette[0], accountPanel: true },
     { icon: '⭐', title: 'Favoritos', detail: 'Prácticas, audios y lecturas guardadas.', tone: palette[1] },
     { icon: '📈', title: 'Mi avance', detail: 'Tu progreso en las prácticas guiadas.', tone: palette[2] },
   ] },
@@ -107,14 +115,14 @@ function CategoryIcon({ item }: { item: DeckItem }) {
     : /audio|escuchar/.test(title) ? 'ear'
     : null;
   if (animatedIcon) return <AnimatedInterfaceIcon name={animatedIcon} size={30} />;
-  const Icon = /configura|preferencia/.test(title) ? Settings2
-    : /consulta|pregunt|respuesta/.test(title) ? MessageCircle
-    : /propia/.test(title) ? SlidersHorizontal
-    : /noche/.test(title) ? Moon
-    : /mañana/.test(title) ? Sun
-    : /día|recorrido|práctica/.test(title) ? Route
-    : item.reader ? BookOpen : Sparkles;
-  return <Icon size={30} strokeWidth={1.6} aria-hidden="true" />;
+  const hugeIcon = /configura|preferencia/.test(title) ? Settings02Icon
+    : /consulta|pregunt|respuesta/.test(title) ? MessageCircleIcon
+    : /propia/.test(title) ? HugeSlidersHorizontalIcon
+    : /día|recorrido|práctica/.test(title) ? Route01Icon
+    : null;
+  if (hugeIcon) return <HugeiconsIcon icon={hugeIcon} size={30} strokeWidth={1.6} aria-hidden="true" />;
+  const FallbackIcon = /noche/.test(title) ? Moon : /mañana/.test(title) ? Sun : item.reader ? BookOpen : Sparkles;
+  return <FallbackIcon size={30} strokeWidth={1.6} aria-hidden="true" />;
 }
 
 function DeckCard({ item, index, last, onClick, favorite, onFavorite }: { item: DeckItem; index: number; last: boolean; onClick?: () => void; favorite?: boolean; onFavorite?: () => void }) {
@@ -213,17 +221,18 @@ function PreguntamePanel({ user, onBack, onNavigate }: { user: User; onBack: () 
 
 type NavTarget = 'home' | 'favorites' | 'biblioteca' | 'audiolibros' | 'meditaciones' | 'talleres' | 'propia' | 'consultas' | 'curso' | 'espacio' | 'configuracion' | 'notificaciones';
 const navMenuItems: { target: NavTarget; icon: ReactNode; label: string }[] = [
-  { target: 'home', icon: <House size={21} />, label: 'Inicio' },
-  { target: 'talleres', icon: <Route size={21} />, label: 'Prácticas guiadas' },
-  { target: 'propia', icon: <SlidersHorizontal size={21} />, label: 'Tu propia práctica' },
+  { target: 'home', icon: <HugeiconsIcon icon={Home01Icon} size={21} strokeWidth={1.8} />, label: 'Inicio' },
+  { target: 'talleres', icon: <HugeiconsIcon icon={Route01Icon} size={21} strokeWidth={1.8} />, label: 'Prácticas guiadas' },
+  { target: 'propia', icon: <HugeiconsIcon icon={HugeSlidersHorizontalIcon} size={21} strokeWidth={1.8} />, label: 'Tu propia práctica' },
   { target: 'meditaciones', icon: <AnimatedInterfaceIcon name="brain" size={21} />, label: 'Meditaciones' },
   { target: 'biblioteca', icon: <AnimatedInterfaceIcon name="open-door" size={21} />, label: 'Biblioteca' },
   { target: 'audiolibros', icon: <AnimatedInterfaceIcon name="ear" size={21} />, label: 'Audiolibros de Germán' },
-  { target: 'consultas', icon: <MessageCircle size={21} />, label: 'Consultas' },
+  { target: 'consultas', icon: <HugeiconsIcon icon={MessageCircleIcon} size={21} strokeWidth={1.8} />, label: 'Consultas' },
   { target: 'curso', icon: <AnimatedInterfaceIcon name="calendar" size={21} />, label: 'Taller de 365 días' },
   { target: 'espacio', icon: <AnimatedInterfaceIcon name="profile" size={21} />, label: 'Mi perfil' },
   { target: 'favorites', icon: <AnimatedInterfaceIcon name="bookmark" size={21} />, label: 'Favoritos' },
-  { target: 'configuracion', icon: <Settings2 size={21} />, label: 'Configuración' },
+  { target: 'notificaciones', icon: <AnimatedInterfaceIcon name="notification" size={21} />, label: 'Notificaciones' },
+  { target: 'configuracion', icon: <HugeiconsIcon icon={Settings02Icon} size={21} strokeWidth={1.8} />, label: 'Configuración' },
 ];
 
 function NavMenuSheet({ onSelect, onCancel }: { onSelect: (target: NavTarget) => void; onCancel: () => void }) {
@@ -248,8 +257,8 @@ function NavMenuSheet({ onSelect, onCancel }: { onSelect: (target: NavTarget) =>
 function MainNavigationDock({ current, onSelect }: { current: NavTarget; onSelect: (target: NavTarget) => void }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const dockItems: { target: NavTarget; icon: ReactNode; label: string }[] = [
-    { target: 'home', icon: <House size={21} />, label: 'Inicio' },
-    { target: 'talleres', icon: <Route size={21} />, label: 'Prácticas' },
+    { target: 'home', icon: <HugeiconsIcon icon={Home01Icon} size={21} strokeWidth={1.8} />, label: 'Inicio' },
+    { target: 'talleres', icon: <HugeiconsIcon icon={Route01Icon} size={21} strokeWidth={1.8} />, label: 'Prácticas' },
     { target: 'meditaciones', icon: <AnimatedInterfaceIcon name="brain" size={21} />, label: 'Meditar' },
     { target: 'biblioteca', icon: <AnimatedInterfaceIcon name="open-door" size={21} />, label: 'Biblioteca' },
     { target: 'espacio', icon: <AnimatedInterfaceIcon name="profile" size={21} />, label: 'Perfil' },
@@ -257,7 +266,7 @@ function MainNavigationDock({ current, onSelect }: { current: NavTarget; onSelec
   return <>
     <nav className="main-navigation-dock" aria-label="Navegación principal">
       {dockItems.map((item) => <button key={item.target} type="button" aria-current={current === item.target ? 'page' : undefined} className={current === item.target ? 'is-current' : ''} onClick={() => onSelect(item.target)}>{item.icon}<span>{item.label}</span></button>)}
-      <button type="button" aria-label="Todas las secciones" aria-haspopup="dialog" onClick={() => setMoreOpen(true)}><AnimatedInterfaceIcon name="menu" size={21} /><span>Más</span></button>
+      <button type="button" aria-label="Todas las secciones" aria-haspopup="dialog" onClick={() => setMoreOpen(true)}><AnimatedInterfaceIcon name="menu" size={22} /><span>Más</span></button>
     </nav>
     {moreOpen && <NavMenuSheet onSelect={(target) => { setMoreOpen(false); onSelect(target); }} onCancel={() => setMoreOpen(false)} />}
   </>;
@@ -269,7 +278,7 @@ function FixedHeader({ eyebrow, title, subtitle, onBack, onNavigate }: { eyebrow
     <div className="header-top-row">
       <button type="button" className="header-back" onClick={onBack}><ChevronLeft size={22} strokeWidth={2.4} />Volver</button>
     </div>
-    <button type="button" className="header-menu" onClick={() => setMenuOpen(true)} aria-label="Menú" aria-haspopup="dialog"><AnimatedInterfaceIcon name="menu" size={24} /></button>
+    <button type="button" className="header-menu" onClick={() => setMenuOpen(true)} aria-label="Menú" aria-haspopup="dialog"><AnimatedInterfaceIcon name="menu" size={26} /></button>
     <p>{eyebrow}</p><h1>{title}</h1><small>{subtitle}</small>
     {menuOpen && <NavMenuSheet onSelect={(target) => { setMenuOpen(false); onNavigate(target); }} onCancel={() => setMenuOpen(false)} />}
   </header>;
@@ -277,47 +286,6 @@ function FixedHeader({ eyebrow, title, subtitle, onBack, onNavigate }: { eyebrow
 
 function ToggleSwitch({ checked, onChange, disabled, label }: { checked: boolean; onChange: () => void; disabled?: boolean; label: string }) {
   return <AnimatedSwitch checked={checked} onCheckedChange={onChange} disabled={disabled} aria-label={label} enableDrag={false} />;
-}
-
-function useNotificationsToggle(user: User) {
-  const [active, setActive] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    getPushSubscriptionActive(user.id).then((value) => {
-      if (cancelled) return;
-      setActive(value);
-      setLoading(false);
-    });
-    return () => { cancelled = true; };
-  }, [user.id]);
-
-  const toggle = async () => {
-    console.log('[notifications] toggle tocado, estado actual activo =', active);
-    setBusy(true);
-    setError('');
-    try {
-      const result = active ? await disablePushSubscription(user.id) : await ensurePushSubscription(user);
-      if (result.error) {
-        console.error('[notifications] toggle falló:', result.error);
-        setError(result.error);
-        return;
-      }
-      console.log('[notifications] toggle OK, nuevo estado activo =', !active);
-      setActive((current) => !current);
-    } catch (err) {
-      console.error('[notifications] excepción inesperada en el toggle:', err);
-      setError(err instanceof Error ? err.message : 'No se pudo actualizar las notificaciones.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return { active, loading, busy, error, toggle };
 }
 
 const lawCourseChapters = [
@@ -483,35 +451,18 @@ function InteractiveBookIntro({ onBack, onNavigate }: { onBack: () => void; onNa
   </section>;
 }
 
-function NotificationsPanel({ user, onBack, onNavigate }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
-  const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
-  const [permissionMessage, setPermissionMessage] = useState('');
-  const [permissionBusy, setPermissionBusy] = useState(false);
-  useEffect(() => {
-    if (!('Notification' in window)) setPermission('unsupported');
-    else setPermission(Notification.permission);
-  }, []);
-  const requestPermission = async () => {
-    if (!('Notification' in window)) return;
-    setPermissionBusy(true);
-    setPermissionMessage('');
-    const result = await ensurePushSubscription(user);
-    setPermission(Notification.permission);
-    setPermissionBusy(false);
-    if (result.error) setPermissionMessage(result.error);
-  };
+function NotificationsPanel({ onBack, onNavigate }: { onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   return <section className="reader-section profile-section">
-    <FixedHeader eyebrow="MI PERFIL" title="Notificaciones" subtitle="Permiso de avisos en este dispositivo." onBack={onBack} onNavigate={onNavigate} />
+    <FixedHeader eyebrow="MI PERFIL" title="Notificaciones" subtitle="Tus avisos llegan por Telegram." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body notification-settings">
-      {permission !== 'unsupported' && <ShimmerButton className="notification-permission" onClick={requestPermission} disabled={permissionBusy || permission === 'denied'}><AnimatedInterfaceIcon name="notification" size={18} />{permissionBusy ? 'Activando…' : permission === 'granted' ? 'Notificaciones activadas' : permission === 'denied' ? 'Permiso bloqueado en el navegador' : 'Activar notificaciones'}</ShimmerButton>}
-      {permission === 'denied' && <p className="notification-help">Para activarlas, habilitá las notificaciones de Germán desde los Ajustes de tu teléfono y volvé a abrir la app.</p>}
-      {permissionMessage && <p className="account-message" role="alert">{permissionMessage}</p>}
-      <p className="notification-help">Los horarios se configuran dentro de cada práctica activa.</p>
+      <div className="notification-permission"><AnimatedInterfaceIcon name="notification" size={18} /><strong>Telegram activado</strong></div>
+      <p className="notification-help">Las prácticas, meditaciones y mensajes programados se envían a este chat de Telegram aunque la Mini App esté cerrada.</p>
+      <p className="notification-help">No hace falta habilitar permisos de notificaciones del navegador. Los horarios se configuran dentro de cada práctica activa.</p>
     </div>
   </section>;
 }
 
-function ProfileScreen({ user, items, showInstall, onInstall, onSelect, onBack, onNavigate, onOpenProgress }: { user: User; items: DeckItem[]; showInstall: boolean; onInstall: () => void; onSelect: (item: DeckItem) => void; onBack: () => void; onNavigate: (target: NavTarget) => void; onOpenProgress: () => void }) {
+function ProfileScreen({ user, items, onSelect, onBack, onNavigate, onOpenProgress }: { user: User; items: DeckItem[]; onSelect: (item: DeckItem) => void; onBack: () => void; onNavigate: (target: NavTarget) => void; onOpenProgress: () => void }) {
   return <section className="reader-section profile-section">
     <FixedHeader eyebrow="MI PERFIL" title="Tu espacio" subtitle="Tu cuenta y tus elecciones." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body profile-folder-stage">
@@ -535,7 +486,7 @@ function ProfileScreen({ user, items, showInstall, onInstall, onSelect, onBack, 
   </section>;
 }
 
-type ProgressDelivery = { enrollment_id: string; day_number: number; delivery_type: string; delivered_at: string; seen_at: string | null };
+type ProgressDelivery = { enrollment_id: string; day_number: number; delivery_type: TallerDeliveryType; message_index: number | null; delivered_at: string; seen_at: string | null };
 type ProgressEnrollment = { id: string; status: 'active' | 'abandoned' | 'completed'; current_day: number; started_at: string; abandoned_at: string | null; completed_at: string | null; custom_config: Record<string, unknown> | null; collections: { title?: string; slug?: string } | null };
 
 function attentionFromDelivery(delivery: ProgressDelivery): 'Excelente' | 'Buena' | 'Mala' {
@@ -573,7 +524,7 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
     setLoading(true);
     void Promise.all([
       supabase.from('program_enrollments').select('id,status,current_day,started_at,abandoned_at,completed_at,custom_config,collections(title,slug)').eq('user_id', user.id).order('started_at', { ascending: false }),
-      supabase.from('taller_deliveries').select('enrollment_id,day_number,delivery_type,delivered_at,seen_at').eq('user_id', user.id).order('delivered_at', { ascending: false }).limit(1000),
+      supabase.from('taller_deliveries').select('enrollment_id,day_number,delivery_type,message_index,delivered_at,seen_at').eq('user_id', user.id).order('delivered_at', { ascending: false }).limit(1000),
     ]).then(([enrollmentsResult, deliveriesResult]) => {
       if (cancelled) return;
       if (enrollmentsResult.error) console.error('[progress] enrollments:', enrollmentsResult.error);
@@ -610,7 +561,16 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
               const attention = attentionFromDelivery(delivery);
               const sent = new Date(delivery.delivered_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
               const opened = delivery.seen_at ? new Date(delivery.seen_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : 'No abierta';
-              return <p key={`${delivery.delivered_at}-${index}`}><strong>Día {delivery.day_number}</strong> · Enviada {sent} · Abierta {opened} · <b>{attention}</b></p>;
+              const deliveryLabel = delivery.delivery_type === 'intermediate_message'
+                ? `Mensaje ${delivery.message_index ?? '—'}`
+                : deliveryTypeLabels[delivery.delivery_type];
+              return <div className="progress-delivery-row" key={`${delivery.delivered_at}-${index}`}>
+                <div className="progress-delivery-copy">
+                  <strong>{deliveryLabel}</strong>
+                  <span>Día {delivery.day_number} · Enviada {sent} · {delivery.seen_at ? `Abierta ${opened}` : 'No abierta'}</span>
+                </div>
+                <b className={`progress-attention progress-attention-${attention.toLowerCase()}`}>{attention}</b>
+              </div>;
             })}
           </div>}
         </article>;
@@ -619,7 +579,7 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
   </section>;
 }
 
-function ConfigurationPanel({ user, onBack, onNavigate, onOpenNotifications }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void; onOpenNotifications: () => void }) {
+function ConfigurationPanel({ onBack, onNavigate }: { onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   return <section className="reader-section">
     <FixedHeader eyebrow="MI PERFIL" title="Configuración" subtitle="Preferencias de la aplicación." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body configuration-settings">
@@ -637,16 +597,6 @@ function AccountPanel({ user, fullName, onBack, onNavigate, onNameSaved, onLogou
   const [name, setName] = useState(fullName || user.user_metadata?.full_name || '');
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
-  const [entitlement, setEntitlement] = useState<Entitlement>(null);
-  const [accessLoaded, setAccessLoaded] = useState(false);
-  const [accessUnavailable, setAccessUnavailable] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    void supabase.from('user_entitlements').select('access_until,lifetime').eq('user_id', user.id).maybeSingle().then(({ data, error }) => {
-      if (!cancelled) { setEntitlement(data); setAccessUnavailable(Boolean(error)); setAccessLoaded(true); }
-    });
-    return () => { cancelled = true; };
-  }, [user.id]);
   const save = async () => {
     const cleanName = name.trim();
     if (!cleanName) return setMessage('Escribí tu nombre para guardarlo.');
@@ -670,7 +620,7 @@ function AccountPanel({ user, fullName, onBack, onNavigate, onNameSaved, onLogou
       <label>Nombre<input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" /></label>
       <ShimmerButton className="account-save" onClick={save} disabled={saving}>{saving ? 'Guardando…' : 'Guardar cambios'}</ShimmerButton>
       {message && <p className="account-message">{message}</p>}
-      <section className="subscription-card"><p>TU PLAN</p><b>{!accessLoaded ? 'Consultando…' : accessUnavailable ? 'Sin suscripción' : entitlement?.lifetime ? 'Plan Premium' : hasActiveAccess(entitlement) ? 'Plan Premium' : 'Sin suscripción'}</b><span>{!accessLoaded ? 'Consultando tu acceso.' : accessUnavailable ? 'No tenés una suscripción activa.' : entitlement?.lifetime ? 'Tu acceso Premium está activo.' : hasActiveAccess(entitlement) && entitlement?.access_until ? `Tu acceso Premium está disponible hasta el ${new Date(entitlement.access_until).toLocaleDateString('es-AR')}.` : 'No tenés una suscripción activa.'}</span></section>
+      <section className="subscription-card"><p>TU ACCESO</p><b>Habilitado</b><span>El acceso se administra directamente con Germán.</span></section>
       <button className="account-logout" onClick={onLogout}><LogOut size={17} /> Cerrar sesión</button>
     </div>
   </section>;
@@ -875,7 +825,7 @@ function extractConferenceYear(item: Record<string, unknown>): number | undefine
   return undefined;
 }
 
-function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggleFavorite }: { entries: LibraryEntry[]; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (entry: LibraryEntry, query?: string, mode?: 'audio' | 'text') => void; favorites: FavoriteRecord[]; onToggleFavorite: (favorite: FavoriteRecord) => void }) {
+function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggleFavorite, booksAllowed, onBooksBlocked }: { entries: LibraryEntry[]; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (entry: LibraryEntry, query?: string, mode?: 'audio' | 'text') => void; favorites: FavoriteRecord[]; onToggleFavorite: (favorite: FavoriteRecord) => void; booksAllowed: boolean; onBooksBlocked: () => void }) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -963,7 +913,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           closeOnSelect
           physics
           drift={0.5}
-          onSelect={(value) => setFilter(value)}
+          onSelect={(value) => { if (/Libros/.test(value) && !booksAllowed) { onBooksBlocked(); return; } setFilter(value); }}
           folderColor="#3f3f46"
           frontColor="#52525b"
           paperColor="#f5f5f5"
@@ -1543,146 +1493,91 @@ function getDeliveryIdFromUrl() {
   return pathMatch ? decodeURIComponent(pathMatch[1]) : null;
 }
 
-function VideoIntro({ onFinish }: { onFinish: () => void }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [showEnter, setShowEnter] = useState(false);
-  // Ref con la última versión de onFinish: el efecto de abajo monta el video
-  // una sola vez ([] de dependencias) y no debe re-ejecutarse si App
-  // re-renderiza y pasa una nueva función inline — eso era lo que hacía que
-  // el video se reiniciara a mitad de reproducción (se veía como "doble video").
-  const onFinishRef = useRef(onFinish);
-  useEffect(() => { onFinishRef.current = onFinish; }, [onFinish]);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    // Crear el elemento de video directamente en el DOM para evitar el bug de 'muted' en React
-    const video = document.createElement('video');
-    video.className = 'video-intro-video';
-    video.src = '/videos/video-german-white.mp4?v=3';
-    video.setAttribute('autoplay', '');
-    video.setAttribute('muted', '');
-    video.setAttribute('playsinline', '');
-    video.setAttribute('webkit-playsinline', 'true');
-    video.setAttribute('preload', 'auto');
-    video.setAttribute('aria-label', 'Presentación de Germán Asistente');
-    video.muted = true;
-    video.defaultMuted = true;
-    video.playsInline = true;
-    video.autoplay = true;
-
-    video.onended = () => {
-      onFinishRef.current();
-    };
-
-    let buttonTimer: ReturnType<typeof setTimeout> | null = null;
-    const scheduleEnterButton = () => {
-      if (buttonTimer) return;
-      buttonTimer = setTimeout(() => setShowEnter(true), 2000);
-    };
-    video.addEventListener('playing', scheduleEnterButton, { once: true });
-    // Red de seguridad: si el autoplay queda bloqueado y 'playing' nunca
-    // dispara, igual mostramos el botón para no dejar al usuario varado
-    // sin ninguna forma de avanzar.
-    const safetyTimer = setTimeout(scheduleEnterButton, 2500);
-
-    container.appendChild(video);
-
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {
-        const playOnTouch = () => {
-          video.play().catch(() => undefined);
-          window.removeEventListener('touchstart', playOnTouch);
-        };
-        window.addEventListener('touchstart', playOnTouch, { once: true, passive: true });
-      });
-    }
-
-    return () => {
-      video.onended = null;
-      video.removeEventListener('playing', scheduleEnterButton);
-      clearTimeout(safetyTimer);
-      if (buttonTimer) clearTimeout(buttonTimer);
-      video.pause();
-      if (video.parentNode === container) {
-        container.removeChild(video);
-      }
-    };
-  }, []);
-
-  return <div ref={containerRef} className="video-intro">
-    {showEnter && <button type="button" className="video-intro-enter" onClick={() => onFinishRef.current()}><span>Ingresar</span><ArrowRight size={18} strokeWidth={2.4} /></button>}
-  </div>;
-}
-
 export default function TelegramMiniApp() {
-  // El splash se salta al volver de OAuth y al abrir una entrega desde push.
-  // El deep-link debe llevar al contenido inmediatamente, incluso si primero
-  // hace falta restaurar la sesión o iniciar sesión.
-  const isOAuthCallback = hasOAuthCallbackParams();
+  const router = useRouter();
   const initialDeliveryId = getDeliveryIdFromUrl();
-  const [showVideo, setShowVideo] = useState(() => {
-    if (isOAuthCallback) console.log('[auth] callback de OAuth detectado en la URL al montar, saltando el video');
-    if (initialDeliveryId) console.log('[deep-link] entrega detectada en la URL al montar, saltando el video');
-    return !isOAuthCallback && !initialDeliveryId;
-  });
   const [sessionChecked, setSessionChecked] = useState(false);
   const [accessState, setAccessState] = useState<'checking' | 'active' | 'inactive' | 'error'>('checking');
+  const [accessPermissions, setAccessPermissions] = useState<AccessPermissions>({});
+  const [fullyBlocked, setFullyBlocked] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [pendingDeliveryId, setPendingDeliveryId] = useState(initialDeliveryId);
 
-  // iOS puede reutilizar una PWA ya abierta cuando se toca un push. En ese caso
-  // el componente no se remonta: sincronizamos ?delivery= al volver a primer plano
-  // y apagamos el splash antes de abrir la entrega.
+  // Telegram abre la Mini App con ?delivery=<id>. Si la misma instancia ya estaba
+  // abierta, sincronizamos el deep-link al volver a primer plano sin depender de
+  // Service Worker ni de Web Push.
   useEffect(() => {
-    const syncPushDeepLink = () => {
+    const syncDeliveryDeepLink = () => {
       const deliveryId = getDeliveryIdFromUrl();
       if (!deliveryId) return;
-      setShowVideo(false);
       setPendingDeliveryId(deliveryId);
     };
-    syncPushDeepLink();
-    window.addEventListener('pageshow', syncPushDeepLink);
-    window.addEventListener('popstate', syncPushDeepLink);
-    const onSwMessage = (event: MessageEvent) => {
-      if (!['LAST_PUSH', 'OPEN_PUSH'].includes(event.data?.type) || typeof event.data.url !== 'string') return;
-      const pushUrl = new URL(event.data.url, window.location.origin);
-      const deliveryPathMatch = pushUrl.pathname.match(/^\/delivery\/[^/]+$/);
-      if (deliveryPathMatch) {
-        window.location.assign(`${pushUrl.pathname}${pushUrl.search}${pushUrl.hash}`);
-        return;
-      }
-      const deliveryId = pushUrl.searchParams.get('delivery');
-      if (!deliveryId) return;
-      setShowVideo(false);
-      setPendingDeliveryId(deliveryId);
-    };
-    const requestLastPush = () => {
-      navigator.serviceWorker?.ready
-        .then((registration) => registration.active?.postMessage({ type: 'GET_LAST_PUSH' }))
-        .catch(() => undefined);
-    };
+    syncDeliveryDeepLink();
+    window.addEventListener('pageshow', syncDeliveryDeepLink);
+    window.addEventListener('popstate', syncDeliveryDeepLink);
     const onVisibilityChange = () => {
-      syncPushDeepLink();
-      if (document.visibilityState === 'visible') requestLastPush();
+      if (document.visibilityState === 'visible') syncDeliveryDeepLink();
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
-    navigator.serviceWorker?.addEventListener('message', onSwMessage);
-    requestLastPush();
     return () => {
-      window.removeEventListener('pageshow', syncPushDeepLink);
-      window.removeEventListener('popstate', syncPushDeepLink);
+      window.removeEventListener('pageshow', syncDeliveryDeepLink);
+      window.removeEventListener('popstate', syncDeliveryDeepLink);
       document.removeEventListener('visibilitychange', onVisibilityChange);
-      navigator.serviceWorker?.removeEventListener('message', onSwMessage);
     };
   }, []);
 
   useEffect(() => {
     if (!session?.user) { setFavorites([]); return; }
     let cancelled = false;
-    void supabase.from('user_favorites').select('payload').eq('user_id', session.user.id).order('created_at', { ascending: false }).then(({ data, error }) => { if (cancelled) return; if (error) { console.error('[favorites] load error:', error); return; } setFavorites((data || []).map((row) => row.payload as FavoriteRecord)); });
+    void (async () => {
+      const { data, error } = await supabase
+        .from('user_favorites')
+        .select('favorite_id,payload')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+      if (cancelled) return;
+      if (error) { console.error('[favorites] load error:', error); return; }
+
+      const rows = data || [];
+      const deliveryIds = rows
+        .map((row) => typeof row.favorite_id === 'string' && row.favorite_id.startsWith('delivery:') ? row.favorite_id.slice('delivery:'.length) : null)
+        .filter((id): id is string => Boolean(id));
+
+      let deliveryMap = new Map<string, { day_number: number; delivery_type: TallerDeliveryType; message_index: number | null }>();
+      if (deliveryIds.length) {
+        const { data: deliveryRows, error: deliveryError } = await supabase
+          .from('taller_deliveries')
+          .select('id,day_number,delivery_type,message_index')
+          .eq('user_id', session.user.id)
+          .in('id', deliveryIds);
+        if (deliveryError) console.error('[favorites] no se pudieron completar los números de entrega:', deliveryError);
+        else deliveryMap = new Map((deliveryRows || []).map((delivery) => [delivery.id, {
+          day_number: delivery.day_number,
+          delivery_type: delivery.delivery_type as TallerDeliveryType,
+          message_index: delivery.message_index,
+        }]));
+      }
+
+      if (cancelled) return;
+      setFavorites(rows.map((row) => {
+        const favorite = row.payload as FavoriteRecord;
+        if (typeof row.favorite_id !== 'string' || !row.favorite_id.startsWith('delivery:')) return favorite;
+        const deliveryId = row.favorite_id.slice('delivery:'.length);
+        const delivery = deliveryMap.get(deliveryId);
+        if (!delivery) return favorite;
+        const label = deliveryTypeLabels[delivery.delivery_type];
+        const title = delivery.delivery_type === 'intermediate_message'
+          ? `Mensaje ${delivery.message_index ?? '—'}`
+          : label;
+        const detail = `Día ${delivery.day_number} · ${label}`;
+        return {
+          ...favorite,
+          title,
+          detail,
+          reader: favorite.reader ? { ...favorite.reader, title, detail } : favorite.reader,
+        };
+      }));
+    })();
     return () => { cancelled = true; };
   }, [session?.user?.id]);
 
@@ -1692,85 +1587,18 @@ export default function TelegramMiniApp() {
     setAccessState('checking');
     fetch('/api/access', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' })
       .then(async (response) => {
-        const data = await response.json().catch(() => ({})) as { active?: boolean };
+        const data = await response.json().catch(() => ({})) as { active?: boolean; blocked?: boolean; permissions?: AccessPermissions };
         if (cancelled) return;
         if (!response.ok) return setAccessState('error');
+        setAccessPermissions(data.permissions || {});
+        setFullyBlocked(Boolean(data.blocked));
         if (data.active) setAccessState('active');
-        else { setAccessState('inactive'); window.location.assign('/access'); }
+        else setAccessState('inactive');
       })
       .catch(() => { if (!cancelled) setAccessState('error'); });
     return () => { cancelled = true; };
   }, [session?.access_token]);
 
-  // iOS puede conservar el permiso pero perder/rotar la suscripción WebPush.
-  // Si el permiso ya fue concedido, reparamos el endpoint al abrir o volver al
-  // primer plano sin mostrar ningún prompt al usuario.
-  useEffect(() => {
-    if (isTelegramMiniApp() || !session?.user || typeof Notification === 'undefined') return;
-    const repairPush = () => {
-      if (document.visibilityState !== 'visible' || Notification.permission !== 'granted') return;
-      void ensurePushSubscription(session.user).then((result) => {
-        if (result.error) console.error('[push] autorreparación falló:', result.error);
-      });
-    };
-    repairPush();
-    document.addEventListener('visibilitychange', repairPush);
-    return () => document.removeEventListener('visibilitychange', repairPush);
-  }, [session?.user]);
-
-  // Red de seguridad mientras la PWA está realmente activa. Si el backend creó
-  // una entrega pero el evento WebPush no llegó al dispositivo, comprobamos las
-  // entregas recientes y mostramos la notificación local una sola vez. El SW
-  // guarda un recibo por deliveryId cuando sí recibió el push, evitando duplicados.
-  useEffect(() => {
-    if (isTelegramMiniApp() || !session?.user || accessState !== 'active' || typeof Notification === 'undefined') return;
-    let cancelled = false;
-    const receiptCacheName = 'german-push-receipts-v1';
-    const checkRecentDeliveries = async () => {
-      if (cancelled || document.visibilityState !== 'visible' || Notification.permission !== 'granted' || !('serviceWorker' in navigator) || !('caches' in window)) return;
-      const now = Date.now();
-      const cutoff = new Date(now - 20 * 60_000).toISOString();
-      const { data, error } = await supabase
-        .from('taller_deliveries')
-        .select('id,day_number,delivery_type,delivered_at,seen_at')
-        .eq('user_id', session.user.id)
-        .is('seen_at', null)
-        .gte('delivered_at', cutoff)
-        .order('delivered_at', { ascending: true })
-        .limit(20);
-      if (error || cancelled || !data?.length) return;
-      const registration = await navigator.serviceWorker.ready;
-      const cache = await caches.open(receiptCacheName);
-      for (const delivery of data) {
-        if (cancelled) return;
-        const ageMs = now - new Date(delivery.delivered_at).getTime();
-        if (ageMs < 120_000) continue;
-        const receiptKey = `/__push_receipt__/${delivery.id}`;
-        if (await cache.match(receiptKey)) continue;
-        const tag = `delivery-${delivery.id}`;
-        const existing = await registration.getNotifications({ tag });
-        if (!existing.length) {
-          await registration.showNotification('Mensaje de Germán', {
-            body: 'Germán te dejó una práctica.',
-            icon: '/icons/icon-192.png',
-            badge: '/icons/icon-192.png',
-            tag,
-            data: { url: `/delivery/${delivery.id}` },
-          });
-        }
-        await cache.put(receiptKey, new Response(JSON.stringify({ at: Date.now(), fallback: true })));
-      }
-    };
-    void checkRecentDeliveries();
-    const timer = window.setInterval(() => { void checkRecentDeliveries(); }, 30_000);
-    const onVisible = () => { if (document.visibilityState === 'visible') void checkRecentDeliveries(); };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-      document.removeEventListener('visibilitychange', onVisible);
-    };
-  }, [session?.user, accessState]);
   const [fullName, setFullName] = useState<string | null>(null);
   const [mainMenu, setMainMenu] = useState(true);
   const [tab, setTab] = useState<Tab>('biblioteca');
@@ -1785,13 +1613,9 @@ export default function TelegramMiniApp() {
   const [programConfig, setProgramConfig] = useState<ProgramPanelConfig>({ slug: 'taller-40-dias', title: 'Taller de 40 días', subtitle: 'Autoconcepto y control de la imaginación.' });
   const [courseOpen, setCourseOpen] = useState(false);
   const [interactiveBookOpen, setInteractiveBookOpen] = useState(false);
-  const [installOpen, setInstallOpen] = useState(false);
-  const [installDismissed, setInstallDismissed] = useState(false);
-  const [installPlatform, setInstallPlatform] = useState<ReturnType<typeof detectInstallPlatform>>('other');
-  const [installPromptAvailable, setInstallPromptAvailable] = useState(false);
-  const [standalone, setStandalone] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteRecord[]>([]);
   const [preguntameOpen, setPreguntameOpen] = useState(false);
+  const [blockedSection, setBlockedSection] = useState<string | null>(null);
   const [libraryItems, setLibraryItems] = useState<LibraryEntry[]>([]);
   const [audiobookItems, setAudiobookItems] = useState<AudiobookEntry[]>([]);
   const [audiobooksLoading, setAudiobooksLoading] = useState(true);
@@ -1823,6 +1647,17 @@ export default function TelegramMiniApp() {
   };
 
   const navigateTo = (target: NavTarget) => {
+    const permissionForTarget: Partial<Record<NavTarget, { key: SectionPermissionKey; label: string }>> = {
+      audiolibros: { key: 'books', label: 'los libros y audiolibros' },
+      curso: { key: 'course365', label: 'el Taller de 365 días' },
+      consultas: { key: 'consultations', label: 'Consultas' },
+    };
+    const rule = permissionForTarget[target];
+    if (rule && accessPermissions[rule.key] === false) {
+      setBlockedSection(rule.label);
+      return;
+    }
+    setBlockedSection(null);
     setSelectedAudiobook(null);
     setReader(null);
     setNotificationsOpen(false);
@@ -1845,13 +1680,6 @@ export default function TelegramMiniApp() {
 
   const logout = () => {
     void (async () => {
-      // Este navegador/PWA puede usarse luego con otra cuenta. Antes de cerrar
-      // sesión desactivamos los pushes del usuario actual para que el mismo
-      // dispositivo no siga recibiendo entregas de la cuenta que salió.
-      if (session?.user) {
-        const { error } = await disableCurrentBrowserPushSubscription(session.user.id);
-        if (error) console.error('[logout] no se pudo desactivar push:', error);
-      }
       await supabase.auth.signOut();
     })().finally(() => {
       setSession(null);
@@ -1950,13 +1778,12 @@ export default function TelegramMiniApp() {
   };
 
   useEffect(() => {
-    if (!isTelegramMiniApp() && 'serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((registration) => registration.update().catch(() => undefined)).catch(() => undefined);
     localStorage.removeItem('german-propia-practica');
     localStorage.removeItem('german-favorites');
 
     // La sesión de Supabase se restaura desde almacenamiento local. No
-    // bloqueamos la primera pintura esperando perfil/red: eso hacía que una
-    // PWA con conexión lenta pareciera congelada.
+    // bloqueamos la primera pintura esperando perfil/red: una conexión lenta
+    // no debe dejar la mini app congelada.
     console.log('[auth] pidiendo getSession()...');
     // Red de seguridad: si getSession() nunca resuelve (colgado por red u
     // otro motivo), no dejamos la app trabada en blanco para siempre.
@@ -1993,29 +1820,6 @@ export default function TelegramMiniApp() {
       listener.subscription.unsubscribe();
     };
   }, []);
-
-  useEffect(() => {
-    if (isTelegramMiniApp()) {
-      setStandalone(true);
-      setInstallPromptAvailable(false);
-      setInstallOpen(false);
-      return;
-    }
-    setInstallPlatform(detectInstallPlatform());
-    setStandalone(isRunningStandalone());
-    setInstallPromptAvailable(hasNativeInstallPrompt());
-    return listenForPwaInstallation(({ installed, promptAvailable, standalone: nextStandalone }) => {
-      setInstallPromptAvailable(promptAvailable);
-      const isInstalled = nextStandalone || installed;
-      setStandalone(isInstalled);
-      if (isInstalled) setInstallOpen(false);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!session?.user || pendingDeliveryId || standalone || installDismissed) return;
-    setInstallOpen(true);
-  }, [session?.user, standalone, pendingDeliveryId, installDismissed]);
 
   // Nota: la animación de entrada de las MagicCard ya se maneja adentro del
   // propio componente (app/components/magic-ui.tsx, un IntersectionObserver
@@ -2163,19 +1967,19 @@ export default function TelegramMiniApp() {
     if (!session?.user || accessState !== 'active' || !pendingDeliveryId) return;
     const deliveryId = pendingDeliveryId;
     setPendingDeliveryId(null);
-    window.location.replace(`/delivery/${encodeURIComponent(deliveryId)}`);
-  }, [session?.user, accessState, pendingDeliveryId]);
+    router.replace(`/delivery/${encodeURIComponent(deliveryId)}`);
+  }, [session?.user, accessState, pendingDeliveryId, router]);
 
-  // Esperamos a saber si hay sesión antes de decidir la siguiente pantalla
-  // (para no mostrar LoginGate de arranque si en realidad hay sesión) —
-  // pero esto no afecta si se muestra el video: callback de OAuth y deep-link
-  // de entrega lo saltean desde el estado inicial.
-  if (!sessionChecked) return null;
-  if (showVideo && !getDeliveryIdFromUrl() && !pendingDeliveryId) return <VideoIntro onFinish={() => setShowVideo(false)} />;
+  // Esperamos a saber si hay sesión antes de decidir la siguiente pantalla.
+  // Mientras tanto mostramos el loader AG; ya no hay video de presentación.
+  if (!sessionChecked) return <AudioWaveLoader label="Preparando Asistente Germán" />;
   if (!session) return <LoginGate redirectPath="/telegram" />;
-  if (accessState === 'checking') return <main className="app-shell app-main section-app"><div className="access-loading" role="status" aria-live="polite">Cargando tu espacio…</div></main>;
+  if (accessState === 'checking') return <AudioWaveLoader label="Cargando tu espacio" />;
   if (accessState === 'error') return <main className="app-shell app-main section-app"><div className="access-loading"><p>No pudimos comprobar tu acceso.</p><button type="button" onClick={() => window.location.reload()}>Reintentar</button></div></main>;
-  if (accessState === 'inactive') return null;
+  if (accessState === 'inactive') return <AccessPaywall />;
+  if (fullyBlocked || accessPermissions.all === false) return <AccessPaywall />;
+  if (blockedSection) return <AccessPaywall section={blockedSection} onBack={() => setBlockedSection(null)} />;
+  if (pendingDeliveryId) return <AudioWaveLoader label="Abriendo tu práctica" />;
   const dock = <MainNavigationDock current={mainMenu ? "home" : configurationOpen ? "configuracion" : tab} onSelect={navigateTo} />;
 
   if (mainMenu) {
@@ -2183,7 +1987,7 @@ export default function TelegramMiniApp() {
     const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/german-perfil.webp' : target === 'biblioteca' ? '/images/german-biblioteca.webp' : target === 'audiolibros' ? '/images/german-audiolibros.webp' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
     const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
     const items = [...welcomeItems.slice(0, meditIndex + 1), courseCard, ...welcomeItems.slice(meditIndex + 1)];
-    return <><main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; if (item.target === 'curso') { setCourseOpen(true); setMainMenu(false); return; } setTab(item.target); setTrail([]); setReader(null); setMainMenu(false); }} /></section>{dock}</main>{installOpen && !standalone && !pendingDeliveryId && <InstallOnboarding suggestedPlatform={installPlatform} nativePromptAvailable={installPromptAvailable} onClose={() => { setInstallOpen(false); setInstallDismissed(true); }} onInstallAndroid={promptNativeInstallation} onRecheckInstallation={() => { const installed = isRunningStandalone(); setStandalone(installed); return installed; }} />}</>;
+    return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; navigateTo(item.target); }} /></section>{dock}</main>;
   }
   if (interactiveBookOpen) return <main className="app-shell app-main section-app"><InteractiveBookIntro onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (courseOpen) return <main className="app-shell app-main section-app"><LawCoursePanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
@@ -2192,15 +1996,15 @@ export default function TelegramMiniApp() {
   if (reader) { const favorite = deckFavorite({ icon: '📖', title: reader.title, detail: reader.detail, tone: palette[0], reader }); return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} onNavigate={navigateTo} favorite={favorites.some((item) => item.title === reader.title)} onFavorite={() => { const exact = favorites.find((item) => item.title === reader.title); toggleFavorite(exact || favorite); }} />{dock}</main>; }
   if (favoritesOpen) return <main className="app-shell app-main section-app"><FavoritesPanel favorites={favorites} onBack={back} onNavigate={navigateTo} onOpen={(favorite) => { if (favorite.reader) setReader(favorite.reader); }} onRemove={toggleFavorite} />{dock}</main>;
   if (workshopOpen) return <main className="app-shell app-main section-app"><WorkshopPanel user={session.user} program={programConfig} onBack={back} onNavigate={navigateTo} onRead={setReader} />{dock}</main>;
-  if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
-  if (configurationOpen) return <main className="app-shell app-main section-app"><ConfigurationPanel user={session.user} onBack={back} onNavigate={navigateTo} onOpenNotifications={() => setNotificationsOpen(true)} />{dock}</main>;
+  if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
+  if (configurationOpen) return <main className="app-shell app-main section-app"><ConfigurationPanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (preguntameOpen) return <main className="app-shell app-main section-app preguntame-shell"><PreguntamePanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'audiolibros' && !trail.length) {
     return <main className="app-shell app-main section-app"><AudiobookLibraryPanel entries={audiobookItems} loading={audiobooksLoading} error={audiobooksError} onBack={back} onNavigate={navigateTo} onOpen={(entry) => { touchContentProgress(session.user.id, `audiobook:${entry.id}`, 'audiobook'); setSelectedAudiobook(entry); }} />{dock}</main>;
   }
-  if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} onRead={(entry, searchQuery, mode) => setReader({ title: entry.title, eyebrow: mode === 'audio' ? 'AUDIO' : mode === 'text' ? 'TEXTO' : entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: mode === 'audio' ? [] : cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: mode === 'text' ? undefined : entry.audioUrl, duration: entry.duration, highlightQuery: searchQuery })} />{dock}</main>;
+  if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} booksAllowed={accessPermissions.books !== false} onBooksBlocked={() => setBlockedSection('los libros y audiolibros')} onRead={(entry, searchQuery, mode) => setReader({ title: entry.title, eyebrow: mode === 'audio' ? 'AUDIO' : mode === 'text' ? 'TEXTO' : entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: mode === 'audio' ? [] : cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: mode === 'text' ? undefined : entry.audioUrl, duration: entry.duration, highlightQuery: searchQuery })} />{dock}</main>;
   if (showProgress) return <main className="app-shell app-main section-app"><ProgressScreen user={session.user} onBack={() => setShowProgress(false)} onNavigate={navigateTo} />{dock}</main>;
-  if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} showInstall={!standalone} onInstall={() => { setInstallDismissed(false); setInstallOpen(true); }} onSelect={select} onBack={back} onNavigate={navigateTo} onOpenProgress={() => setShowProgress(true)} />{dock}</main>;
+  if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} onSelect={select} onBack={back} onNavigate={navigateTo} onOpenProgress={() => setShowProgress(true)} />{dock}</main>;
   if (tab === 'consultas' && !trail.length) return <main className="app-shell app-main section-app preguntame-shell"><PreguntamePanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'propia' && !trail.length) return <main className="app-shell app-main section-app"><PropiaPracticaPanel user={session.user} onBack={back} onNavigate={navigateTo} onRead={setReader} />{dock}</main>;
   if (tab === 'talleres' && !trail.length) {

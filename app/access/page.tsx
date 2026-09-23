@@ -1,2 +1,5 @@
-import { PricingScreen } from '../components/pricing-screen';
-export default function AccessPage() { return <PricingScreen />; }
+import { AccessPaywall } from '../components/access-paywall';
+
+export default function AccessPage() {
+  return <AccessPaywall />;
+}

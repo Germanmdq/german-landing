@@ -1,35 +1,26 @@
 // Edge Function: send-notifications
 //
-// Pensada para correr cada minuto via pg_cron (SQL y pasos de deploy entregados
-// aparte, no en este repo). Procesa exclusivamente program_enrollments activas;
-// push_subscriptions sólo aporta los dispositivos activos del usuario.
-//
-// Cada entrega insertada en taller_deliveries queda con push_status
-// ('pending' por default, luego 'sent' o 'failed') y push_error si falló —
-// requiere las columnas nuevas (ver migración en este mismo PR/commit).
+// Corre cada minuto vía pg_cron y procesa exclusivamente program_enrollments
+// activas. Telegram es el único transporte: cada entrega se reserva en
+// taller_deliveries y luego se despacha al chat_id vinculado en telegram_accounts.
 // El progreso y los horarios viven únicamente en program_enrollments.
-//
-// NO se hace deploy desde este código — eso se hace a mano con la CLI.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import webpush from 'npm:web-push@3.6.7';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY')!;
-const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY')!;
-const VAPID_EMAIL = Deno.env.get('VAPID_EMAIL')!;
+const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN')!;
 const PUSH_CRON_TOKEN = Deno.env.get('PUSH_CRON_TOKEN')!;
+const TELEGRAM_APP_ORIGIN = 'https://german.elclubdelaimaginacion.com';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-webpush.setVapidDetails(`mailto:${VAPID_EMAIL}`, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
-const MATCH_WINDOW_MINUTES = 2;
-// No acumulamos avisos viejos: si un push no salió cerca de su horario,
-// queda como fallo histórico y no reaparece mucho después junto con otros.
-const PUSH_RETRY_WINDOW_MINUTES = 5;
-const PUSH_RETRY_MIN_INTERVAL_SECONDS = 90;
-const PUSH_RETRY_MAX_ATTEMPTS = 6;
+// Telegram es el único transporte de avisos. Nunca generamos una entrega antes
+// del minuto configurado. Los intermedios sólo se crean en su minuto exacto;
+// si ese slot se perdió, no se acumula ni se manda más tarde.
+const TELEGRAM_RETRY_WINDOW_MINUTES = 5;
+const TELEGRAM_RETRY_MIN_INTERVAL_SECONDS = 90;
+const TELEGRAM_RETRY_MAX_ATTEMPTS = 6;
 // Las 4 meditaciones diarias tienen un único horario fijo por día, separado
 // por horas entre sí, así que este margen no puede pisar el turno siguiente.
 // Cubre una corrida de cron que falló, un timeout, o una carrera de inserción
@@ -46,10 +37,7 @@ const MEDITATION_CATCHUP_MINUTES = 30;
 // para loguear (una vez, no todo el día) que una meditación programada quedó
 // vencida sin generar entrega — para enterarnos nosotros, no el usuario.
 const OVERDUE_ALERT_WINDOW_MINUTES = 5;
-// Un endpoint de push colgado no debe bloquear el resto del lote: sin timeout,
-// una sola suscripción lenta puede hacer que toda la invocación exceda el
-// minuto de cron y arrastre a otros usuarios fuera de su ventana de envío.
-const PUSH_SEND_TIMEOUT_MS = 10_000;
+const TELEGRAM_SEND_TIMEOUT_MS = 10_000;
 
 type MeditationMoment = 'morning' | 'noon' | 'afternoon' | 'night';
 type DeliveryType = 'meditation_morning' | 'meditation_noon' | 'meditation_afternoon' | 'meditation_night' | 'intermediate_message';
@@ -68,13 +56,11 @@ const meditationTitles: Record<MeditationMoment, string> = {
   night: 'Meditación de la noche',
 };
 
-type PushDeviceRow = {
-  id: string;
+type TelegramAccountRow = {
+  telegram_user_id: number;
   user_id: string;
-  endpoint: string;
-  p256dh: string;
-  auth_key: string;
-  is_active: boolean;
+  chat_id: number | null;
+  access_tier: 'trial' | 'limited' | 'active' | 'founder' | 'blocked';
 };
 
 type ProgramEnrollmentRow = {
@@ -91,7 +77,7 @@ type ProgramEnrollmentRow = {
   current_day: number;
 };
 
-type DeliveryPushRow = {
+type DeliveryTelegramRow = {
   id: string;
   user_id: string;
   day_number: number;
@@ -126,9 +112,8 @@ function localDateKey(date: Date, timeZone: string): string {
   return `${year}-${month}-${day}`;
 }
 
-function withinWindow(nowMinutes: number, targetMinutes: number, windowMinutes = MATCH_WINDOW_MINUTES): boolean {
-  const diff = Math.abs(nowMinutes - targetMinutes);
-  return Math.min(diff, 1440 - diff) <= windowMinutes;
+function isExactMinute(nowMinutes: number, targetMinutes: number): boolean {
+  return nowMinutes === ((targetMinutes % 1440) + 1440) % 1440;
 }
 
 // Minutos transcurridos desde la última vez que el reloj local pasó por
@@ -188,7 +173,7 @@ function matchIntermediateSlot(nowMinutes: number, morning: string, night: strin
   let index = 1;
   // Incluimos el último slot. Ej.: 07:30..22:00 cada 30 min => slot base 30.
   while (slot <= end) {
-    if (withinWindow(nowMinutes, slot % 1440)) return index;
+    if (isExactMinute(nowMinutes, slot % 1440)) return index;
     slot += intervalMinutes;
     index += 1;
   }
@@ -279,7 +264,7 @@ async function deliveryExists(enrollmentId: string, dayNumber: number, deliveryT
 // dos invocaciones del cron pueden comprobar a la vez que no existe y luego
 // insertar ambas. La base debe tener los índices únicos de la migración
 // 20260912_taller_deliveries_dedup.sql; si otra invocación ganó la carrera,
-// Postgres devuelve 23505 y simplemente no enviamos un segundo push.
+    // Postgres devuelve 23505 y simplemente no enviamos un segundo aviso.
 async function reserveDelivery(values: {
   enrollment_id: string;
   user_id: string;
@@ -315,95 +300,96 @@ async function nightAlreadySentToday(enrollmentId: string, now: Date, timeZone: 
   return localDateKey(new Date(data.delivered_at), timeZone) === localDateKey(now, timeZone);
 }
 
-// deliveryId: la fila de taller_deliveries ya insertada para este envío —
-// queda registrado ahí si el push realmente salió o no, y por qué, porque
-// insertar la fila NO significa que el push haya llegado al teléfono.
-async function sendPush(device: PushDeviceRow, payload: Record<string, unknown>) {
+function telegramDeliveryText(delivery: DeliveryTelegramRow) {
+  if (delivery.delivery_type === 'intermediate_message') return 'Mensaje de Germán';
+  return meditationTitles[(Object.entries(momentToDeliveryType).find(([, type]) => type === delivery.delivery_type)?.[0] || 'morning') as MeditationMoment];
+}
+
+async function sendTelegram(account: TelegramAccountRow, delivery: DeliveryTelegramRow) {
+  if (!account.chat_id) return { ok: false as const, error: 'La cuenta de Telegram no tiene chat_id.' };
+  if (account.access_tier === 'blocked') return { ok: false as const, error: 'La cuenta está bloqueada.' };
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), TELEGRAM_SEND_TIMEOUT_MS);
   try {
-    await Promise.race([
-      webpush.sendNotification(
-        { endpoint: device.endpoint, keys: { p256dh: device.p256dh, auth: device.auth_key } },
-        JSON.stringify(payload),
-      ),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('push send timeout')), PUSH_SEND_TIMEOUT_MS)),
-    ]);
-    return true;
-  } catch (err) {
-    const statusCode = (err as { statusCode?: number })?.statusCode;
-    if (statusCode === 404 || statusCode === 410) {
-      // La suscripción ya no existe del lado del navegador (desinstaló la PWA,
-      // revocó el permiso, etc.) — la desactivamos para no reintentar en vano.
-      await supabase.from('push_subscriptions').update({ is_active: false }).eq('id', device.id);
-    }
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`push failed for subscription ${device.id}:`, err);
-    return message.slice(0, 500);
+    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        chat_id: account.chat_id,
+        text: telegramDeliveryText(delivery),
+        reply_markup: {
+          inline_keyboard: [[{
+            text: 'Abrir práctica',
+            web_app: { url: `${TELEGRAM_APP_ORIGIN}/delivery/${encodeURIComponent(delivery.id)}` },
+          }]],
+        },
+      }),
+    });
+    const result = await response.json().catch(() => null) as { ok?: boolean; description?: string; result?: { message_id?: number } } | null;
+    if (!response.ok || !result?.ok) return { ok: false as const, error: result?.description || `Telegram respondió ${response.status}` };
+    return { ok: true as const, messageId: result.result?.message_id ?? null };
+  } catch (error) {
+    return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
-function deliveryPushPayload(delivery: DeliveryPushRow, retry = false) {
-  return {
-    title: 'Mensaje de Germán',
-    body: '',
-    url: `/delivery/${delivery.id}`,
-    deliveryId: delivery.id,
-    tag: `delivery-${delivery.id}`,
-    data: {
-      type: delivery.delivery_type,
-      day: delivery.day_number,
-      ...(delivery.message_index == null ? {} : { index: delivery.message_index }),
-      ...(retry ? { retry: true } : {}),
-    },
-  };
-}
+async function sendToTelegramAccount(delivery: DeliveryTelegramRow) {
+  const { data: account, error } = await supabase
+    .from('telegram_accounts')
+    .select('telegram_user_id,user_id,chat_id,access_tier')
+    .eq('user_id', delivery.user_id)
+    .maybeSingle();
 
-async function sendToActiveDevices(userId: string, deliveryId: string, payload: Record<string, unknown>) {
-  const { data, error } = await supabase
-    .from('push_subscriptions')
-    .select('id,user_id,endpoint,p256dh,auth_key,is_active')
-    .eq('user_id', userId)
-    .eq('is_active', true);
-  if (error) {
-    await supabase.from('taller_deliveries').update({ push_status: 'failed', push_error: error.message.slice(0, 500) }).eq('id', deliveryId);
-    return;
+  if (error || !account) {
+    const message = error?.message || 'No hay una cuenta de Telegram vinculada.';
+    await supabase.from('taller_deliveries').update({ telegram_status: 'failed', telegram_error: message.slice(0, 500) }).eq('id', delivery.id);
+    return false;
   }
 
-  const results = await Promise.all((data || []).map((device) => sendPush(device as PushDeviceRow, payload)));
-  const errors = results.filter((result): result is string => typeof result === 'string');
-  const sent = results.some((result) => result === true);
-  await supabase.from('taller_deliveries').update({
-    push_status: sent ? 'sent' : 'failed',
-    push_error: errors.length ? errors.join('; ').slice(0, 500) : (sent ? null : 'No hay dispositivos push activos'),
-  }).eq('id', deliveryId);
+  const result = await sendTelegram(account as TelegramAccountRow, delivery);
+  await supabase.from('taller_deliveries').update(result.ok ? {
+    telegram_status: 'sent',
+    telegram_error: null,
+    telegram_message_id: result.messageId,
+    telegram_sent_at: new Date().toISOString(),
+  } : {
+    telegram_status: 'failed',
+    telegram_error: result.error.slice(0, 500),
+  }).eq('id', delivery.id);
+  return result.ok;
 }
 
-async function attemptDeliveryPush(delivery: DeliveryPushRow, retry = false) {
-  const { data: claimed, error: claimError } = await supabase.rpc('claim_delivery_push_attempt', {
+async function attemptDeliveryTelegram(delivery: DeliveryTelegramRow) {
+  const { data: claimed, error: claimError } = await supabase.rpc('claim_delivery_telegram_attempt', {
     p_delivery_id: delivery.id,
-    p_min_interval_seconds: PUSH_RETRY_MIN_INTERVAL_SECONDS,
-    p_max_attempts: PUSH_RETRY_MAX_ATTEMPTS,
+    p_min_interval_seconds: TELEGRAM_RETRY_MIN_INTERVAL_SECONDS,
+    p_max_attempts: TELEGRAM_RETRY_MAX_ATTEMPTS,
   });
   if (claimError) throw claimError;
   if (!claimed) return false;
-  await sendToActiveDevices(delivery.user_id, delivery.id, deliveryPushPayload(delivery, retry));
+  await sendToTelegramAccount(delivery);
   return true;
 }
 
 async function retryRecentUnsentDeliveries(now: Date) {
-  const cutoff = new Date(now.getTime() - PUSH_RETRY_WINDOW_MINUTES * 60_000).toISOString();
+  const cutoff = new Date(now.getTime() - TELEGRAM_RETRY_WINDOW_MINUTES * 60_000).toISOString();
   const { data, error } = await supabase
     .from('taller_deliveries')
-    .select('id,user_id,day_number,delivery_type,message_index,push_status,push_attempts,push_last_attempt_at,delivered_at')
-    .in('push_status', ['pending', 'failed'])
+    .select('id,user_id,day_number,delivery_type,message_index,telegram_status,telegram_attempts,telegram_last_attempt_at,delivered_at')
+    .in('telegram_status', ['pending', 'failed'])
     .gte('delivered_at', cutoff)
     .order('delivered_at', { ascending: true })
     .limit(100);
   if (error) throw error;
 
-  const results = await Promise.allSettled((data || []).map((row) => attemptDeliveryPush(row as DeliveryPushRow, true)));
+  const results = await Promise.allSettled((data || []).map((row) => attemptDeliveryTelegram(row as DeliveryTelegramRow)));
   const attempted = results.filter((result) => result.status === 'fulfilled' && result.value === true).length;
   const failed = results.filter((result) => result.status === 'rejected').length;
-  if (attempted || failed) console.info(JSON.stringify({ event: 'push-retry-pass', candidates: data?.length || 0, attempted, failed }));
+  if (attempted || failed) console.info(JSON.stringify({ event: 'telegram-retry-pass', candidates: data?.length || 0, attempted, failed }));
   return { candidates: data?.length || 0, attempted, failed };
 }
 
@@ -444,7 +430,7 @@ async function processMeditation(enrollment: ProgramEnrollmentRow, moment: Medit
   });
   if (!inserted) return;
 
-  await attemptDeliveryPush({
+  await attemptDeliveryTelegram({
     id: inserted.id,
     user_id: enrollment.user_id,
     day_number: enrollment.current_day,
@@ -484,7 +470,7 @@ async function processIntermediateMessage(enrollment: ProgramEnrollmentRow, mess
   });
   if (!inserted) return;
 
-  await attemptDeliveryPush({
+  await attemptDeliveryTelegram({
     id: inserted.id,
     user_id: enrollment.user_id,
     day_number: enrollment.current_day,
@@ -520,16 +506,22 @@ async function processEnrollment(enrollment: ProgramEnrollmentRow, now: Date) {
     const target = enrollment[moment];
     if (!target) continue;
     const targetMinutes = minutesOfDay(target);
-    if (withinWindow(nowMinutes, targetMinutes)) {
+    if (isExactMinute(nowMinutes, targetMinutes)) {
       meditationDueNow = true;
       await processMeditation(enrollment, moment, now);
       continue;
     }
     const elapsed = minutesElapsedSince(nowMinutes, targetMinutes);
-    if (elapsed > MATCH_WINDOW_MINUTES && elapsed <= MEDITATION_CATCHUP_MINUTES) {
-      meditationDueNow = true;
-      console.warn(JSON.stringify({ event: 'meditation-catchup-send', enrollmentId: enrollment.id, day: enrollment.current_day, moment, minutesLate: elapsed }));
-      await processMeditation(enrollment, moment, now);
+    if (elapsed > 0 && elapsed <= MEDITATION_CATCHUP_MINUTES) {
+      // El catch-up sólo ocupa el slot actual si la meditación realmente falta.
+      // Si ya fue enviada en su horario, no debe bloquear un intermedio posterior
+      // (por ejemplo: meditación 12:00 + mensaje intermedio 12:30).
+      const alreadyDelivered = await deliveryExists(enrollment.id, enrollment.current_day, momentToDeliveryType[moment], null);
+      if (!alreadyDelivered) {
+        meditationDueNow = true;
+        console.warn(JSON.stringify({ event: 'meditation-catchup-send', enrollmentId: enrollment.id, day: enrollment.current_day, moment, minutesLate: elapsed }));
+        await processMeditation(enrollment, moment, now);
+      }
       continue;
     }
     if (elapsed > MEDITATION_CATCHUP_MINUTES && elapsed <= MEDITATION_CATCHUP_MINUTES + OVERDUE_ALERT_WINDOW_MINUTES) {
@@ -556,7 +548,6 @@ async function processEnrollment(enrollment: ProgramEnrollmentRow, now: Date) {
 
 type InvocationBody = {
   mode?: 'run' | 'diagnostics' | 'retry-delivery';
-  subscriptionId?: string;
   deliveryId?: string;
 };
 
@@ -568,53 +559,19 @@ function isAuthorized(req: Request) {
   return req.headers.get('Authorization') === `Bearer ${PUSH_CRON_TOKEN}`;
 }
 
-async function sha256(value: string) {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
-}
-
-async function retrySingleDelivery(subscriptionId: string, deliveryId: string) {
-  const [{ data: device, error: deviceError }, { data: delivery, error: deliveryError }] = await Promise.all([
-    supabase
-      .from('push_subscriptions')
-      .select('id,user_id,endpoint,p256dh,auth_key,is_active')
-      .eq('id', subscriptionId)
-      .eq('is_active', true)
-      .maybeSingle(),
-    supabase
-      .from('taller_deliveries')
-      .select('id,user_id,day_number,delivery_type,message_index,push_status,content_items(title,body)')
-      .eq('id', deliveryId)
-      .maybeSingle(),
-  ]);
-
-  if (deviceError || !device) return jsonResponse({ ok: false, error: 'Active push subscription not found' }, 404);
-  if (deliveryError || !delivery) return jsonResponse({ ok: false, error: 'Delivery not found' }, 404);
-  if (device.user_id !== delivery.user_id) return jsonResponse({ ok: false, error: 'Subscription and delivery belong to different users' }, 403);
-
-  const content = delivery.content_items as unknown as { title: string; body: string } | null;
-  const deliveryType = delivery.delivery_type as DeliveryType;
-  const moment = (Object.entries(momentToDeliveryType).find(([, value]) => value === deliveryType)?.[0] ?? null) as MeditationMoment | null;
-  const payload = {
-    title: 'Mensaje de Germán',
-    body: '',
-    url: `/delivery/${delivery.id}`,
-    deliveryId: delivery.id,
-    tag: `delivery-${delivery.id}`,
-    data: { type: deliveryType, day: delivery.day_number, retry: true },
-  };
-
-  await supabase.from('taller_deliveries').update({ push_status: 'pending', push_error: null }).eq('id', delivery.id);
-  const result = await sendPush(device as PushDeviceRow, payload);
-  const sent = result === true;
-  const pushError = sent ? null : result;
-  await supabase.from('taller_deliveries').update({
-    push_status: sent ? 'sent' : 'failed',
-    push_error: pushError,
-  }).eq('id', delivery.id);
-
-  console.info(JSON.stringify({ event: 'controlled-push-test', subscriptionId, deliveryId, push_status: sent ? 'sent' : 'failed' }));
-  return jsonResponse({ ok: sent, deliveryId, push_status: sent ? 'sent' : 'failed', error: pushError }, sent ? 200 : 502);
+async function retrySingleDelivery(deliveryId: string) {
+  const { data: delivery, error } = await supabase
+    .from('taller_deliveries')
+    .select('id,user_id,day_number,delivery_type,message_index')
+    .eq('id', deliveryId)
+    .maybeSingle();
+  if (error || !delivery) return jsonResponse({ ok: false, error: 'Delivery not found' }, 404);
+  await supabase.from('taller_deliveries').update({ telegram_status: 'pending', telegram_error: null }).eq('id', delivery.id);
+  const attempted = await attemptDeliveryTelegram(delivery as DeliveryTelegramRow);
+  const { data: updated } = await supabase.from('taller_deliveries').select('telegram_status,telegram_error,telegram_message_id').eq('id', delivery.id).single();
+  const ok = attempted && updated?.telegram_status === 'sent';
+  console.info(JSON.stringify({ event: 'controlled-telegram-test', deliveryId, telegram_status: updated?.telegram_status }));
+  return jsonResponse({ ok, deliveryId, ...updated }, ok ? 200 : 502);
 }
 
 // --- Entry point -------------------------------------------------------------
@@ -626,22 +583,25 @@ Deno.serve(async (req) => {
   try {
     body = await req.json();
   } catch {
-    return jsonResponse({ ok: false, error: 'Invalid JSON body' }, 400);
+    // pg_cron / pg_net puede invocar la función sin body o con body vacío.
+    // Una corrida normal no necesita payload: tratamos ese caso como `run`
+    // en lugar de abortar toda la ejecución con 400.
+    body = {};
   }
 
   if (body.mode === 'diagnostics') {
-    return jsonResponse({ ok: true, vapidPublicKeySha256: await sha256(VAPID_PUBLIC_KEY) });
+    return jsonResponse({ ok: true, transport: 'telegram', appUrl: TELEGRAM_APP_ORIGIN });
   }
 
   if (body.mode === 'retry-delivery') {
-    if (!body.subscriptionId || !body.deliveryId) return jsonResponse({ ok: false, error: 'subscriptionId and deliveryId are required' }, 400);
-    return retrySingleDelivery(body.subscriptionId, body.deliveryId);
+    if (!body.deliveryId) return jsonResponse({ ok: false, error: 'deliveryId is required' }, 400);
+    return retrySingleDelivery(body.deliveryId);
   }
 
   const now = new Date();
   const retrySummary = await retryRecentUnsentDeliveries(now).catch((reason: unknown) => {
     const message = reason instanceof Error ? reason.message : String(reason);
-    console.error(JSON.stringify({ event: 'push-retry-pass-error', error: message.slice(0, 500) }));
+    console.error(JSON.stringify({ event: 'telegram-retry-pass-error', error: message.slice(0, 500) }));
     return { candidates: 0, attempted: 0, failed: 1 };
   });
   const { data: enrollments, error } = await supabase
@@ -659,9 +619,9 @@ Deno.serve(async (req) => {
 
   rejected.forEach((result) => {
     const message = result.reason instanceof Error ? result.reason.message : String(result.reason);
-    console.error(JSON.stringify({ event: 'scheduled-push-error', error: message.slice(0, 500) }));
+    console.error(JSON.stringify({ event: 'scheduled-telegram-error', error: message.slice(0, 500) }));
   });
 
-  console.info(JSON.stringify({ event: 'scheduled-push-run', processed: enrollments?.length || 0, failed, retries: retrySummary }));
+  console.info(JSON.stringify({ event: 'scheduled-telegram-run', processed: enrollments?.length || 0, failed, retries: retrySummary }));
   return jsonResponse({ ok: true, processed: enrollments?.length || 0, failed, retries: retrySummary });
 });

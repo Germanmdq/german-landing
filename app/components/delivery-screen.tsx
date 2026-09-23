@@ -5,12 +5,15 @@ import type { Session } from '@supabase/supabase-js';
 import { AlertCircle, ArrowLeft, Heart, Moon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { LoginGate } from './login-gate';
+import { AccessPaywall } from './access-paywall';
+import { AudioWaveLoader } from './audio-wave-loader';
 import VoicePill from './VoicePill';
 import { deliveryTypeLabels, extractDeliveryParagraphs, type TallerDeliveryType } from '../lib/taller-delivery';
 
 type DeliveryView = {
   dayNumber: number;
   deliveryType: TallerDeliveryType;
+  messageIndex: number | null;
   title: string;
   deliveredAt: string;
   paragraphs: string[];
@@ -25,6 +28,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
   const [sessionChecked, setSessionChecked] = useState(false);
   const [accessChecked, setAccessChecked] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
+  const [blocked, setBlocked] = useState(false);
   const [delivery, setDelivery] = useState<DeliveryView | null>(null);
   const [error, setError] = useState('');
 
@@ -47,9 +51,10 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     if (!session?.access_token) { setAccessChecked(false); setHasAccess(false); return; }
     let active = true;
     void fetch('/api/access', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' }).then(async (response) => {
-      const data = await response.json().catch(() => ({})) as { active?: boolean };
+      const data = await response.json().catch(() => ({})) as { active?: boolean; blocked?: boolean };
       if (!active) return;
       setHasAccess(response.ok && data.active === true);
+      setBlocked(Boolean(data.blocked));
       setAccessChecked(true);
     }).catch(() => { if (active) setAccessChecked(true); });
     return () => { active = false; };
@@ -90,6 +95,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
       setDelivery({
         dayNumber: row.day_number,
         deliveryType,
+        messageIndex: row.message_index,
         title: item?.title || deliveryTypeLabels[deliveryType],
         deliveredAt: row.delivered_at,
         paragraphs: paragraphs || [],
@@ -125,16 +131,20 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
   const toggleFavorite = async () => {
     if (!delivery || !session?.user) return;
     const id = `delivery:${deliveryId}`;
+    const isIntermediate = delivery.deliveryType === 'intermediate_message';
+    const favoriteTitle = isIntermediate
+      ? `Mensaje ${delivery.messageIndex ?? '—'}`
+      : deliveryTypeLabels[delivery.deliveryType];
     const payload = {
       id,
-      title: delivery.title,
+      title: favoriteTitle,
       detail: `Día ${delivery.dayNumber} · ${deliveryTypeLabels[delivery.deliveryType]}`,
       icon: '🎧',
       tone: '#D92D35',
       reader: {
-        title: delivery.title,
+        title: favoriteTitle,
         eyebrow: 'AUDIO',
-        detail: `Día ${delivery.dayNumber}`,
+        detail: `Día ${delivery.dayNumber} · ${deliveryTypeLabels[delivery.deliveryType]}`,
         paragraphs: delivery.paragraphs,
         audioUrl: delivery.audioUrl,
       },
@@ -150,15 +160,16 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     }
     setFavorite(next);
   };
-  if (!sessionChecked) return <main className="delivery-screen"><p className="delivery-loading">Abriendo tu entrega…</p></main>;
+  if (!sessionChecked) return <AudioWaveLoader label="Abriendo tu entrega" dark />;
   if (!session) return <LoginGate redirectPath={`/delivery/${encodeURIComponent(deliveryId)}`} />;
-  if (!accessChecked) return <main className="delivery-screen"><p className="delivery-loading">Comprobando tu acceso…</p></main>;
-  if (!hasAccess) { if (typeof window !== 'undefined') window.location.assign('/access'); return <main className="delivery-screen"><p className="delivery-loading">Abriendo tu espacio…</p></main>; }
-  if (error) return <main className="delivery-screen"><section className="delivery-state" role="alert"><AlertCircle size={30}/><h1>No pudimos abrir esta entrega</h1><p>{error}</p><small>Referencia: {deliveryId}</small><a href="/">Volver al Asistente</a></section></main>;
-  if (!delivery) return <main className="delivery-screen"><p className="delivery-loading">Buscando el contenido…</p></main>;
+  if (!accessChecked) return <AudioWaveLoader label="Comprobando tu acceso" dark />;
+  if (blocked) return <AccessPaywall />;
+  if (!hasAccess) { if (typeof window !== 'undefined') window.location.assign('/access'); return <AudioWaveLoader label="Abriendo tu espacio" dark />; }
+  if (error) return <main className="delivery-screen"><section className="delivery-state" role="alert"><AlertCircle size={30}/><h1>No pudimos abrir esta entrega</h1><p>{error}</p><small>Referencia: {deliveryId}</small><a href="/telegram">Volver al Asistente</a></section></main>;
+  if (!delivery) return <AudioWaveLoader label="Buscando el contenido" dark />;
 
   return <main className="delivery-screen"><article className="delivery-article">
-    <a className="delivery-back" href="/" aria-label="Volver al Asistente"><ArrowLeft size={20}/></a>
+    <a className="delivery-back" href="/telegram" aria-label="Volver al Asistente"><ArrowLeft size={20}/></a>
     <button type="button" className={`delivery-favorite${favorite ? ' is-favorite' : ''}`} onClick={toggleFavorite} aria-label={favorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}><Heart size={21} fill={favorite ? 'currentColor' : 'none'} /></button>
     {delivery.audioUrl && <section className="delivery-audio-modern">
       {delivery.deliveryType !== 'intermediate_message' && <div className="delivery-audio-label"><Moon size={14} strokeWidth={1.8} /><span>{deliveryTypeLabels[delivery.deliveryType]}</span></div>}

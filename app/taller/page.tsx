@@ -1,9 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ArrowRight, MessageCircle, Smartphone } from 'lucide-react';
+import { ArrowRight, MessageCircle } from 'lucide-react';
 import { LoginGate } from '../components/login-gate';
 import { supabase } from '../lib/supabase';
-import { isRunningStandalone } from '../lib/pwa';
 import type { Session } from '@supabase/supabase-js';
 
 const WHATSAPP = '5492236151152';
@@ -23,7 +22,6 @@ export default function TallerActivationPage() {
     const user = session?.user;
     if (!user) return;
     const patch: Record<string,string> = { workshop_link_opened_at: new Date().toISOString(), last_seen_at: new Date().toISOString() };
-    if (isRunningStandalone()) patch.installed_at = new Date().toISOString();
     void supabase.from('profiles').update(patch).eq('id', user.id);
   }, [session?.user]);
 
@@ -44,13 +42,13 @@ export default function TallerActivationPage() {
       <div className="login-brand-mark">G</div>
       <p className="card-subtitle">ASISTENTE GERMÁN</p>
       <h1 className="login-title">Ya estás registrado</h1>
-      <p className="login-subtitle">Instalá la aplicación y después avisame para solicitar la activación de tu acceso.</p>
-      <p className="login-account-copy"><Smartphone size={18} style={{verticalAlign:'middle',marginRight:6}}/>Cuenta: <b>{session.user.email}</b></p>
+      <p className="login-subtitle">Tu cuenta está vinculada con Telegram. Avisame para solicitar la activación de tu acceso.</p>
+      <p className="login-account-copy">Cuenta: <b>{session.user.email}</b></p>
       <button type="button" className="login-google-button" onClick={requestActivation}>
         <MessageCircle size={20}/><span>{requested ? 'Abriendo WhatsApp…' : 'Solicitar activación'}</span><ArrowRight size={18}/>
       </button>
       <p className="login-terms">La solicitud queda registrada antes de abrir WhatsApp. La activación del acceso la confirma Germán.</p>
-      <a className="login-account-copy" href="/">Abrir la aplicación</a>
+      <a className="login-account-copy" href="/telegram">Abrir el Asistente</a>
     </section>
   </main>;
 }

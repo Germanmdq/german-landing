@@ -39,7 +39,15 @@ export function AnimatedInterfaceIcon({ name, size }: { name: AnimatedInterfaceI
 
   useEffect(() => {
     const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const updatePreference = () => setReduceMotion(query.matches);
+    const updatePreference = () => {
+      setReduceMotion(query.matches);
+      if (query.matches) {
+        playerRef.current?.pause();
+        playerRef.current?.setFrame(0);
+      } else {
+        playerRef.current?.play();
+      }
+    };
     query.addEventListener('change', updatePreference);
     return () => query.removeEventListener('change', updatePreference);
   }, []);
@@ -64,8 +72,11 @@ export function AnimatedInterfaceIcon({ name, size }: { name: AnimatedInterfaceI
       <DotLottieReact
         src={iconSources[name]}
         autoplay={!reduceMotion}
-        loop={false}
-        dotLottieRefCallback={(player) => { playerRef.current = player; }}
+        loop={!reduceMotion}
+        dotLottieRefCallback={(player) => {
+          playerRef.current = player;
+          if (!reduceMotion) player?.play();
+        }}
         style={{ width: '100%', height: '100%' }}
         renderConfig={{ autoResize: true }}
       />
