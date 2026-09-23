@@ -124,6 +124,24 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .nav-menu-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 14px 16px; border: 0; border-top: 1px solid #E5E5EA; background: none; text-align: left; font-size: 17px; color: #1C1C1E; }
 .nav-menu-row:first-child { border-top: 0; }
 .nav-menu-icon { font-size: 20px; line-height: 1; }
+.motion-icon { display: grid; place-items: center; line-height: 0; transform-origin: 50% 100%; }
+.motion-icon--home { animation: home-icon-motion 2.35s cubic-bezier(.22, 1, .36, 1) infinite; }
+.motion-icon--route { animation: route-icon-motion 2.5s cubic-bezier(.22, 1, .36, 1) infinite; }
+@keyframes home-icon-motion {
+  0%, 56%, 100% { transform: translateY(0) scale(1); }
+  65% { transform: translateY(-2px) scale(1.06); }
+  74% { transform: translateY(0) scale(.97); }
+  83% { transform: translateY(-.5px) scale(1.015); }
+  90% { transform: translateY(0) scale(1); }
+}
+@keyframes route-icon-motion {
+  0%, 52%, 100% { transform: translateX(0) rotate(0deg); }
+  62% { transform: translateX(-1.5px) rotate(-4deg); }
+  72% { transform: translateX(1.5px) rotate(4deg); }
+  82% { transform: translateX(-.5px) rotate(-1.5deg); }
+  91% { transform: translateX(0) rotate(0deg); }
+}
+@media (prefers-reduced-motion: reduce) { .motion-icon { animation: none !important; } }
 .nav-menu-cancel { display: block; width: 100%; min-height: 50px; border: 0; border-radius: 14px; background: #F2F2F7; color: var(--ui-accent); font-size: 17px; font-weight: 600; }
 .nav-menu-row, .nav-menu-cancel, .confirm-sheet-danger, .confirm-sheet-cancel { outline: none; }
 .nav-menu-row:focus-visible, .nav-menu-cancel:focus-visible, .confirm-sheet-danger:focus-visible, .confirm-sheet-cancel:focus-visible { outline: none; box-shadow: none; }
