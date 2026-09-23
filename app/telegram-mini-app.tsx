@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { UserRound, Clock3, Settings2, TrendingUp, MessageCircle, SlidersHorizontal, Flower2, Route, Bookmark, Sun, Moon, X, Headphones, Sparkles, Bell, BookOpen, ChevronRight, ChevronLeft, ChevronDown, MoreHorizontal, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, ArrowUp, Download, House, Menu, Lock, Mic, Square } from 'lucide-react';
+import { Settings2, MessageCircle, SlidersHorizontal, Route, Sun, Moon, X, Sparkles, BookOpen, ChevronRight, ChevronLeft, ChevronDown, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, ArrowUp, Download, House, Lock, Mic, Square } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { subscribeToPush, ensurePushSubscription, reconcilePushSubscription, disablePushSubscription, disableCurrentBrowserPushSubscription, getPushSubscriptionActive, getCurrentBrowserPushSubscriptionActive, type WorkshopSchedule } from './lib/push';
 import { detectInstallPlatform, hasNativeInstallPrompt, isRunningStandalone, listenForPwaInstallation, promptNativeInstallation } from './lib/pwa';
@@ -26,6 +26,7 @@ import './components/sona/sona.css';
 import './premium-mobile.css';
 import { hasActiveAccess, type Entitlement } from './lib/payments';
 import { LoginGate } from './components/login-gate';
+import { AnimatedInterfaceIcon, type AnimatedInterfaceIconName } from './components/animated-interface-icon';
 import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, type TallerDeliveryType } from './lib/taller-delivery';
 
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'audiolibros' | 'consultas' | 'espacio';
@@ -96,17 +97,19 @@ const mainCategories: Array<[Tab, string, string, string, string]> = [
 
 function CategoryIcon({ item }: { item: DeckItem }) {
   const title = item.title.toLowerCase();
-  const Icon = /perfil|cuenta/.test(title) ? UserRound
-    : /horario/.test(title) ? Clock3
-    : /configura|preferencia/.test(title) ? Settings2
-    : /notifica/.test(title) ? Bell
-    : /favorito|guardad/.test(title) ? Bookmark
-    : /avance|progreso/.test(title) ? TrendingUp
-    : /biblioteca|lectura|leer/.test(title) ? BookOpen
+  const animatedIcon: AnimatedInterfaceIconName | null = /perfil|cuenta/.test(title) ? 'profile'
+    : /horario/.test(title) ? 'calendar'
+    : /notifica/.test(title) ? 'notification'
+    : /favorito|guardad/.test(title) ? 'bookmark'
+    : /avance|progreso/.test(title) ? 'history'
+    : /biblioteca|lectura|leer/.test(title) ? 'open-door'
+    : /medita/.test(title) ? 'brain'
+    : /audio|escuchar/.test(title) ? 'ear'
+    : null;
+  if (animatedIcon) return <AnimatedInterfaceIcon name={animatedIcon} size={30} />;
+  const Icon = /configura|preferencia/.test(title) ? Settings2
     : /consulta|pregunt|respuesta/.test(title) ? MessageCircle
     : /propia/.test(title) ? SlidersHorizontal
-    : /medita/.test(title) ? Flower2
-    : /audio|escuchar/.test(title) ? Headphones
     : /noche/.test(title) ? Moon
     : /mañana/.test(title) ? Sun
     : /día|recorrido|práctica/.test(title) ? Route
@@ -213,13 +216,13 @@ const navMenuItems: { target: NavTarget; icon: ReactNode; label: string }[] = [
   { target: 'home', icon: <House size={21} />, label: 'Inicio' },
   { target: 'talleres', icon: <Route size={21} />, label: 'Prácticas guiadas' },
   { target: 'propia', icon: <SlidersHorizontal size={21} />, label: 'Tu propia práctica' },
-  { target: 'meditaciones', icon: <Flower2 size={21} />, label: 'Meditaciones' },
-  { target: 'biblioteca', icon: <BookOpen size={21} />, label: 'Biblioteca' },
-  { target: 'audiolibros', icon: <Headphones size={21} />, label: 'Audiolibros de Germán' },
+  { target: 'meditaciones', icon: <AnimatedInterfaceIcon name="brain" size={21} />, label: 'Meditaciones' },
+  { target: 'biblioteca', icon: <AnimatedInterfaceIcon name="open-door" size={21} />, label: 'Biblioteca' },
+  { target: 'audiolibros', icon: <AnimatedInterfaceIcon name="ear" size={21} />, label: 'Audiolibros de Germán' },
   { target: 'consultas', icon: <MessageCircle size={21} />, label: 'Consultas' },
-  { target: 'curso', icon: <BookOpen size={21} />, label: 'Taller de 365 días' },
-  { target: 'espacio', icon: <UserRound size={21} />, label: 'Mi perfil' },
-  { target: 'favorites', icon: <Heart size={21} />, label: 'Favoritos' },
+  { target: 'curso', icon: <AnimatedInterfaceIcon name="calendar" size={21} />, label: 'Taller de 365 días' },
+  { target: 'espacio', icon: <AnimatedInterfaceIcon name="profile" size={21} />, label: 'Mi perfil' },
+  { target: 'favorites', icon: <AnimatedInterfaceIcon name="bookmark" size={21} />, label: 'Favoritos' },
   { target: 'configuracion', icon: <Settings2 size={21} />, label: 'Configuración' },
 ];
 
@@ -247,14 +250,14 @@ function MainNavigationDock({ current, onSelect }: { current: NavTarget; onSelec
   const dockItems: { target: NavTarget; icon: ReactNode; label: string }[] = [
     { target: 'home', icon: <House size={21} />, label: 'Inicio' },
     { target: 'talleres', icon: <Route size={21} />, label: 'Prácticas' },
-    { target: 'meditaciones', icon: <Flower2 size={21} />, label: 'Meditar' },
-    { target: 'biblioteca', icon: <BookOpen size={21} />, label: 'Biblioteca' },
-    { target: 'espacio', icon: <UserRound size={21} />, label: 'Perfil' },
+    { target: 'meditaciones', icon: <AnimatedInterfaceIcon name="brain" size={21} />, label: 'Meditar' },
+    { target: 'biblioteca', icon: <AnimatedInterfaceIcon name="open-door" size={21} />, label: 'Biblioteca' },
+    { target: 'espacio', icon: <AnimatedInterfaceIcon name="profile" size={21} />, label: 'Perfil' },
   ];
   return <>
     <nav className="main-navigation-dock" aria-label="Navegación principal">
       {dockItems.map((item) => <button key={item.target} type="button" aria-current={current === item.target ? 'page' : undefined} className={current === item.target ? 'is-current' : ''} onClick={() => onSelect(item.target)}>{item.icon}<span>{item.label}</span></button>)}
-      <button type="button" aria-label="Todas las secciones" aria-haspopup="dialog" onClick={() => setMoreOpen(true)}><Menu size={21} /><span>Más</span></button>
+      <button type="button" aria-label="Todas las secciones" aria-haspopup="dialog" onClick={() => setMoreOpen(true)}><AnimatedInterfaceIcon name="menu" size={21} /><span>Más</span></button>
     </nav>
     {moreOpen && <NavMenuSheet onSelect={(target) => { setMoreOpen(false); onSelect(target); }} onCancel={() => setMoreOpen(false)} />}
   </>;
@@ -266,7 +269,7 @@ function FixedHeader({ eyebrow, title, subtitle, onBack, onNavigate }: { eyebrow
     <div className="header-top-row">
       <button type="button" className="header-back" onClick={onBack}><ChevronLeft size={22} strokeWidth={2.4} />Volver</button>
     </div>
-    <button type="button" className="header-menu" onClick={() => setMenuOpen(true)} aria-label="Menú" aria-haspopup="dialog"><Menu size={24} /></button>
+    <button type="button" className="header-menu" onClick={() => setMenuOpen(true)} aria-label="Menú" aria-haspopup="dialog"><AnimatedInterfaceIcon name="menu" size={24} /></button>
     <p>{eyebrow}</p><h1>{title}</h1><small>{subtitle}</small>
     {menuOpen && <NavMenuSheet onSelect={(target) => { setMenuOpen(false); onNavigate(target); }} onCancel={() => setMenuOpen(false)} />}
   </header>;
@@ -392,7 +395,7 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
     return <section className="reader-section law-course-section">
       <FixedHeader eyebrow="TALLER DE 365 DÍAS" title={`Día ${formatCourseDayLabel(selectedDay)}`} subtitle={dayContent.title || 'Ley de Asunción'} onBack={() => setSelectedDay(null)} onNavigate={onNavigate} />
       <article className="reader-body law-course-day">
-        {audioUrl ? <AudioPlayer title={`Día ${formatCourseDayLabel(selectedDay)}${dayContent.title ? ` · ${dayContent.title}` : ''}`} audioUrl={audioUrl} /> : <div className="law-course-audio-missing"><Headphones size={22} /><span>Audio pendiente para este día.</span></div>}
+        {audioUrl ? <AudioPlayer title={`Día ${formatCourseDayLabel(selectedDay)}${dayContent.title ? ` · ${dayContent.title}` : ''}`} audioUrl={audioUrl} /> : <div className="law-course-audio-missing"><AnimatedInterfaceIcon name="ear" size={22} /><span>Audio pendiente para este día.</span></div>}
       </article>
     </section>;
   }
@@ -400,7 +403,7 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
   return <section className="reader-section law-course-section">
     <FixedHeader eyebrow="LEY DE ASUNCIÓN" title="Taller de 365 días" subtitle="365 días para entenderla, practicarla y vivirla." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body law-course-browser">
-      <div className="law-course-progress-card"><div><span>TU RECORRIDO</span><b>{progressLoading ? 'Cargando…' : unlockedDay ? `Día ${unlockedDay} de 365` : 'Todavía no iniciado'}</b></div><BookOpen size={22} /></div>
+      <div className="law-course-progress-card"><div><span>TU RECORRIDO</span><b>{progressLoading ? 'Cargando…' : unlockedDay ? `Día ${unlockedDay} de 365` : 'Todavía no iniciado'}</b></div><AnimatedInterfaceIcon name="history" size={22} /></div>
       <div className="law-course-chapters">
         {lawCourseChapters.map((chapter) => {
           const expanded = openChapter === chapter.number;
@@ -500,7 +503,7 @@ function NotificationsPanel({ user, onBack, onNavigate }: { user: User; onBack: 
   return <section className="reader-section profile-section">
     <FixedHeader eyebrow="MI PERFIL" title="Notificaciones" subtitle="Permiso de avisos en este dispositivo." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body notification-settings">
-      {permission !== 'unsupported' && <ShimmerButton className="notification-permission" onClick={requestPermission} disabled={permissionBusy || permission === 'denied'}><Bell size={18} />{permissionBusy ? 'Activando…' : permission === 'granted' ? 'Notificaciones activadas' : permission === 'denied' ? 'Permiso bloqueado en el navegador' : 'Activar notificaciones'}</ShimmerButton>}
+      {permission !== 'unsupported' && <ShimmerButton className="notification-permission" onClick={requestPermission} disabled={permissionBusy || permission === 'denied'}><AnimatedInterfaceIcon name="notification" size={18} />{permissionBusy ? 'Activando…' : permission === 'granted' ? 'Notificaciones activadas' : permission === 'denied' ? 'Permiso bloqueado en el navegador' : 'Activar notificaciones'}</ShimmerButton>}
       {permission === 'denied' && <p className="notification-help">Para activarlas, habilitá las notificaciones de Germán desde los Ajustes de tu teléfono y volvé a abrir la app.</p>}
       {permissionMessage && <p className="account-message" role="alert">{permissionMessage}</p>}
       <p className="notification-help">Los horarios se configuran dentro de cada práctica activa.</p>
@@ -980,7 +983,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           bounce={0.3}
         />
       </div>}
-      {filter && !query && !/Libros/.test(filter) && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p><div className="library-content-list">{conferenceGroups.map((group) => <section key={group.label || 'all'} className="library-year-group is-open">{group.label && <div className="library-year-toggle"><span>{group.label}</span></div>}{group.entries.map((entry,index) => <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index*.025,.2)} className="library-content-card" onClick={() => onRead(entry, undefined, filter === 'Audios' ? 'audio' : 'text')}><div><p>{filter === 'Audios' ? 'Audio' : 'Texto'}</p><b className="card-title">{entry.title}</b>{filter === 'Audios' ? <em className="card-subtitle">Escuchar conferencia</em> : <em className="card-subtitle">{entry.excerpt || 'Abrir conferencia'}</em>}</div><span className="library-card-actions"><i>{filter === 'Audios' ? <Headphones size={19}/> : <ChevronRight size={19}/>}</i></span></MagicCard></div>)}</section>)}</div></>}
+      {filter && !query && !/Libros/.test(filter) && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p><div className="library-content-list">{conferenceGroups.map((group) => <section key={group.label || 'all'} className="library-year-group is-open">{group.label && <div className="library-year-toggle"><span>{group.label}</span></div>}{group.entries.map((entry,index) => <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index*.025,.2)} className="library-content-card" onClick={() => onRead(entry, undefined, filter === 'Audios' ? 'audio' : 'text')}><div><p>{filter === 'Audios' ? 'Audio' : 'Texto'}</p><b className="card-title">{entry.title}</b>{filter === 'Audios' ? <em className="card-subtitle">Escuchar conferencia</em> : <em className="card-subtitle">{entry.excerpt || 'Abrir conferencia'}</em>}</div><span className="library-card-actions"><i>{filter === 'Audios' ? <AnimatedInterfaceIcon name="ear" size={19} /> : <ChevronRight size={19}/>}</i></span></MagicCard></div>)}</section>)}</div></>}
       {filter && /Libros/.test(filter) && !query && <p className="library-empty">Los libros se conectan después.</p>}
       {query && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p>
       <div id="library-results" className="library-content-list" role="tabpanel" aria-label={`Resultados: ${filter || 'Biblioteca'}`}>{conferenceGroups.map((group) => {
