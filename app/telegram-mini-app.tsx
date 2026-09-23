@@ -535,12 +535,6 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
   const [history, setHistory] = useState<ProgressEnrollment[]>([]);
   const [deliveries, setDeliveries] = useState<ProgressDelivery[]>([]);
   const [loading, setLoading] = useState(true);
-  const [openCards, setOpenCards] = useState<Set<string>>(new Set());
-  const toggleCard = (id: string) => setOpenCards((current) => {
-    const next = new Set(current);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    return next;
-  });
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -573,18 +567,17 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
         const customTopic = typeof enrollment.custom_config?.tema === 'string' ? enrollment.custom_config.tema : '';
         const customDuration = typeof enrollment.custom_config?.duracion === 'string' ? enrollment.custom_config.duracion : '';
         const title = customTopic ? `${customTopic} · ${customDuration}` : enrollment.collections?.title || 'Práctica';
-        const open = openCards.has(enrollment.id);
-        return <article className="progress-card" key={enrollment.id}>
-          <button type="button" className="progress-card-toggle" onClick={() => toggleCard(enrollment.id)} aria-expanded={open}>
+        return <details className="progress-card" key={enrollment.id}>
+          <summary className="progress-card-toggle">
             <span>
               <p>{title}</p>
               <b>{progressStatusLabel(enrollment.status)} · Día {Math.min(enrollment.current_day, totalDays)} de {totalDays}</b>
             </span>
             <ChevronDown size={22} aria-hidden="true" />
-          </button>
+          </summary>
           <div className="progress-track" aria-label={`${pct}% del recorrido`}><span style={{ width: `${pct}%` }} /></div>
           <small>{pct}% del recorrido · {ownDeliveries.length} entregas recibidas</small>
-          {open && <div className="progress-card-details">
+          <div className="progress-card-details">
           <small>Comenzó {new Date(enrollment.started_at).toLocaleDateString('es-AR')}</small>
           {ownDeliveries.length > 0 && <div className="progress-delivery-history">
             {ownDeliveries.map((delivery, index) => {
@@ -603,8 +596,8 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
               </div>;
             })}
           </div>}
-          </div>}
-        </article>;
+          </div>
+        </details>;
       })}
     </div>
   </section>;
@@ -894,28 +887,29 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
     }
     let cancelled = false;
     const timer = window.setTimeout(() => {
-      void supabase
+      const searchingBooks = filter === 'Libros en texto';
+      const queryBuilder = supabase
         .from('content_items')
-        .select('id,body')
+        .select(searchingBooks ? 'id' : 'id,body')
         .eq('is_published', true)
-        .in('content_type', ['conference', 'book'])
+        .eq('content_type', searchingBooks ? 'book' : 'conference')
         .ilike('body', `%${q}%`)
-        .limit(1000)
-        .then(({ data, error }) => {
+        .limit(1000);
+      void queryBuilder.then(({ data, error }) => {
           if (cancelled) return;
           if (error) {
             console.error('[library] búsqueda en texto:', error);
             setBodyMatches(new Map());
             return;
           }
-          setBodyMatches(new Map((data || []).map((row) => [String(row.id), typeof row.body === 'string' ? row.body : ''])));
+          setBodyMatches(new Map((data || []).map((row) => [String(row.id), 'body' in row && typeof row.body === 'string' ? row.body : ''])));
         });
     }, 280);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [query]);
+  }, [query, filter]);
   const visible = entries.filter((entry) => {
     const q = query.trim().toLocaleLowerCase();
     const matchesQuery = !q || (
@@ -1031,7 +1025,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
             preview = highlightText(contextText, q);
           } else if (bodyMatches.has(entry.id)) {
             const bodySnippet = snippetAround(bodyMatches.get(entry.id) || '', q, 44);
-            preview = bodySnippet ? highlightText(bodySnippet, q) : entry.excerpt || 'Abrí para leer o escuchar.';
+            preview = bodySnippet ? highlightText(bodySnippet, q) : (/book|libro/i.test(entry.type) ? 'Coincidencia encontrada dentro del libro.' : entry.excerpt || 'Abrí para leer o escuchar.');
           } else if (!titleHasMatch) {
             preview = entry.excerpt || 'Abrí para leer o escuchar.';
           }

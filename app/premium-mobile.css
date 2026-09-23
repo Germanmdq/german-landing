@@ -767,12 +767,15 @@ body:has(.guided-photo-screen),
 /* Mi avance: progreso real del programa activo. */
 .progress-screen { display:grid; gap:18px; }
 .progress-card { padding: 22px; border-radius: 26px; background: #111113; color: #f5f5f7; }
+.progress-card::after { pointer-events:none; }
 .progress-card p { margin: 0 0 7px; color: #a1a1a6; font-size: 13px; }
 .progress-card-toggle { width:100%; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:0; border:0; background:transparent; color:#f5f5f7; text-align:left; }
+.progress-card-toggle::-webkit-details-marker { display:none; }
+.progress-card-toggle::marker { content:''; }
 .progress-card-toggle > span { min-width:0; }
 .progress-card-toggle b { display:block; font-size:24px; letter-spacing:-.04em; color:#f5f5f7; }
 .progress-card-toggle svg { flex:0 0 auto; transition:transform 180ms ease; }
-.progress-card-toggle[aria-expanded="true"] svg { transform:rotate(180deg); }
+.progress-card[open] .progress-card-toggle svg { transform:rotate(180deg); }
 .progress-card small { display: block; margin-top: 9px; color: #a1a1a6; font-size: 12px; }
 .progress-track { height: 9px; margin-top: 18px; overflow: hidden; border-radius: 999px; background: #2c2c2e; }
 .progress-track span { display: block; height: 100%; border-radius: inherit; background: #f5f5f7; }

@@ -43,6 +43,14 @@ export default function Layout({ children }: Readonly<{ children: React.ReactNod
                   webApp.onEvent('deactivated', function () {
                     try { if (webApp.close) webApp.close(); } catch (_) {}
                   });
+                  var closeWhenHidden = function () {
+                    if (document.visibilityState !== 'hidden') return;
+                    try { if (webApp.close) webApp.close(); } catch (_) {}
+                  };
+                  document.addEventListener('visibilitychange', closeWhenHidden);
+                  window.addEventListener('pagehide', function () {
+                    try { if (webApp.close) webApp.close(); } catch (_) {}
+                  });
                 }
                 var revealAttempts = 0;
                 var revealWhenPaintable = function () {
