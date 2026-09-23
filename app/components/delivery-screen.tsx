@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase';
 import { LoginGate } from './login-gate';
 import { AccessPaywall } from './access-paywall';
 import { AudioWaveLoader } from './audio-wave-loader';
-import VoicePill from './VoicePill';
+import { AnimatedInterfaceIcon } from './animated-interface-icon';
 import { deliveryTypeLabels, extractDeliveryParagraphs, type TallerDeliveryType } from '../lib/taller-delivery';
 
 type DeliveryView = {
@@ -160,6 +160,12 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     }
     setFavorite(next);
   };
+  const toggleAudio = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) await audio.play().catch(() => undefined);
+    else audio.pause();
+  };
   if (!sessionChecked) return <AudioWaveLoader label="Abriendo tu entrega" dark />;
   if (!session) return <LoginGate redirectPath={`/delivery/${encodeURIComponent(deliveryId)}`} />;
   if (!accessChecked) return <AudioWaveLoader label="Comprobando tu acceso" dark />;
@@ -182,19 +188,9 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
       />
-      <VoicePill
-        className="delivery-audio-pill"
-        size={40}
-        mode="toggle"
-        reactive="simulated"
-        showTime
-        waveform
-        slideToCancel={false}
-        active={playing}
-        onStart={() => { void audioRef.current?.play(); }}
-        onStop={() => { audioRef.current?.pause(); }}
-        ariaLabel={playing ? 'Pausar audio' : 'Escuchar audio'}
-      />
+      <button type="button" className={`delivery-audio-ear${playing ? ' is-playing' : ''}`} onClick={() => { void toggleAudio(); }} aria-label={playing ? 'Pausar audio' : 'Escuchar audio'} aria-pressed={playing}>
+        <AnimatedInterfaceIcon name="ear" size={42} />
+      </button>
     </section>}
   </article></main>;
 }

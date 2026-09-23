@@ -26,7 +26,6 @@ import { AnimatedDialog, AnimatedDialogContent, AnimatedDialogTitle, AnimatedDia
 import AnimatedSwitch from './components/sona/animated-switch';
 import FolderFloat from './components/FolderFloat/FolderFloat';
 import BranchedMenu from './components/BranchedMenu';
-import VoicePill from './components/VoicePill';
 import './components/sona/sona.css';
 import './premium-mobile.css';
 import { LoginGate } from './components/login-gate';
@@ -644,7 +643,9 @@ function AudioPlayer({ title, audioUrl }: { title: string; audioUrl: string }) {
   }, [title]);
   return <section className="audio-player-card">
     <audio ref={audioRef} src={audioUrl} preload="metadata" playsInline onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => { setPlaying(false); setProgress(0); }} onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)} onTimeUpdate={(event) => setProgress(event.currentTarget.currentTime)} />
-    <VoicePill className="audio-voice-pill" size={40} mode="toggle" reactive="simulated" showTime waveform slideToCancel={false} active={playing} onStart={() => { void audioRef.current?.play(); }} onStop={() => { audioRef.current?.pause(); }} ariaLabel={playing ? 'Pausar audio' : 'Escuchar audio'} />
+    <button type="button" className={`audio-ear-button${playing ? ' is-playing' : ''}`} onClick={() => { void toggle(); }} aria-label={playing ? 'Pausar audio' : 'Escuchar audio'} aria-pressed={playing}>
+      <AnimatedInterfaceIcon name="ear" size={28} />
+    </button>
     <div className="audio-player-copy"><b>{title}</b></div>
   </section>;
 }
@@ -677,7 +678,9 @@ function AudiobookPlayer({ title, author, audioUrl, durationSeconds }: { title: 
       onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
     />
     <div className="audiobook-player-heading">
-      <VoicePill className="audio-voice-pill" size={42} mode="toggle" reactive="simulated" showTime waveform slideToCancel={false} active={playing} onStart={() => { void audioRef.current?.play(); }} onStop={() => { audioRef.current?.pause(); }} ariaLabel={playing ? 'Pausar audiolibro' : 'Reproducir audiolibro'} />
+      <button type="button" className={`audio-ear-button${playing ? ' is-playing' : ''}`} onClick={() => { void toggle(); }} aria-label={playing ? 'Pausar audiolibro' : 'Reproducir audiolibro'} aria-pressed={playing}>
+        <AnimatedInterfaceIcon name="ear" size={30} />
+      </button>
       <div><b>{title}</b></div>
     </div>
   </section>;

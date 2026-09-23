@@ -365,6 +365,9 @@ button, input { font-family: inherit !important; }
 }
 .audio-play { width: 46px; height: 46px; z-index: 2; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--ui-accent); color: #fff; }
 .audio-play svg { transform: translateX(1px); }
+.audio-ear-button { width: 46px; height: 46px; z-index: 2; display: grid; place-items: center; padding: 0; border: 1px solid var(--ui-line); border-radius: 50%; background: #fff; color: var(--ui-accent); }
+.audio-ear-button:active { transform: scale(.96); }
+.audio-ear-button.is-playing { border-color: var(--ui-accent); background: color-mix(in srgb,var(--ui-accent),#fff 90%); }
 .audio-player-copy { z-index: 2; min-width: 0; display: grid; gap: 3px; }
 .audio-player-copy p { display: none; }
 .audio-player-copy b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; line-height: 1.2; }
