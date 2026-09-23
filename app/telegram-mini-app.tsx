@@ -865,10 +865,12 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
       (entry.body && entry.body.toLocaleLowerCase().includes(q))
     );
     const isConference = /conference|conferencia/i.test(entry.type);
+    const isBook = /book|libro/i.test(entry.type);
     const hasAudio = Boolean(entry.audioUrl);
     const matchesFilter = !filter ||
       (filter === 'Conferencias' && isConference) ||
-      (filter === 'Audios' && hasAudio);
+      (filter === 'Audios' && isConference && hasAudio) ||
+      (filter === 'Libros en texto' && isBook);
     return matchesQuery && matchesFilter;
   });
   const q = query.trim();
@@ -941,7 +943,11 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           closeOnSelect
           physics
           drift={0.5}
-          onSelect={(value) => { if (/Libros/.test(value) && !booksAllowed) { onBooksBlocked(); return; } setFilter(value); }}
+          onSelect={(value) => {
+            if (/Libros/.test(value) && !booksAllowed) { onBooksBlocked(); return; }
+            if (value === 'Libros en audio') { onNavigate('audiolibros'); return; }
+            setFilter(value);
+          }}
           folderColor="#3f3f46"
           frontColor="#52525b"
           paperColor="#f5f5f5"
@@ -961,14 +967,13 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           bounce={0.3}
         />
       </div>}
-      {filter && !query && !/Libros/.test(filter) && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p><div className="library-content-list">{conferenceGroups.map((group) => {
+      {filter && !query && filter !== 'Libros en audio' && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p><div className="library-content-list">{conferenceGroups.map((group) => {
         const open = !group.label || openYears.has(group.label);
         return <section key={group.label || 'all'} className={`library-year-group${open ? ' is-open' : ''}`}>
           {group.label && <button type="button" className="library-year-toggle" onClick={() => toggleYear(group.label)} aria-expanded={open}><span>{group.label}</span><ChevronDown size={22} aria-hidden="true" /></button>}
           {open && group.entries.map((entry,index) => <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index*.025,.2)} className="library-content-card" onClick={() => onRead(entry, undefined, filter === 'Audios' ? 'audio' : 'text')}><div><p>{filter === 'Audios' ? 'Audio' : 'Texto'}</p><b className="card-title">{entry.title}</b>{filter === 'Audios' ? <em className="card-subtitle">Escuchar conferencia</em> : <em className="card-subtitle">{entry.excerpt || 'Abrir conferencia'}</em>}</div><span className="library-card-actions"><i>{filter === 'Audios' ? <AnimatedInterfaceIcon name="ear" size={19} /> : <ChevronRight size={19}/>}</i></span></MagicCard></div>)}
         </section>;
       })}</div></>}
-      {filter && /Libros/.test(filter) && !query && <p className="library-empty">Los libros se conectan después.</p>}
       {query && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p>
       <div id="library-results" className="library-content-list" role="tabpanel" aria-label={`Resultados: ${filter || 'Biblioteca'}`}>{conferenceGroups.map((group) => {
         const open = !group.label || openYears.has(group.label);
@@ -1971,10 +1976,10 @@ export default function TelegramMiniApp() {
       .from('content_items')
       .select('*,content_assets(asset_type,source_url,storage_path,duration_seconds,sort_order)')
       .eq('is_published', true)
-      .eq('content_type', 'conference')
+      .in('content_type', ['conference', 'book'])
       .eq('content_assets.asset_type', 'audio')
       .order('published_at', { ascending: false })
-      .limit(250)
+      .limit(1000)
       .then(({ data, error }) => {
         if (error) { console.error('[library] error cargando content_items:', error); return; }
         if (!data) return;
