@@ -429,6 +429,8 @@ html:has(.profile-section), body:has(.profile-section), .app-shell:has(.profile-
 
 /* Audiolibros internos: máxima legibilidad sobre negro. */
 .app-shell.section-app .audiobook-section-title h2,
+.app-shell.section-app .audiobook-chapters-toggle,
+.app-shell.section-app .audiobook-chapters-toggle b,
 .app-shell.section-app .audiobook-index nav button,
 .app-shell.section-app .audiobook-index nav button b,
 .app-shell.section-app .audiobook-chapter h2,
@@ -437,10 +439,17 @@ html:has(.profile-section), body:has(.profile-section), .app-shell:has(.profile-
 }
 .app-shell.section-app .audiobook-section-title small,
 .app-shell.section-app .audiobook-section-title span,
+.app-shell.section-app .audiobook-chapters-toggle small,
+.app-shell.section-app .audiobook-chapters-toggle em,
+.app-shell.section-app .audiobook-chapters-toggle > svg,
 .app-shell.section-app .audiobook-chapter > small,
 .app-shell.section-app .audiobook-index nav button span,
 .app-shell.section-app .audiobook-index nav button svg {
   color:#fff !important;
+}
+.app-shell.section-app .audiobook-availability {
+  border-color:#2c2c2e !important;
+  color:#d1d1d6 !important;
 }
 .app-shell.section-app:not(.welcome-carousel-screen) .favorite-content-card em { color:#a1a1a6 !important; }
 .app-shell.section-app:not(.welcome-carousel-screen) .remove-favorite {

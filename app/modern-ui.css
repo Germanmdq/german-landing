@@ -435,6 +435,13 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .audiobook-progress { width: 100%; height: 4px; margin: 22px 0 8px; accent-color: #fff; cursor: pointer; }
 .audiobook-time { display: flex; justify-content: space-between; color: #aeaeb2; font-size: 12px; font-variant-numeric: tabular-nums; }
 .audiobook-index { margin-bottom: 34px; padding: 22px 18px 8px; border-radius: 22px; background: #fff; box-shadow: 0 3px 14px rgba(0,0,0,.06); }
+.audiobook-chapters-toggle { width: 100%; min-height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 0 0 14px; border: 0; background: transparent; color: inherit; text-align: left; }
+.audiobook-chapters-toggle > span { min-width: 0; display: grid; gap: 3px; }
+.audiobook-chapters-toggle small { color: #86868b; font-size: 10px; font-weight: 750; letter-spacing: .12em; }
+.audiobook-chapters-toggle b { font-size: 22px; line-height: 1.1; }
+.audiobook-chapters-toggle em { color: #86868b; font-size: 12px; font-style: normal; }
+.audiobook-chapters-toggle > svg { flex: 0 0 auto; color: #86868b; transition: transform .2s ease; }
+.audiobook-chapters-toggle[aria-expanded="true"] > svg { transform: rotate(180deg); }
 .audiobook-section-title small, .audiobook-chapter > small { color: #86868b; font-size: 10px; font-weight: 750; letter-spacing: .12em; }
 .audiobook-section-title h2 { margin: 5px 0 2px; font-size: 27px; letter-spacing: -.035em; }
 .audiobook-section-title span { color: #86868b; font-size: 13px; }
@@ -448,6 +455,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .audiobook-chapter:first-child { border-top: 0; }
 .audiobook-chapter h2 { margin: 7px 0 20px; font-size: 27px; line-height: 1.12; letter-spacing: -.035em; }
 .audiobook-chapter p { margin: 0 0 1.2em; color: #2c2c2e; font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif; font-size: 18px; line-height: 1.68; }
+.audiobook-prologue { padding-top: 0; }
+.audiobook-selected-chapter { padding-top: 2px; }
+.audiobook-availability { min-height: 74px; display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 18px; border: 1px solid #dcdce1; border-radius: 18px; color: #86868b; text-align: center; }
+.audiobook-availability b { color: inherit; font-size: 15px; font-weight: 650; }
 .audiobook-pdf-link { width: fit-content; min-height: 46px; display: flex; align-items: center; gap: 9px; margin: 12px 0 20px; padding: 0 17px; border-radius: 999px; background: #e8e8ed; color: #1d1d1f; font-size: 14px; font-weight: 650; text-decoration: none; }
 
 @media (max-width: 360px) {

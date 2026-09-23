@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
-import { Settings2, MessageCircle, SlidersHorizontal, Route, Sun, Moon, X, Sparkles, BookOpen, ChevronRight, ChevronLeft, ChevronDown, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, ArrowUp, Download, House, Lock, Mic, Square } from 'lucide-react';
+import { Settings2, MessageCircle, SlidersHorizontal, Route, Sun, Moon, X, Sparkles, BookOpen, ChevronRight, ChevronLeft, ChevronDown, Heart, LogOut, Pause, Play, Search, Trash2, Check, ArrowRight, ArrowUp, House, Lock, Mic, Square } from 'lucide-react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Home01Icon,
@@ -784,25 +784,40 @@ function AudiobookLibraryPanel({ entries, loading, error, onBack, onNavigate, on
 
 function AudiobookReader({ book, onBack, onNavigate }: { book: AudiobookEntry; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   const sections = useMemo(() => splitAudiobookSections(book.body, book.chapters), [book.body, book.chapters]);
-  const goToChapter = (anchor: string) => document.getElementById(`chapter-${anchor}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const prologue = sections.find((section) => section.anchor === 'prologo') ?? sections[0];
+  const chapters = sections.filter((section) => section.anchor !== 'prologo');
+  const [chaptersOpen, setChaptersOpen] = useState(false);
+  const [selectedChapter, setSelectedChapter] = useState<(typeof sections)[number] | null>(null);
+  const firstChapterUnlockAt = new Date('2026-09-25T00:00:00-03:00').getTime();
+  const chaptersLocked = Date.now() < firstChapterUnlockAt;
+  const selectChapter = (chapter: (typeof sections)[number]) => {
+    setSelectedChapter(chapter);
+    setChaptersOpen(false);
+  };
   return <section className="reader-section audiobook-reader-section">
     <FixedHeader eyebrow="AUDIOLIBRO" title={book.title} subtitle={book.author} onBack={onBack} onNavigate={onNavigate} />
     <article className="reader-body audiobook-reader">
-      {book.audioUrl ? <AudiobookPlayer title={book.title} author={book.author} audioUrl={book.audioUrl} durationSeconds={book.durationSeconds} /> : null}
+      {prologue && !selectedChapter && <section className="audiobook-chapter audiobook-prologue">
+        <small>PRÓLOGO</small>
+        <h2>Prólogo</h2>
+        {prologue.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+      </section>}
       <section className="audiobook-index" aria-labelledby="audiobook-chapters-title">
-        <div className="audiobook-section-title"><small>ÍNDICE</small><h2 id="audiobook-chapters-title">Capítulos</h2><span>{book.chapters.length > 0 && book.chapters[0]?.anchor === 'prologo' ? `${book.chapters.length - 1} capítulos + prólogo` : `${book.chapters.length} capítulos`}</span></div>
-        <nav aria-label="Capítulos de Sinfonía de susurros">
-          {book.chapters.map((chapter) => <button type="button" key={chapter.anchor} onClick={() => goToChapter(chapter.anchor)}><span>{chapter.anchor === 'prologo' ? '—' : String(chapter.order).padStart(2, '0')}</span><b>{chapter.anchor === 'prologo' ? 'Prólogo' : `Capítulo ${chapter.order} — ${chapter.title}`}</b><ChevronDown size={17} aria-hidden="true" /></button>)}
-        </nav>
+        <button type="button" className="audiobook-chapters-toggle" aria-expanded={chaptersOpen} aria-controls="audiobook-chapters-list" onClick={() => setChaptersOpen((open) => !open)}>
+          <span><small>ÍNDICE</small><b id="audiobook-chapters-title">Capítulos</b><em>{chapters.length} capítulos</em></span>
+          <ChevronDown size={19} aria-hidden="true" />
+        </button>
+        {chaptersOpen && <nav id="audiobook-chapters-list" aria-label={`Capítulos de ${book.title}`}>
+          {chapters.map((chapter) => <button type="button" key={chapter.anchor} onClick={() => selectChapter(chapter)}><span>{String(chapter.order).padStart(2, '0')}</span><b>Capítulo {chapter.order} — {chapter.title}</b><ChevronDown size={17} aria-hidden="true" /></button>)}
+        </nav>}
       </section>
-      <section className="audiobook-text" aria-label={`Texto completo de ${book.title}`}>
-        {sections.map((section) => <section key={section.anchor} id={`chapter-${section.anchor}`} className="audiobook-chapter">
-          <small>{section.anchor === 'prologo' ? 'PRÓLOGO' : `CAPÍTULO ${section.order}`}</small>
-          <h2>{section.anchor === 'prologo' ? 'Prólogo' : section.title}</h2>
-          {section.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
-        </section>)}
-      </section>
-      {book.pdfUrl && <a className="audiobook-pdf-link" href={book.pdfUrl} target="_blank" rel="noreferrer"><Download size={18} />Abrir PDF completo</a>}
+      {selectedChapter && <section className="audiobook-chapter audiobook-selected-chapter">
+        <small>CAPÍTULO {selectedChapter.order}</small>
+        <h2>{selectedChapter.title}</h2>
+        {chaptersLocked || selectedChapter.paragraphs.length === 0
+          ? <div className="audiobook-availability"><Lock size={18} aria-hidden="true" /><b>Disponible día viernes</b></div>
+          : selectedChapter.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+      </section>}
     </article>
   </section>;
 }
