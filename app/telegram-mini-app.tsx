@@ -598,7 +598,8 @@ function ConfigurationPanel({ onBack, onNavigate }: { onBack: () => void; onNavi
 
 function Reader({ content: reader, onBack, onNavigate, favorite, onFavorite }: { content: ReaderContent; onBack: () => void; onNavigate: (target: NavTarget) => void; favorite: boolean; onFavorite: () => void }) {
   const libraryMode = reader.eyebrow === 'AUDIO' || reader.eyebrow === 'TEXTO';
-  return <section className={`reader-section${libraryMode ? ' library-reader-section' : ''}`}><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} onNavigate={onNavigate} /><article className="reader-body"><button className={`reader-favorite${favorite ? ' is-favorite' : ''}`} onClick={onFavorite}><Heart size={18} fill={favorite ? 'currentColor' : 'none'} /></button>{reader.audioUrl && <AudioPlayer title={reader.title} audioUrl={reader.audioUrl} />}{reader.audios?.map((audio) => <AudioPlayer key={audio.label} title={audio.label} audioUrl={audio.url} />)}{reader.paragraphs.map((paragraph, index) => <p key={index}>{reader.highlightQuery ? highlightText(paragraph, reader.highlightQuery) : paragraph}</p>)}</article></section>;
+  const audioOnly = Boolean(reader.audioUrl || reader.audios?.length);
+  return <section className={`reader-section${libraryMode ? ' library-reader-section' : ''}`}><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} onNavigate={onNavigate} /><article className="reader-body"><button className={`reader-favorite${favorite ? ' is-favorite' : ''}`} onClick={onFavorite}><Heart size={18} fill={favorite ? 'currentColor' : 'none'} /></button>{reader.audioUrl && <AudioPlayer title={reader.title} audioUrl={reader.audioUrl} />}{reader.audios?.map((audio) => <AudioPlayer key={audio.label} title={audio.label} audioUrl={audio.url} />)}{!audioOnly && reader.paragraphs.map((paragraph, index) => <p key={index}>{reader.highlightQuery ? highlightText(paragraph, reader.highlightQuery) : paragraph}</p>)}</article></section>;
 }
 
 function AccountPanel({ user, fullName, onBack, onNavigate, onNameSaved, onLogout }: { user: User; fullName: string | null; onBack: () => void; onNavigate: (target: NavTarget) => void; onNameSaved: (name: string) => void; onLogout: () => void }) {
@@ -997,13 +998,23 @@ function ConfirmDialog({ title = '¿Eliminar?', description, confirmLabel = 'Eli
   </AnimatedDialog>;
 }
 
+function FavoriteContentIcon({ favorite }: { favorite: FavoriteRecord }) {
+  if (favorite.id.startsWith('delivery:') || favorite.reader?.audioUrl || /🎧|🎙️/.test(favorite.icon)) {
+    return <AnimatedInterfaceIcon name="ear" size={30} />;
+  }
+  if (/📖|📚/.test(favorite.icon)) {
+    return <AnimatedInterfaceIcon name="open-door" size={30} />;
+  }
+  return <CategoryIcon item={{ icon: favorite.icon, title: favorite.title, detail: favorite.detail, tone: favorite.tone }} />;
+}
+
 function FavoritesPanel({ favorites, onBack, onNavigate, onOpen, onRemove }: { favorites: FavoriteRecord[]; onBack: () => void; onNavigate: (target: NavTarget) => void; onOpen: (favorite: FavoriteRecord) => void; onRemove: (favorite: FavoriteRecord) => void }) {
   const [pendingRemoval, setPendingRemoval] = useState<FavoriteRecord | null>(null);
   return <section className="reader-section favorites-section">
     <FixedHeader eyebrow="MI PERFIL" title="Favoritos" subtitle="Todo lo que guardaste, reunido en un solo lugar." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body favorites-browser">
       {!favorites.length && <div className="favorites-empty"><Heart size={30} /><b>Todavía no guardaste nada</b><p>Tocá el corazón de cualquier tarjeta para encontrarla después acá.</p></div>}
-      {favorites.map((favorite, index) => <div key={favorite.id} className="favorite-card-row"><MagicCard delay={index * .04} className="favorite-content-card" onClick={() => onOpen(favorite)} style={{ '--category-tone': favorite.tone } as React.CSSProperties}><span className="card-image"><CategoryIcon item={{ icon: favorite.icon, title: favorite.title, detail: favorite.detail, tone: favorite.tone }} /></span><div><small className="card-subtitle">FAVORITO</small><b className="card-title">{favorite.title}</b><em className="card-subtitle">{favorite.detail}</em></div></MagicCard><button type="button" className="remove-favorite" onClick={() => setPendingRemoval(favorite)} aria-label={`Quitar ${favorite.title} de favoritos`}><Trash2 size={18} /></button></div>)}
+      {favorites.map((favorite, index) => <div key={favorite.id} className="favorite-card-row"><MagicCard delay={index * .04} className="favorite-content-card" onClick={() => onOpen(favorite)} style={{ '--category-tone': favorite.tone } as React.CSSProperties}><span className="card-image"><FavoriteContentIcon favorite={favorite} /></span><div><small className="card-subtitle">FAVORITO</small><b className="card-title">{favorite.title}</b><em className="card-subtitle">{favorite.detail}</em></div></MagicCard><button type="button" className="remove-favorite" onClick={() => setPendingRemoval(favorite)} aria-label={`Quitar ${favorite.title} de favoritos`}><Trash2 size={18} /></button></div>)}
     </div>
     {pendingRemoval && <ConfirmDialog description={`Se va a quitar "${pendingRemoval.title}" de tus favoritos.`} onCancel={() => setPendingRemoval(null)} onConfirm={() => { onRemove(pendingRemoval); setPendingRemoval(null); }} />}
   </section>;
@@ -1081,7 +1092,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
         console.log('[workshop] buscando taller_deliveries…');
         const { data: deliveryRows, error: deliveryError } = await supabase
           .from('taller_deliveries')
-          .select('id,day_number,delivery_type,delivered_at,seen_at,message_index,content_items(title,body),content_assets(source_url,storage_path)')
+          .select('id,day_number,delivery_type,delivered_at,seen_at,message_index,content_items(title),content_assets(source_url,storage_path)')
           .eq('enrollment_id', enrollment.id)
           .order('delivered_at', { ascending: false });
         if (cancelled) return;
@@ -1089,7 +1100,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
         console.log('[workshop] entregas encontradas:', deliveryRows?.length ?? 0);
 
         const mapped = (deliveryRows || []).map((row) => {
-          const item = row.content_items as unknown as { title: string; body: string } | null;
+          const item = row.content_items as unknown as { title: string } | null;
           const asset = row.content_assets as unknown as { source_url: string; storage_path?: string } | null;
           const audioUrl = asset?.source_url && !asset.source_url.startsWith('storage://')
             ? asset.source_url
@@ -1097,8 +1108,6 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
               ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/${asset.storage_path}`
               : undefined;
           const deliveryType = row.delivery_type as TallerDeliveryType;
-          const body = item?.body || '';
-          const paragraphs = extractDeliveryParagraphs(body, deliveryType, row.message_index);
           return {
             id: row.id,
             dayNumber: row.day_number,
@@ -1106,7 +1115,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
             deliveredAt: row.delivered_at,
             seenAt: row.seen_at,
             title: item?.title || `Día ${row.day_number}`,
-            paragraphs: paragraphs || [],
+            paragraphs: [],
             audioUrl,
           } as TallerDelivery;
         });
@@ -1586,7 +1595,7 @@ export default function TelegramMiniApp() {
           ...favorite,
           title,
           detail,
-          reader: favorite.reader ? { ...favorite.reader, title, detail } : favorite.reader,
+          reader: favorite.reader ? { ...favorite.reader, title, detail, paragraphs: [] } : favorite.reader,
         };
       }));
     })();

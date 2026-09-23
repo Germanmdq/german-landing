@@ -8,7 +8,7 @@ import { LoginGate } from './login-gate';
 import { AccessPaywall } from './access-paywall';
 import { AudioWaveLoader } from './audio-wave-loader';
 import { AnimatedInterfaceIcon } from './animated-interface-icon';
-import { deliveryTypeLabels, extractDeliveryParagraphs, type TallerDeliveryType } from '../lib/taller-delivery';
+import { deliveryTypeLabels, type TallerDeliveryType } from '../lib/taller-delivery';
 
 type DeliveryView = {
   dayNumber: number;
@@ -67,7 +67,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     void (async () => {
       const { data: row, error: queryError } = await supabase
         .from('taller_deliveries')
-        .select('id,user_id,day_number,delivery_type,message_index,content_id,asset_id,delivered_at,seen_at,content_items(title,body),content_assets(source_url,storage_path)')
+        .select('id,user_id,day_number,delivery_type,message_index,content_id,asset_id,delivered_at,seen_at,content_items(title),content_assets(source_url,storage_path)')
         .eq('id', deliveryId)
         .eq('user_id', session.user.id)
         .maybeSingle();
@@ -76,7 +76,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
         setError(queryError ? `No pudimos consultar la entrega: ${queryError.message}` : 'La entrega no existe o no está disponible para esta cuenta.');
         return;
       }
-      const item = row.content_items as unknown as { title: string; body: string } | null;
+      const item = row.content_items as unknown as { title: string } | null;
       const asset = row.content_assets as unknown as { source_url: string; storage_path?: string } | null;
       const audioUrl = asset?.source_url && !asset.source_url.startsWith('storage://')
         ? asset.source_url
@@ -84,12 +84,8 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
           ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/${asset.storage_path}`
           : undefined;
       const deliveryType = row.delivery_type as TallerDeliveryType;
-      const paragraphs = extractDeliveryParagraphs(item?.body || '', deliveryType, row.message_index);
-      if (!paragraphs?.length && !audioUrl) {
-        const reason = deliveryType === 'intermediate_message'
-          ? `No encontramos el mensaje numerado ${row.message_index ?? 'sin índice'} dentro del contenido asociado.`
-          : 'No encontramos texto ni audio para esta entrega.';
-        setError(reason);
+      if (!audioUrl) {
+        setError('No encontramos el audio para esta entrega.');
         return;
       }
       setDelivery({
@@ -98,7 +94,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
         messageIndex: row.message_index,
         title: item?.title || deliveryTypeLabels[deliveryType],
         deliveredAt: row.delivered_at,
-        paragraphs: paragraphs || [],
+        paragraphs: [],
         audioUrl,
       });
       if (!row.seen_at) {
@@ -145,7 +141,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
         title: favoriteTitle,
         eyebrow: 'AUDIO',
         detail: `Día ${delivery.dayNumber} · ${deliveryTypeLabels[delivery.deliveryType]}`,
-        paragraphs: delivery.paragraphs,
+        paragraphs: [],
         audioUrl: delivery.audioUrl,
       },
     };
