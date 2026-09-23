@@ -905,29 +905,9 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
   });
   const q = query.trim();
   const ordered = [...visible].sort((a, b) => {
-    const ay = a.year ?? 9999;
-    const by = b.year ?? 9999;
-    if (filter === 'Conferencias' && ay !== by) return ay - by;
     return a.title.localeCompare(b.title, 'es', { sensitivity: 'base' });
   });
-  const groupedByConferenceYear = filter === 'Conferencias' || filter === 'Audios';
-  const conferenceGroups = groupedByConferenceYear
-    ? Array.from(new Set(ordered.map((entry) => entry.year ? String(entry.year) : 'Sin fecha'))).map((label) => ({ label, entries: ordered.filter((entry) => (entry.year ? String(entry.year) : 'Sin fecha') === label) }))
-    : [{ label: '', entries: ordered }];
-  const [openYears, setOpenYears] = useState<Set<string>>(new Set());
-  useEffect(() => {
-    if (!groupedByConferenceYear) return;
-    if (q) {
-      setOpenYears(new Set(conferenceGroups.map((group) => group.label)));
-      return;
-    }
-    setOpenYears(new Set());
-  }, [groupedByConferenceYear, q, conferenceGroups.map((group) => group.label).join('|')]);
-  const toggleYear = (label: string) => setOpenYears((current) => {
-    const next = new Set(current);
-    if (next.has(label)) next.delete(label); else next.add(label);
-    return next;
-  });
+  const conferenceGroups = [{ label: '', entries: ordered }];
   return <section className="reader-section library-section">
     <FixedHeader eyebrow="PARA ESCUCHAR Y LEER" title="Tu biblioteca" subtitle="Buscá por conferencia, tema o etiqueta." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body library-browser">
@@ -1003,18 +983,14 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
         <p>Estamos preparando los audiolibros. Próximamente van a estar disponibles narrados por Germán.</p>
       </div>}
       {filter && !query && filter !== 'Libros en audio' && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p><div className="library-content-list">{conferenceGroups.map((group) => {
-        const open = !group.label || openYears.has(group.label);
-        return <section key={group.label || 'all'} className={`library-year-group${open ? ' is-open' : ''}`}>
-          {group.label && <button type="button" className="library-year-toggle" onClick={() => toggleYear(group.label)} aria-expanded={open}><span>{group.label}</span><ChevronDown size={22} aria-hidden="true" /></button>}
-          {open && group.entries.map((entry,index) => <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index*.025,.2)} className={`library-content-card${filter === 'Audios' ? ' is-coming-soon' : ''}`} disabled={filter === 'Audios'} onClick={filter === 'Audios' ? undefined : () => onRead(entry, undefined, 'text')}><div><p>{filter === 'Audios' ? 'Audio' : 'Texto'}</p><b className="card-title">{entry.title}</b>{filter === 'Audios' ? <em className="card-subtitle">Próximamente · leída por Germán</em> : <em className="card-subtitle">{entry.excerpt || 'Abrir conferencia'}</em>}</div><span className="library-card-actions"><i>{filter === 'Audios' ? <AnimatedInterfaceIcon name="ear" size={19} /> : <ChevronRight size={19}/>}</i></span></MagicCard></div>)}
+        return <section key={group.label || 'all'} className="library-year-group is-open">
+          {group.entries.map((entry,index) => <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index*.025,.2)} className={`library-content-card${filter === 'Audios' ? ' is-coming-soon' : ''}`} disabled={filter === 'Audios'} onClick={filter === 'Audios' ? undefined : () => onRead(entry, undefined, 'text')}><div><p>{filter === 'Audios' ? 'Audio' : 'Texto'}</p><b className="card-title">{entry.title}</b>{filter === 'Audios' ? <em className="card-subtitle">Próximamente · leída por Germán</em> : <em className="card-subtitle">{entry.excerpt || 'Abrir conferencia'}</em>}</div><span className="library-card-actions"><i>{filter === 'Audios' ? <AnimatedInterfaceIcon name="ear" size={19} /> : <ChevronRight size={19}/>}</i></span></MagicCard></div>)}
         </section>;
       })}</div></>}
       {query && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p>
       <div id="library-results" className="library-content-list" role="tabpanel" aria-label={`Resultados: ${filter || 'Biblioteca'}`}>{conferenceGroups.map((group) => {
-        const open = !group.label || openYears.has(group.label);
-        return <section key={group.label || 'all'} className={`library-year-group${open ? ' is-open' : ''}`}>
-          {group.label && <button type="button" className="library-year-toggle" onClick={() => toggleYear(group.label)} aria-expanded={open}><span>{group.label}</span><ChevronDown size={22} aria-hidden="true" /></button>}
-          {open && group.entries.map((entry, index) => {
+        return <section key={group.label || 'all'} className="library-year-group is-open">
+          {group.entries.map((entry, index) => {
         const saved = favorites.some((favorite) => favorite.id === libraryFavorite(entry).id);
         let preview: React.ReactNode = entry.excerpt || 'Abrí para leer o escuchar.';
         if (q) {
