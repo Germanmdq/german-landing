@@ -1977,7 +1977,6 @@ export default function TelegramMiniApp() {
       .select('*,content_assets(asset_type,source_url,storage_path,duration_seconds,sort_order)')
       .eq('is_published', true)
       .in('content_type', ['conference', 'book'])
-      .eq('content_assets.asset_type', 'audio')
       .order('published_at', { ascending: false })
       .limit(1000)
       .then(({ data, error }) => {
@@ -1986,7 +1985,9 @@ export default function TelegramMiniApp() {
         setLibraryItems(data.map((value) => {
           const item = value as Record<string, unknown>;
           const assets = Array.isArray(item.content_assets) ? item.content_assets as Record<string, unknown>[] : [];
-          const asset = assets.sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))[0];
+          const asset = assets
+            .filter((candidate) => candidate.asset_type === 'audio')
+            .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))[0];
           const source = firstText(asset || item, ['source_url', 'audio_url', 'audioUrl', 'media_url', 'mediaUrl', 'file_url', 'fileUrl']);
           const path = firstText(asset || item, ['audio_path', 'audioPath', 'storage_path', 'storagePath']);
           const bucket = firstText(item, ['audio_bucket', 'audioBucket', 'bucket']) || 'audios';
