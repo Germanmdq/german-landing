@@ -68,6 +68,7 @@ type ProgramEnrollmentRow = {
   user_id: string;
   collection_id: string;
   status: 'active' | 'abandoned' | 'completed';
+  started_at: string;
   morning: string | null;
   noon: string | null;
   afternoon: string | null;
@@ -212,6 +213,20 @@ async function getDayContent(collectionId: string, dayNumber: number) {
 }
 
 async function getProgramLastDay(collectionId: string) {
+  const { data: collection, error: collectionError } = await supabase
+    .from('collections')
+    .select('slug')
+    .eq('id', collectionId)
+    .maybeSingle();
+  if (collectionError || !collection) return null;
+
+  const slug = String(collection.slug || '');
+  if (slug === 'taller-40-dias') return 40;
+
+  const durationMatch = slug.match(/(?:^|-)(7|15|30|40)-dias(?:-|$)/);
+  if (durationMatch) return Number(durationMatch[1]);
+
+  // Fallback para programas históricos sin duración codificada en el slug.
   const { data, error } = await supabase
     .from('collection_items')
     .select('sort_order')
@@ -521,6 +536,14 @@ async function recordOverdueIncident(enrollment: ProgramEnrollmentRow, moment: M
 async function processEnrollment(enrollment: ProgramEnrollmentRow, now: Date) {
   if (enrollment.status !== 'active' || !enrollment.timezone) return;
   const nowMinutes = localMinutesNow(now, enrollment.timezone);
+  const startedAt = enrollment.started_at ? new Date(enrollment.started_at) : null;
+  const startedToday = enrollment.current_day === 1
+    && startedAt
+    && !Number.isNaN(startedAt.getTime())
+    && localDateKey(startedAt, enrollment.timezone) === localDateKey(now, enrollment.timezone);
+  const startedMinutes = startedToday && startedAt
+    ? localMinutesNow(startedAt, enrollment.timezone)
+    : null;
 
   const moments: MeditationMoment[] = ['morning', 'noon', 'afternoon', 'night'];
   let meditationDueNow = false;
@@ -528,6 +551,10 @@ async function processEnrollment(enrollment: ProgramEnrollmentRow, now: Date) {
     const target = enrollment[moment];
     if (!target) continue;
     const targetMinutes = minutesOfDay(target);
+    // En el primer día nunca recuperamos una meditación cuyo horario ya había
+    // pasado antes de que la persona se inscribiera. Si se anotó después del
+    // último horario, su primera entrega será al día siguiente.
+    if (startedMinutes != null && targetMinutes < startedMinutes) continue;
     if (isExactMinute(nowMinutes, targetMinutes)) {
       meditationDueNow = true;
       await processMeditation(enrollment, moment, now);
