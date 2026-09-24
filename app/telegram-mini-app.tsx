@@ -524,17 +524,35 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    void Promise.all([
-      supabase.from('program_enrollments').select('id,status,current_day,started_at,abandoned_at,completed_at,custom_config,collections(title,slug)').eq('user_id', user.id).order('started_at', { ascending: false }),
-      supabase.from('taller_deliveries').select('enrollment_id,day_number,delivery_type,message_index,delivered_at,seen_at').eq('user_id', user.id).order('delivered_at', { ascending: false }).limit(1000),
-    ]).then(([enrollmentsResult, deliveriesResult]) => {
+    void (async () => {
+      const enrollmentsResult = await supabase.from('program_enrollments').select('id,status,current_day,started_at,abandoned_at,completed_at,custom_config,collections(title,slug)').eq('user_id', user.id).order('started_at', { ascending: false });
       if (cancelled) return;
       if (enrollmentsResult.error) console.error('[progress] enrollments:', enrollmentsResult.error);
-      if (deliveriesResult.error) console.error('[progress] deliveries:', deliveriesResult.error);
-      setHistory((enrollmentsResult.data || []) as unknown as ProgressEnrollment[]);
-      setDeliveries((deliveriesResult.data || []) as ProgressDelivery[]);
+      const enrollments = (enrollmentsResult.data || []) as unknown as ProgressEnrollment[];
+      const active = enrollments.find((enrollment) => enrollment.status === 'active');
+      // Sólo las entregas del taller activo, todas: un taller de 40 días
+      // supera las 1000 filas que devuelve cada consulta, así que paginamos.
+      const activeDeliveries: ProgressDelivery[] = [];
+      if (active) {
+        const pageSize = 1000;
+        for (let from = 0; ; from += pageSize) {
+          const { data, error } = await supabase
+            .from('taller_deliveries')
+            .select('id,enrollment_id,day_number,delivery_type,message_index,delivered_at,seen_at')
+            .eq('enrollment_id', active.id)
+            .order('delivered_at', { ascending: false })
+            .order('id', { ascending: true })
+            .range(from, from + pageSize - 1);
+          if (cancelled) return;
+          if (error) { console.error('[progress] deliveries:', error); break; }
+          activeDeliveries.push(...((data || []) as ProgressDelivery[]));
+          if (!data || data.length < pageSize) break;
+        }
+      }
+      setHistory(enrollments);
+      setDeliveries(activeDeliveries);
       setLoading(false);
-    }).catch((error) => {
+    })().catch((error) => {
       if (!cancelled) { console.error('[progress] history:', error); setLoading(false); }
     });
     return () => { cancelled = true; };
@@ -1159,7 +1177,8 @@ const shiftHours = (time: string, hours: number) => {
 
 type WorkshopStage = 'loading' | 'onboarding' | 'conflict' | 'confirmed' | 'days' | 'edit-schedule' | 'error';
 type WorkshopOnboardingStep = 'intro' | 'schedule' | 'frequency' | 'summary';
-type ActiveProgramEnrollment = { id: string; collection_id: string; current_day: number; morning: string; noon: string; afternoon: string; night: string; timezone: string; message_interval_minutes: number; collections: { title: string } | null };
+type ActiveProgramEnrollment = { id: string; collection_id: string; current_day: number; morning: string; noon: string; afternoon: string; night: string; timezone: string; message_interval_minutes: number; pending_schedule: PendingProgramSchedule | null; collections: { title: string } | null };
+type PendingProgramSchedule = { morning: string; noon: string; afternoon: string; night: string; timezone: string; message_interval_minutes: number };
 
 function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: User; program: ProgramPanelConfig; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (reader: ReaderContent) => void }) {
   const programMeta = guidedProgramMeta[program.slug] || guidedProgramMeta['taller-40-dias'];
@@ -1173,6 +1192,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
   const [step, setStep] = useState<WorkshopOnboardingStep>('intro');
   const [schedule, setSchedule] = useState<WorkshopSchedule>(defaultWorkshopSchedule);
   const [timezone, setTimezone] = useState(detectTimezone);
+  const [schedulePendingNextDay, setSchedulePendingNextDay] = useState(false);
   const [messageInterval, setMessageInterval] = useState<typeof workshopIntervalOptions[number]>(40);
   const [editingMoment, setEditingMoment] = useState<typeof workshopMomentKeys[number] | null>(null);
   const [editingTimezone, setEditingTimezone] = useState(false);
@@ -1200,7 +1220,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
         console.log('[workshop] buscando programa activo para', user.id);
         const { data: enrollmentData, error: enrollmentError } = await supabase
           .from('program_enrollments')
-          .select('id,collection_id,current_day,morning,noon,afternoon,night,timezone,message_interval_minutes,collections(title)')
+          .select('id,collection_id,current_day,morning,noon,afternoon,night,timezone,message_interval_minutes,pending_schedule,collections(title)')
           .eq('user_id', user.id)
           .eq('status', 'active')
           .maybeSingle();
@@ -1212,9 +1232,13 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
         if (enrollment.collection_id !== collection.id) { setStage('conflict'); return; }
         setEnrollmentId(enrollment.id);
         setCurrentDay(enrollment.current_day);
-        setSchedule({ morning: enrollment.morning.slice(0, 5), noon: enrollment.noon.slice(0, 5), afternoon: enrollment.afternoon.slice(0, 5), night: enrollment.night.slice(0, 5) });
-        setTimezone(enrollment.timezone);
-        if (workshopIntervalOptions.includes(enrollment.message_interval_minutes as typeof workshopIntervalOptions[number])) setMessageInterval(enrollment.message_interval_minutes as typeof workshopIntervalOptions[number]);
+        // Si hay un cambio de horarios pendiente para el próximo día, mostramos
+        // lo que la persona eligió y avisamos desde cuándo se aplica.
+        const shownSchedule = enrollment.pending_schedule ?? enrollment;
+        setSchedulePendingNextDay(Boolean(enrollment.pending_schedule));
+        setSchedule({ morning: shownSchedule.morning.slice(0, 5), noon: shownSchedule.noon.slice(0, 5), afternoon: shownSchedule.afternoon.slice(0, 5), night: shownSchedule.night.slice(0, 5) });
+        setTimezone(shownSchedule.timezone);
+        if (workshopIntervalOptions.includes(shownSchedule.message_interval_minutes as typeof workshopIntervalOptions[number])) setMessageInterval(shownSchedule.message_interval_minutes as typeof workshopIntervalOptions[number]);
 
         console.log('[workshop] buscando taller_deliveries…');
         const { data: deliveryRows, error: deliveryError } = await supabase
@@ -1289,31 +1313,25 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
     if (!enrollmentId) return;
     setSaving(true);
     setSaveError('');
-    const { error } = await supabase
-      .from('program_enrollments')
-      .update({
-        morning: schedule.morning,
-        noon: schedule.noon,
-        afternoon: schedule.afternoon,
-        night: schedule.night,
-        timezone,
-        message_interval_minutes: messageInterval,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', enrollmentId)
-      .eq('user_id', user.id)
-      .eq('status', 'active');
+    // Sólo horarios, zona y frecuencia: el progreso nunca se toca desde el
+    // cliente. Si el día ya empezó, el cambio se aplica desde el próximo día.
+    const { data, error } = await supabase.rpc('update_program_schedule', {
+      p_enrollment_id: enrollmentId,
+      p_morning: schedule.morning,
+      p_noon: schedule.noon,
+      p_afternoon: schedule.afternoon,
+      p_night: schedule.night,
+      p_timezone: timezone,
+      p_message_interval_minutes: messageInterval,
+    });
     setSaving(false);
     if (error) { setSaveError(error.message); return; }
-    setActiveProgram((current) => current ? {
-      ...current,
-      morning: schedule.morning,
-      noon: schedule.noon,
-      afternoon: schedule.afternoon,
-      night: schedule.night,
-      timezone,
-      message_interval_minutes: messageInterval,
-    } : current);
+    const appliedNextDay = (data as { applied?: string } | null)?.applied === 'next_day';
+    const savedSchedule = { morning: schedule.morning, noon: schedule.noon, afternoon: schedule.afternoon, night: schedule.night, timezone, message_interval_minutes: messageInterval };
+    setSchedulePendingNextDay(appliedNextDay);
+    setActiveProgram((current) => current ? (appliedNextDay
+      ? { ...current, pending_schedule: savedSchedule }
+      : { ...current, ...savedSchedule, pending_schedule: null }) : current);
     setStage('days');
   };
 
@@ -1443,7 +1461,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
   </section>;
 
   if (stage === 'edit-schedule') return <section className="reader-section workshop-section">
-    <FixedHeader eyebrow={`TALLER DE ${programDays} DÍAS`} title="Cambiar horarios" subtitle="Los cambios se aplican desde ahora. Tu día y tu progreso no se modifican." onBack={() => { setSaveError(''); setStage('days'); }} onNavigate={onNavigate} />
+    <FixedHeader eyebrow={`TALLER DE ${programDays} DÍAS`} title="Cambiar horarios" subtitle="Si tu día ya empezó, los cambios se aplican desde el próximo día. Tu día y tu progreso no se modifican." onBack={() => { setSaveError(''); setStage('days'); }} onNavigate={onNavigate} />
     <div className="reader-body workshop-browser">
       <div className="workshop-schedule-pills">
         <button className="workshop-schedule-pill" onClick={() => setEditingTimezone(true)} aria-haspopup="dialog"><span className="ios-row-label">Zona horaria</span><span className="ios-row-value ios-row-value--muted">{timezone.replace(/_/g, ' ')}<ChevronRight size={17} /></span></button>
@@ -1486,6 +1504,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
       <div className="workshop-schedule-action">
         <button type="button" className="workshop-schedule-pill" onClick={() => { setSaveError(''); setStage('edit-schedule'); }}><span className="ios-row-label">Cambiar horarios</span><span className="ios-row-value">{schedule.morning} · {schedule.noon} · {schedule.afternoon} · {schedule.night}<ChevronRight size={17} /></span></button>
       </div>
+      {schedulePendingNextDay && <p className="workshop-hint">Tus nuevos horarios se aplican desde el próximo día del taller.</p>}
       {!deliveries.length && <p className="library-empty">Tu taller empieza ahora. Vas a recibir tu primera entrega en el próximo horario disponible de tu configuración.</p>}
       {!!deliveries.length && <div className="workshop-days-list">{Array.from(new Set(deliveries.map((delivery) => delivery.dayNumber))).sort((a, b) => b - a).map((dayNumber) => {
         const dayDeliveries = deliveries.filter((delivery) => delivery.dayNumber === dayNumber);

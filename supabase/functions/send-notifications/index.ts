@@ -6,6 +6,7 @@
 // El progreso y los horarios viven únicamente en program_enrollments.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { decideMeditationSlot, localDateKey, minutesOfDay, toLocalStamp } from './schedule.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -76,6 +77,7 @@ type ProgramEnrollmentRow = {
   timezone: string | null;
   message_interval_minutes: number | null;
   current_day: number;
+  current_day_started_at: string | null;
 };
 
 type DeliveryTelegramRow = {
@@ -87,31 +89,6 @@ type DeliveryTelegramRow = {
 };
 
 // --- Helpers de tiempo -----------------------------------------------------
-
-function minutesOfDay(hhmm: string): number {
-  const [h, m] = hhmm.split(':').map(Number);
-  return h * 60 + (m || 0);
-}
-
-function localMinutesNow(date: Date, timeZone: string): number {
-  const parts = new Intl.DateTimeFormat('en-US', { timeZone, hour12: false, hour: '2-digit', minute: '2-digit' }).formatToParts(date);
-  const hour = Number(parts.find((p) => p.type === 'hour')?.value ?? '0') % 24;
-  const minute = Number(parts.find((p) => p.type === 'minute')?.value ?? '0');
-  return hour * 60 + minute;
-}
-
-function localDateKey(date: Date, timeZone: string): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(date);
-  const year = parts.find((p) => p.type === 'year')?.value ?? '';
-  const month = parts.find((p) => p.type === 'month')?.value ?? '';
-  const day = parts.find((p) => p.type === 'day')?.value ?? '';
-  return `${year}-${month}-${day}`;
-}
 
 function isExactMinute(nowMinutes: number, targetMinutes: number): boolean {
   return nowMinutes === ((targetMinutes % 1440) + 1440) % 1440;
@@ -202,32 +179,6 @@ async function getDayContent(collectionId: string, dayNumber: number) {
     .maybeSingle();
   if (error || !data) return null;
   return data.content_items as unknown as { id: string; title: string; body: string } | null;
-}
-
-async function getProgramLastDay(collectionId: string) {
-  const { data: collection, error: collectionError } = await supabase
-    .from('collections')
-    .select('slug')
-    .eq('id', collectionId)
-    .maybeSingle();
-  if (collectionError || !collection) return null;
-
-  const slug = String(collection.slug || '');
-  if (slug === 'taller-40-dias') return 40;
-
-  const durationMatch = slug.match(/(?:^|-)(7|15|30|40)-dias(?:-|$)/);
-  if (durationMatch) return Number(durationMatch[1]);
-
-  // Fallback para programas históricos sin duración codificada en el slug.
-  const { data, error } = await supabase
-    .from('collection_items')
-    .select('sort_order')
-    .eq('collection_id', collectionId)
-    .order('sort_order', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error || !data) return null;
-  return data.sort_order as number;
 }
 
 async function getMomentAsset(contentId: string, moment: MeditationMoment) {
@@ -374,12 +325,13 @@ async function sendToTelegramAccount(delivery: DeliveryTelegramRow) {
 
   if (error || !account) {
     const message = error?.message || 'No hay una cuenta de Telegram vinculada.';
-    await supabase.from('taller_deliveries').update({ telegram_status: 'failed', telegram_error: message.slice(0, 500) }).eq('id', delivery.id);
+    const { error: updateError } = await supabase.from('taller_deliveries').update({ telegram_status: 'failed', telegram_error: message.slice(0, 500) }).eq('id', delivery.id);
+    if (updateError) console.error('[telegram] no se pudo marcar la entrega como failed:', delivery.id, updateError);
     return false;
   }
 
   const result = await sendTelegram(account as TelegramAccountRow, delivery);
-  await supabase.from('taller_deliveries').update(result.ok ? {
+  const { error: updateError } = await supabase.from('taller_deliveries').update(result.ok ? {
     telegram_status: 'sent',
     telegram_error: null,
     telegram_message_id: result.messageId,
@@ -388,6 +340,7 @@ async function sendToTelegramAccount(delivery: DeliveryTelegramRow) {
     telegram_status: 'failed',
     telegram_error: result.error.slice(0, 500),
   }).eq('id', delivery.id);
+  if (updateError) console.error('[telegram] no se pudo guardar el resultado del envío:', delivery.id, updateError);
   return result.ok;
 }
 
@@ -423,57 +376,132 @@ async function retryRecentUnsentDeliveries(now: Date) {
 
 // --- Procesamiento de una suscripción ---------------------------------------
 
-async function processMeditation(enrollment: ProgramEnrollmentRow, moment: MeditationMoment, now: Date) {
-  const deliveryType = momentToDeliveryType[moment];
-  // La noche necesita una reserva ATÓMICA en la base. El chequeo histórico por
-  // delivered_at no alcanza si dos ejecuciones del cron se superponen: ambas
-  // pueden leer "todavía no enviado" antes de que la otra inserte. claim_program_night
-  // permite que una sola ejecución gane por fecha local y día de inscripción.
-  if (moment === 'night' && enrollment.timezone) {
-    const localDate = localDateKey(now, enrollment.timezone);
-    const { data: claimed, error: claimError } = await supabase.rpc('claim_program_night', {
-      p_enrollment_id: enrollment.id,
-      p_current_day: enrollment.current_day,
-      p_local_date: localDate,
-    });
-    if (claimError) throw claimError;
-    if (!claimed) return;
-  }
-  if (await deliveryExists(enrollment.id, enrollment.current_day, deliveryType, null)) return;
-  const lastDay = moment === 'night' ? await getProgramLastDay(enrollment.collection_id) : null;
-  if (moment === 'night' && !lastDay) return;
+type IncidentKind = 'meditation_overdue_uncaught' | 'missing_day_content' | 'missing_meditation_audio';
 
+// Deja rastro DURABLE (no sólo en logs efímeros de la Edge Function) de algo
+// que impidió una entrega, para enterarnos nosotros y no el usuario. Como el
+// scheduler reintenta cada minuto dentro del margen de recuperación, se
+// registra una sola vez por inscripción + día + tipo + motivo.
+async function recordIncident(enrollment: ProgramEnrollmentRow, deliveryType: DeliveryType, kind: IncidentKind, detail: Record<string, unknown>) {
+  console.error(JSON.stringify({ event: kind, enrollmentId: enrollment.id, userId: enrollment.user_id, day: enrollment.current_day, deliveryType, ...detail }));
+  const { data: existing, error: lookupError } = await supabase
+    .from('notification_incidents')
+    .select('id')
+    .eq('enrollment_id', enrollment.id)
+    .eq('day_number', enrollment.current_day)
+    .eq('delivery_type', deliveryType)
+    .eq('kind', kind)
+    .limit(1)
+    .maybeSingle();
+  if (lookupError) console.error('[notification_incidents] no se pudo consultar:', lookupError);
+  if (existing) return;
+  const { error } = await supabase.from('notification_incidents').insert({
+    enrollment_id: enrollment.id,
+    user_id: enrollment.user_id,
+    day_number: enrollment.current_day,
+    delivery_type: deliveryType,
+    kind,
+    detail,
+  });
+  if (error) console.error('[notification_incidents] no se pudo registrar el incidente:', error);
+}
+
+// Telegram va SIEMPRE después de que el estado quedó guardado. Si falla, la
+// entrega queda pending/failed y la toma retryRecentUnsentDeliveries; nunca
+// debe impedir que el taller avance ni tumbar el resto de la corrida.
+async function attemptDeliveryTelegramSafely(delivery: DeliveryTelegramRow) {
+  try {
+    await attemptDeliveryTelegram(delivery);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(JSON.stringify({ event: 'telegram-attempt-error', deliveryId: delivery.id, error: message.slice(0, 500) }));
+  }
+}
+
+// Contenido y audio de una meditación. Si falta algo, registra el incidente y
+// devuelve null: NO se crea una entrega vacía ni se consume la noche.
+async function resolveMeditationContent(enrollment: ProgramEnrollmentRow, moment: MeditationMoment) {
+  const deliveryType = momentToDeliveryType[moment];
   const dayContent = await getDayContent(enrollment.collection_id, enrollment.current_day);
-  if (!dayContent) return;
+  if (!dayContent) {
+    await recordIncident(enrollment, deliveryType, 'missing_day_content', { moment });
+    return null;
+  }
   const assetId = await getMomentAsset(dayContent.id, moment);
+  if (!assetId) {
+    await recordIncident(enrollment, deliveryType, 'missing_meditation_audio', { moment, contentId: dayContent.id });
+    return null;
+  }
+  return { contentId: dayContent.id, assetId };
+}
+
+type NightResult = { status: string; delivery_id?: string | null; inserted?: boolean };
+
+// La noche registra la entrega, reserva la fecha local y avanza (o completa)
+// el taller en UNA sola transacción SQL (deliver_program_night). Nunca avanza
+// dos veces por la misma noche y no depende de Telegram.
+async function processNight(enrollment: ProgramEnrollmentRow, occurrenceDate: string) {
+  // Si la noche de este día ya existe (por ejemplo, un taller que quedó
+  // congelado con la lógica anterior), la RPC sólo completa el avance.
+  const alreadyDelivered = await deliveryExists(enrollment.id, enrollment.current_day, 'meditation_night', null);
+  const content = alreadyDelivered ? null : await resolveMeditationContent(enrollment, 'night');
+  if (!alreadyDelivered && !content) return;
+
+  const { data, error } = await supabase.rpc('deliver_program_night', {
+    p_enrollment_id: enrollment.id,
+    p_current_day: enrollment.current_day,
+    p_local_date: occurrenceDate,
+    p_content_id: content?.contentId ?? null,
+    p_asset_id: content?.assetId ?? null,
+  });
+  if (error) throw error;
+  const result = data as NightResult | null;
+  if (result?.status !== 'advanced' && result?.status !== 'completed') {
+    if (result?.status && result.status !== 'stale' && result.status !== 'night_already_claimed' && result.status !== 'before_day_start') {
+      console.warn(JSON.stringify({ event: 'night-not-delivered', enrollmentId: enrollment.id, day: enrollment.current_day, occurrenceDate, status: result.status }));
+    }
+    return;
+  }
+  console.info(JSON.stringify({ event: 'night-delivered', enrollmentId: enrollment.id, day: enrollment.current_day, occurrenceDate, status: result.status, inserted: result.inserted }));
+  if (result.inserted && result.delivery_id) {
+    await attemptDeliveryTelegramSafely({
+      id: result.delivery_id,
+      user_id: enrollment.user_id,
+      day_number: enrollment.current_day,
+      delivery_type: 'meditation_night',
+      message_index: null,
+    });
+  }
+}
+
+async function processMeditation(enrollment: ProgramEnrollmentRow, moment: MeditationMoment, occurrenceDate: string) {
+  if (moment === 'night') {
+    await processNight(enrollment, occurrenceDate);
+    return;
+  }
+  const deliveryType = momentToDeliveryType[moment];
+  if (await deliveryExists(enrollment.id, enrollment.current_day, deliveryType, null)) return;
+  const content = await resolveMeditationContent(enrollment, moment);
+  if (!content) return;
 
   const inserted = await reserveDelivery({
     enrollment_id: enrollment.id,
     user_id: enrollment.user_id,
-    content_id: dayContent.id,
-    asset_id: assetId,
+    content_id: content.contentId,
+    asset_id: content.assetId,
     day_number: enrollment.current_day,
     delivery_type: deliveryType,
     message_index: null,
   });
   if (!inserted) return;
 
-  await attemptDeliveryTelegram({
+  await attemptDeliveryTelegramSafely({
     id: inserted.id,
     user_id: enrollment.user_id,
     day_number: enrollment.current_day,
     delivery_type: deliveryType,
     message_index: null,
   });
-
-  if (moment === 'night') {
-    const nextDay = enrollment.current_day + 1;
-    if (nextDay > lastDay!) {
-      await supabase.from('program_enrollments').update({ status: 'completed', completed_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', enrollment.id).eq('status', 'active').eq('current_day', enrollment.current_day);
-    } else {
-      await supabase.from('program_enrollments').update({ current_day: nextDay, updated_at: new Date().toISOString() }).eq('id', enrollment.id).eq('status', 'active').eq('current_day', enrollment.current_day);
-    }
-  }
 }
 
 async function processIntermediateMessage(enrollment: ProgramEnrollmentRow, messageIndex: number) {
@@ -499,7 +527,7 @@ async function processIntermediateMessage(enrollment: ProgramEnrollmentRow, mess
   });
   if (!inserted) return;
 
-  await attemptDeliveryTelegram({
+  await attemptDeliveryTelegramSafely({
     id: inserted.id,
     user_id: enrollment.user_id,
     day_number: enrollment.current_day,
@@ -508,33 +536,16 @@ async function processIntermediateMessage(enrollment: ProgramEnrollmentRow, mess
   });
 }
 
-// Deja rastro DURABLE (no sólo en logs efímeros de la Edge Function) de que
-// una meditación programada venció sin generar entrega, incluso si el
-// catch-up todavía no la recuperó. Así nos enteramos nosotros, no el usuario.
-async function recordOverdueIncident(enrollment: ProgramEnrollmentRow, moment: MeditationMoment, minutesLate: number) {
-  const deliveryType = momentToDeliveryType[moment];
-  console.error(JSON.stringify({ event: 'meditation-overdue-uncaught', enrollmentId: enrollment.id, userId: enrollment.user_id, day: enrollment.current_day, moment, minutesLate }));
-  const { error } = await supabase.from('notification_incidents').insert({
-    enrollment_id: enrollment.id,
-    user_id: enrollment.user_id,
-    day_number: enrollment.current_day,
-    delivery_type: deliveryType,
-    kind: 'meditation_overdue_uncaught',
-    detail: { moment, minutesLate },
-  });
-  if (error) console.error('[notification_incidents] no se pudo registrar el incidente:', error);
-}
-
 async function processEnrollment(enrollment: ProgramEnrollmentRow, now: Date) {
   if (enrollment.status !== 'active' || !enrollment.timezone) return;
-  const nowMinutes = localMinutesNow(now, enrollment.timezone);
-  const startedAt = enrollment.started_at ? new Date(enrollment.started_at) : null;
-  const startedToday = enrollment.current_day === 1
-    && startedAt
-    && !Number.isNaN(startedAt.getTime())
-    && localDateKey(startedAt, enrollment.timezone) === localDateKey(now, enrollment.timezone);
-  const startedMinutes = startedToday && startedAt
-    ? localMinutesNow(startedAt, enrollment.timezone)
+  const nowLocal = toLocalStamp(now, enrollment.timezone);
+  const nowMinutes = nowLocal.minutes;
+  // Inicio del día lógico actual: la inscripción (Día 1) o la entrega de la
+  // noche anterior. Sólo cuentan ocurrencias estrictamente posteriores.
+  const dayStartSource = enrollment.current_day_started_at || enrollment.started_at;
+  const dayStartDate = dayStartSource ? new Date(dayStartSource) : null;
+  const dayStart = dayStartDate && !Number.isNaN(dayStartDate.getTime())
+    ? toLocalStamp(dayStartDate, enrollment.timezone)
     : null;
 
   const moments: MeditationMoment[] = ['morning', 'noon', 'afternoon', 'night'];
@@ -542,36 +553,32 @@ async function processEnrollment(enrollment: ProgramEnrollmentRow, now: Date) {
   for (const moment of moments) {
     const target = enrollment[moment];
     if (!target) continue;
-    const targetMinutes = minutesOfDay(target);
-    // En el primer día nunca recuperamos una meditación cuyo horario ya había
-    // pasado antes de que la persona se inscribiera. Si se anotó después del
-    // último horario, su primera entrega será al día siguiente.
-    if (startedMinutes != null && targetMinutes < startedMinutes) continue;
-    if (isExactMinute(nowMinutes, targetMinutes)) {
+    // La ocurrencia queda ligada a su FECHA LOCAL (hoy o ayer) y al día lógico
+    // actual. Ver decideMeditationSlot en schedule.ts.
+    const decision = decideMeditationSlot(nowLocal, minutesOfDay(target), dayStart, MEDITATION_CATCHUP_MINUTES, OVERDUE_ALERT_WINDOW_MINUTES);
+    if (decision.kind === 'due-now') {
       meditationDueNow = true;
-      await processMeditation(enrollment, moment, now);
+      await processMeditation(enrollment, moment, decision.occurrence.date);
       continue;
     }
-    // El catch-up sólo vale si ese horario ya ocurrió en la fecha local actual.
-    // Sin este guard, por ejemplo 00:00 se interpreta como "8 minutos después"
-    // de una noche configurada a las 23:52 y puede avanzar otro día en minutos.
-    const targetOccurredToday = nowMinutes >= targetMinutes;
-    const elapsed = targetOccurredToday ? nowMinutes - targetMinutes : 1440;
-    if (elapsed > 0 && elapsed <= MEDITATION_CATCHUP_MINUTES) {
+    if (decision.kind === 'catch-up') {
       // El catch-up sólo ocupa el slot actual si la meditación realmente falta.
       // Si ya fue enviada en su horario, no debe bloquear un intermedio posterior
       // (por ejemplo: meditación 12:00 + mensaje intermedio 12:30).
       const alreadyDelivered = await deliveryExists(enrollment.id, enrollment.current_day, momentToDeliveryType[moment], null);
       if (!alreadyDelivered) {
         meditationDueNow = true;
-        console.warn(JSON.stringify({ event: 'meditation-catchup-send', enrollmentId: enrollment.id, day: enrollment.current_day, moment, minutesLate: elapsed }));
-        await processMeditation(enrollment, moment, now);
+        console.warn(JSON.stringify({ event: 'meditation-catchup-send', enrollmentId: enrollment.id, day: enrollment.current_day, moment, occurrenceDate: decision.occurrence.date, minutesLate: decision.occurrence.elapsed }));
+        await processMeditation(enrollment, moment, decision.occurrence.date);
+      } else if (moment === 'night') {
+        // Noche ya registrada pero día sin avanzar: completa el avance.
+        await processMeditation(enrollment, moment, decision.occurrence.date);
       }
       continue;
     }
-    if (elapsed > MEDITATION_CATCHUP_MINUTES && elapsed <= MEDITATION_CATCHUP_MINUTES + OVERDUE_ALERT_WINDOW_MINUTES) {
+    if (decision.kind === 'overdue-alert') {
       const exists = await deliveryExists(enrollment.id, enrollment.current_day, momentToDeliveryType[moment], null);
-      if (!exists) await recordOverdueIncident(enrollment, moment, elapsed);
+      if (!exists) await recordIncident(enrollment, momentToDeliveryType[moment], 'meditation_overdue_uncaught', { moment, occurrenceDate: decision.occurrence.date, minutesLate: decision.occurrence.elapsed });
     }
   }
 
