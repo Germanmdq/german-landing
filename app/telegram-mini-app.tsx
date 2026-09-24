@@ -517,6 +517,11 @@ function practiceDuration(enrollment: ProgressEnrollment): number {
   return Math.max(1, enrollment.current_day);
 }
 
+function expectedDeliveriesPerDay(): number {
+  // Formato actual de todos los talleres: 4 meditaciones + 32 textos.
+  return 36;
+}
+
 function progressStatusLabel(status: ProgressEnrollment['status']) {
   if (status === 'completed') return 'Terminada';
   if (status === 'abandoned') return 'Abandonada';
