@@ -7,6 +7,7 @@ import { AlertCircle, ArrowLeft, Heart, MessageCircleMore, Moon } from 'lucide-r
 import { supabase } from '../lib/supabase';
 import { LoginGate } from './login-gate';
 import { AccessPaywall } from './access-paywall';
+import { TrialEndedScreen } from './launch-widgets';
 import { AudioWaveLoader } from './audio-wave-loader';
 import { AnimatedInterfaceIcon } from './animated-interface-icon';
 import { deliveryTypeLabels, extractDeliveryParagraphs, INTERMEDIATE_MESSAGE_TITLE, type TallerDeliveryType } from '../lib/taller-delivery';
@@ -37,6 +38,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
   const [accessChecked, setAccessChecked] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
   const [blocked, setBlocked] = useState(false);
+  const [trialExpired, setTrialExpired] = useState(false);
   const [delivery, setDelivery] = useState<DeliveryView | null>(null);
   const [error, setError] = useState('');
 
@@ -59,10 +61,11 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     if (!session?.access_token) { setAccessChecked(false); setHasAccess(false); return; }
     let active = true;
     void fetch('/api/access', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' }).then(async (response) => {
-      const data = await response.json().catch(() => ({})) as { active?: boolean; blocked?: boolean };
+      const data = await response.json().catch(() => ({})) as { active?: boolean; blocked?: boolean; trialExpired?: boolean };
       if (!active) return;
       setHasAccess(response.ok && data.active === true);
       setBlocked(Boolean(data.blocked));
+      setTrialExpired(Boolean(data.trialExpired));
       setAccessChecked(true);
     }).catch(() => { if (active) setAccessChecked(true); });
     return () => { active = false; };
@@ -189,6 +192,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
   if (!session) return <LoginGate redirectPath={`/delivery/${encodeURIComponent(deliveryId)}`} />;
   if (!accessChecked) return <AudioWaveLoader label="Comprobando tu acceso" dark />;
   if (blocked) return <AccessPaywall />;
+  if (trialExpired) return <TrialEndedScreen />;
   if (!hasAccess) { if (typeof window !== 'undefined') window.location.assign('/access'); return <AudioWaveLoader label="Abriendo tu espacio" dark />; }
   if (error) return <main className="delivery-screen"><section className="delivery-state" role="alert"><AlertCircle size={30}/><h1>No pudimos abrir esta entrega</h1><p>{error}</p><small>Referencia: {deliveryId}</small><a href="/telegram">Volver al Asistente</a></section></main>;
   if (!delivery) return <AudioWaveLoader label="Buscando el contenido" dark />;

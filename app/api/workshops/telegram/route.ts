@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authenticateRequest, getAdminClient } from '../../../lib/server/app-server';
+import { resolveAccess } from '../../../lib/access';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,15 +9,11 @@ export async function GET(request: Request) {
   if (!user) return NextResponse.json({ error: 'Necesitás iniciar sesión.' }, { status: 401 });
   const { data: account, error } = await getAdminClient()
     .from('telegram_accounts')
-    .select('access_tier,permissions')
+    .select('access_tier,permissions,trial_expires_at')
     .eq('user_id', user.id)
     .maybeSingle();
   if (error) return NextResponse.json({ error: 'No pudimos comprobar tu acceso.' }, { status: 500 });
-  const rawPermissions = account?.permissions;
-  const permissions = rawPermissions && typeof rawPermissions === 'object' && !Array.isArray(rawPermissions)
-    ? rawPermissions as Record<string, boolean>
-    : {};
-  if (account?.access_tier === 'blocked' || permissions.all === false) {
+  if (!resolveAccess(account).active) {
     return NextResponse.json({ error: 'Tu acceso no está habilitado en este momento.' }, { status: 403 });
   }
   const url = process.env.TELEGRAM_WORKSHOPS_URL?.trim();

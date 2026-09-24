@@ -30,6 +30,7 @@ import './components/sona/sona.css';
 import './premium-mobile.css';
 import { LoginGate } from './components/login-gate';
 import { AccessPaywall } from './components/access-paywall';
+import { LAUNCH_PENDING, LaunchDateCard, TrialEndedScreen } from './components/launch-widgets';
 import { AudioWaveLoader } from './components/audio-wave-loader';
 import { AnimatedInterfaceIcon, type AnimatedInterfaceIconName } from './components/animated-interface-icon';
 import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, INTERMEDIATE_MESSAGE_TITLE, userFacingDeliveryTitle, type TallerDeliveryType } from './lib/taller-delivery';
@@ -278,6 +279,14 @@ function MainNavigationDock({ current, onSelect }: { current: NavTarget; onSelec
     </nav>
     {moreOpen && <NavMenuSheet onSelect={(target) => { setMoreOpen(false); onSelect(target); }} onCancel={() => setMoreOpen(false)} />}
   </>;
+}
+
+// Sección que todavía no se habilita en el lanzamiento (ver LAUNCH_PENDING).
+function LaunchPendingPanel({ eyebrow, title, subtitle, onBack, onNavigate }: { eyebrow: string; title: string; subtitle: string; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
+  return <section className="reader-section">
+    <FixedHeader eyebrow={eyebrow} title={title} subtitle={subtitle} onBack={onBack} onNavigate={onNavigate} />
+    <div className="reader-body"><LaunchDateCard /></div>
+  </section>;
 }
 
 function FixedHeader({ eyebrow, title, subtitle, onBack, onNavigate }: { eyebrow: string; title: string; subtitle: string; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
@@ -967,6 +976,8 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
     );
     const isConference = /conference|conferencia/i.test(entry.type);
     const isBook = /book|libro/i.test(entry.type);
+    // Mientras los libros no estén habilitados, tampoco aparecen en la búsqueda.
+    if (isBook && LAUNCH_PENDING.libros) return false;
     const matchesFilter = !filter ||
       (filter === 'Conferencias' && isConference) ||
       (filter === 'Audios' && isConference) ||
@@ -1049,12 +1060,13 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           bounce={0.3}
         />
       </div>}
-      {filter === 'Libros en audio' && !query && <div className="library-coming-soon">
+      {filter && /Libros/.test(filter) && LAUNCH_PENDING.libros && <LaunchDateCard />}
+      {filter === 'Libros en audio' && !query && !LAUNCH_PENDING.libros && <div className="library-coming-soon">
         <span>PRÓXIMAMENTE</span>
         <b>Libros en audio</b>
         <p>Estamos preparando los audiolibros. Próximamente van a estar disponibles narrados por Germán.</p>
       </div>}
-      {filter && !query && filter !== 'Libros en audio' && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p><div className="library-content-list">{conferenceGroups.map((group) => {
+      {filter && !query && filter !== 'Libros en audio' && !(/Libros/.test(filter) && LAUNCH_PENDING.libros) && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p><div className="library-content-list">{conferenceGroups.map((group) => {
         return <section key={group.label || 'all'} className="library-year-group is-open">
           {group.entries.map((entry,index) => <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index*.025,.2)} className={`library-content-card${filter === 'Audios' ? ' is-coming-soon' : ''}`} disabled={filter === 'Audios'} onClick={filter === 'Audios' ? undefined : () => onRead(entry, undefined, 'text')}><div><p>{filter === 'Audios' ? 'Audio' : 'Texto'}</p><b className="card-title">{entry.title}</b>{filter === 'Audios' ? <em className="card-subtitle">Próximamente · leída por Germán</em> : <em className="card-subtitle">{entry.excerpt || 'Abrir conferencia'}</em>}</div><span className="library-card-actions"><i>{filter === 'Audios' ? <AnimatedInterfaceIcon name="ear" size={19} /> : <ChevronRight size={19}/>}</i></span></MagicCard></div>)}
         </section>;
@@ -1678,6 +1690,7 @@ export default function TelegramMiniApp() {
   const [accessState, setAccessState] = useState<'checking' | 'active' | 'inactive' | 'error'>('checking');
   const [accessPermissions, setAccessPermissions] = useState<AccessPermissions>({});
   const [fullyBlocked, setFullyBlocked] = useState(false);
+  const [trialExpired, setTrialExpired] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [pendingDeliveryId, setPendingDeliveryId] = useState(initialDeliveryId);
   const [favoritesOpen, setFavoritesOpen] = useState(false);
@@ -1789,11 +1802,12 @@ export default function TelegramMiniApp() {
     setAccessState('checking');
     fetch('/api/access', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' })
       .then(async (response) => {
-        const data = await response.json().catch(() => ({})) as { active?: boolean; blocked?: boolean; permissions?: AccessPermissions };
+        const data = await response.json().catch(() => ({})) as { active?: boolean; blocked?: boolean; trialExpired?: boolean; permissions?: AccessPermissions };
         if (cancelled) return;
         if (!response.ok) return setAccessState('error');
         setAccessPermissions(data.permissions || {});
         setFullyBlocked(Boolean(data.blocked));
+        setTrialExpired(Boolean(data.trialExpired));
         if (data.active) setAccessState('active');
         else setAccessState('inactive');
       })
@@ -2211,8 +2225,10 @@ export default function TelegramMiniApp() {
   if (!session) return <LoginGate redirectPath="/telegram" />;
   if (accessState === 'checking') return <AudioWaveLoader label="Cargando tu espacio" />;
   if (accessState === 'error') return <main className="app-shell app-main section-app"><div className="access-loading"><p>No pudimos comprobar tu acceso.</p><button type="button" onClick={() => window.location.reload()}>Reintentar</button></div></main>;
-  if (accessState === 'inactive') return <AccessPaywall />;
   if (fullyBlocked || accessPermissions.all === false) return <AccessPaywall />;
+  // Fin de la prueba de 48 horas: sólo cambia la pantalla; el progreso queda intacto.
+  if (trialExpired) return <TrialEndedScreen />;
+  if (accessState === 'inactive') return <AccessPaywall />;
   if (blockedSection) return <AccessPaywall section={blockedSection} onBack={() => setBlockedSection(null)} />;
   if (pendingDeliveryId) return <AudioWaveLoader label="Abriendo tu práctica" />;
   const dock = <MainNavigationDock current={mainMenu ? "home" : configurationOpen ? "configuracion" : tab} onSelect={navigateTo} />;
@@ -2225,6 +2241,7 @@ export default function TelegramMiniApp() {
     return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; navigateTo(item.target); }} /></section>{dock}</main>;
   }
   if (interactiveBookOpen) return <main className="app-shell app-main section-app"><InteractiveBookIntro onBack={back} onNavigate={navigateTo} />{dock}</main>;
+  if (courseOpen && LAUNCH_PENDING.curso365) return <main className="app-shell app-main section-app"><LaunchPendingPanel eyebrow="TALLER DE 365 DÍAS" title="Taller de 365 días" subtitle="Ley de Asunción · recorrido completo." onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (courseOpen) return <main className="app-shell app-main section-app"><LawCoursePanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} onBack={back} onNavigate={navigateTo} onNameSaved={setFullName} onLogout={logout} />{dock}</main>;
   if (selectedAudiobook) return <main className="app-shell app-main section-app"><AudiobookReader book={selectedAudiobook} onBack={back} onNavigate={navigateTo} />{dock}</main>;
@@ -2234,6 +2251,8 @@ export default function TelegramMiniApp() {
   if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (configurationOpen) return <main className="app-shell app-main section-app"><ConfigurationPanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (preguntameOpen) return <main className="app-shell app-main section-app preguntame-shell"><PreguntamePanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
+  if (tab === 'audiolibros' && !trail.length && LAUNCH_PENDING.libros) return <main className="app-shell app-main section-app"><LaunchPendingPanel eyebrow="AUDIOLIBROS DE GERMÁN" title="Libros" subtitle="Libros completos de Germán." onBack={back} onNavigate={navigateTo} />{dock}</main>;
+  if (tab === 'meditaciones' && !trail.length && LAUNCH_PENDING.meditaciones) return <main className="app-shell app-main section-app"><LaunchPendingPanel eyebrow="MEDITACIONES" title="Meditaciones para ahora" subtitle="Prácticas para situaciones puntuales." onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'audiolibros' && !trail.length) {
     return <main className="app-shell app-main section-app"><AudiobookLibraryPanel entries={audiobookItems} loading={audiobooksLoading} error={audiobooksError} onBack={back} onNavigate={navigateTo} onOpen={(entry) => { touchContentProgress(session.user.id, `audiobook:${entry.id}`, 'audiobook'); setSelectedAudiobook(entry); }} />{dock}</main>;
   }
