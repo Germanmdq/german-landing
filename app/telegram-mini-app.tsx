@@ -1691,6 +1691,8 @@ export default function TelegramMiniApp() {
   const [accessPermissions, setAccessPermissions] = useState<AccessPermissions>({});
   const [fullyBlocked, setFullyBlocked] = useState(false);
   const [trialExpired, setTrialExpired] = useState(false);
+  const [accessTier, setAccessTier] = useState('active');
+  const [trialGateOpen, setTrialGateOpen] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [pendingDeliveryId, setPendingDeliveryId] = useState(initialDeliveryId);
   const [favoritesOpen, setFavoritesOpen] = useState(false);
@@ -1802,12 +1804,13 @@ export default function TelegramMiniApp() {
     setAccessState('checking');
     fetch('/api/access', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' })
       .then(async (response) => {
-        const data = await response.json().catch(() => ({})) as { active?: boolean; blocked?: boolean; trialExpired?: boolean; permissions?: AccessPermissions };
+        const data = await response.json().catch(() => ({})) as { active?: boolean; blocked?: boolean; trialExpired?: boolean; accessTier?: string; permissions?: AccessPermissions };
         if (cancelled) return;
         if (!response.ok) return setAccessState('error');
         setAccessPermissions(data.permissions || {});
         setFullyBlocked(Boolean(data.blocked));
         setTrialExpired(Boolean(data.trialExpired));
+        setAccessTier(data.accessTier || 'active');
         if (data.active) setAccessState('active');
         else setAccessState('inactive');
       })
@@ -1861,6 +1864,28 @@ export default function TelegramMiniApp() {
   };
 
   const navigateTo = (target: NavTarget) => {
+    const homeSafeTargets: NavTarget[] = ['home', 'espacio', 'configuracion', 'notificaciones'];
+    if (trialExpired && !homeSafeTargets.includes(target)) {
+      setBlockedSection(null);
+      setTrialGateOpen(true);
+      setMainMenu(true);
+      return;
+    }
+    if (accessTier === 'limited' && !['home', 'talleres', 'propia', 'espacio', 'configuracion', 'notificaciones'].includes(target)) {
+      const limitedLabels: Partial<Record<NavTarget, string>> = {
+        favorites: 'Favoritos',
+        biblioteca: 'la Biblioteca',
+        audiolibros: 'los libros y audiolibros',
+        meditaciones: 'Meditaciones para ahora',
+        consultas: 'Consultas',
+        curso: 'el Taller de 365 días',
+      };
+      setTrialGateOpen(false);
+      setBlockedSection(limitedLabels[target] || 'esta sección');
+      setMainMenu(true);
+      return;
+    }
+    setTrialGateOpen(false);
     const permissionForTarget: Partial<Record<NavTarget, { key: SectionPermissionKey; label: string }>> = {
       audiolibros: { key: 'books', label: 'los libros y audiolibros' },
       curso: { key: 'course365', label: 'el Taller de 365 días' },
@@ -1923,7 +1948,11 @@ export default function TelegramMiniApp() {
     if (selected.accountPanel) return setAccountOpen(true);
     if (selected.programPanel) { setProgramConfig(selected.programPanel); setWorkshopOpen(true); return; }
     if (selected.workshopPanel) return setWorkshopOpen(true);
-    if (selected.title === 'Favoritos') return setFavoritesOpen(true);
+    if (selected.title === 'Favoritos') {
+      if (trialExpired) { setTrialGateOpen(true); setMainMenu(true); return; }
+      if (accessTier === 'limited') { setBlockedSection('Favoritos'); setMainMenu(true); return; }
+      return setFavoritesOpen(true);
+    }
     if (selected.title === 'Configuración') return setConfigurationOpen(true);
     if (selected.title === 'Preguntar') return setPreguntameOpen(true);
     if (selected.children) setTrail((value) => [...value, selected]);
@@ -2226,9 +2255,10 @@ export default function TelegramMiniApp() {
   if (accessState === 'checking') return <AudioWaveLoader label="Cargando tu espacio" />;
   if (accessState === 'error') return <main className="app-shell app-main section-app"><div className="access-loading"><p>No pudimos comprobar tu acceso.</p><button type="button" onClick={() => window.location.reload()}>Reintentar</button></div></main>;
   if (fullyBlocked || accessPermissions.all === false) return <AccessPaywall />;
-  // Fin de la prueba de 48 horas: sólo cambia la pantalla; el progreso queda intacto.
-  if (trialExpired) return <TrialEndedScreen />;
-  if (accessState === 'inactive') return <AccessPaywall />;
+  // La home siempre queda visible. El vencimiento del trial se aplica recién al
+  // intentar entrar a una sección de contenido.
+  if (accessState === 'inactive' && !trialExpired) return <AccessPaywall />;
+  if (trialGateOpen) return <TrialEndedScreen onBack={() => { setTrialGateOpen(false); setMainMenu(true); }} />;
   if (blockedSection) return <AccessPaywall section={blockedSection} onBack={() => setBlockedSection(null)} />;
   if (pendingDeliveryId) return <AudioWaveLoader label="Abriendo tu práctica" />;
   const dock = <MainNavigationDock current={mainMenu ? "home" : configurationOpen ? "configuracion" : tab} onSelect={navigateTo} />;

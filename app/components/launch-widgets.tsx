@@ -1,6 +1,7 @@
 'use client';
 
 import './launch-widgets.css';
+import { ArrowLeft } from 'lucide-react';
 
 // Áreas que todavía no se habilitan en el lanzamiento inicial. Para abrir una
 // sección, alcanza con pasar su valor a false: la navegación y el contenido
@@ -53,9 +54,10 @@ export function WhatsAppIcon({ size = 22 }: { size?: number }) {
 
 // Fin de la prueba de 48 horas. El progreso no se toca: al habilitar el acceso
 // la persona sigue exactamente donde estaba.
-export function TrialEndedScreen() {
+export function TrialEndedScreen({ onBack }: { onBack?: () => void }) {
   return <main className="app-shell trial-ended-screen">
     <section className="trial-ended-card" aria-labelledby="trial-ended-title">
+      {onBack && <button type="button" className="header-back" onClick={onBack}><ArrowLeft size={18} />Volver</button>}
       <div className="trial-ended-mark" aria-hidden="true"><span>G</span></div>
       <h1 id="trial-ended-title">¿Querés seguir experimentando esta aplicación?</h1>
       <p>Durante estas horas ya pudiste escuchar, leer y probar cómo funciona el Asistente Germán.</p>
