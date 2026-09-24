@@ -1212,7 +1212,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
         console.log('[workshop] buscando taller_deliveries…');
         const { data: deliveryRows, error: deliveryError } = await supabase
           .from('taller_deliveries')
-          .select('id,day_number,delivery_type,delivered_at,seen_at,message_index,content_items(title),content_assets(source_url,storage_path)')
+          .select('id,day_number,delivery_type,delivered_at,seen_at,message_index,content_items(title,body),content_assets(source_url,storage_path)')
           .eq('enrollment_id', enrollment.id)
           .order('delivered_at', { ascending: false });
         if (cancelled) return;
@@ -1220,7 +1220,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
         console.log('[workshop] entregas encontradas:', deliveryRows?.length ?? 0);
 
         const mapped = (deliveryRows || []).map((row) => {
-          const item = row.content_items as unknown as { title: string } | null;
+          const item = row.content_items as unknown as { title: string; body?: string } | null;
           const asset = row.content_assets as unknown as { source_url: string; storage_path?: string } | null;
           const audioUrl = asset?.source_url && !asset.source_url.startsWith('storage://')
             ? asset.source_url
@@ -1228,6 +1228,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
               ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/${asset.storage_path}`
               : undefined;
           const deliveryType = row.delivery_type as TallerDeliveryType;
+          const paragraphs = extractDeliveryParagraphs(item?.body || '', deliveryType, row.message_index) || [];
           return {
             id: row.id,
             dayNumber: row.day_number,
@@ -1235,7 +1236,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
             deliveredAt: row.delivered_at,
             seenAt: row.seen_at,
             title: item?.title || `Día ${row.day_number}`,
-            paragraphs: [],
+            paragraphs,
             audioUrl,
           } as TallerDelivery;
         });
@@ -1351,7 +1352,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
       if (error) console.error('[workshop] no se pudo marcar entrega como vista:', error);
       else setDeliveries((current) => current.map((item) => item.id === delivery.id ? { ...item, seenAt: String(seenAt) } : item));
     }
-    onRead({ title: `Día ${delivery.dayNumber} · ${deliveryTypeLabels[delivery.deliveryType]}`, eyebrow: 'PRÁCTICA GUIADA', detail: ``, paragraphs: [], audioUrl: delivery.audioUrl });
+    onRead({ title: `Día ${delivery.dayNumber} · ${deliveryTypeLabels[delivery.deliveryType]}`, eyebrow: 'PRÁCTICA GUIADA', detail: ``, paragraphs: delivery.paragraphs, audioUrl: delivery.audioUrl });
   };
 
   if (stage === 'loading') return <section className="reader-section workshop-section"><FixedHeader eyebrow="PRÁCTICAS GUIADAS" title={program.title} subtitle={program.subtitle} onBack={onBack} onNavigate={onNavigate} /><div className="reader-body workshop-browser"><p className="library-empty">Cargando el taller…</p></div></section>;
