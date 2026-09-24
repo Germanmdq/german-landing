@@ -117,14 +117,6 @@ function isExactMinute(nowMinutes: number, targetMinutes: number): boolean {
   return nowMinutes === ((targetMinutes % 1440) + 1440) % 1440;
 }
 
-// Minutos transcurridos desde la última vez que el reloj local pasó por
-// targetMinutes (0..1439). No distingue "todavía no llegó la hora de hoy" de
-// "ya pasó hace casi 24hs" — por eso sólo se usa acotado a una ventana corta
-// (catch-up / alerta), nunca para decidir "ya pasó hoy" sin límite.
-function minutesElapsedSince(nowMinutes: number, targetMinutes: number): number {
-  return ((nowMinutes - targetMinutes) % 1440 + 1440) % 1440;
-}
-
 // Réplica en Deno de la lógica de extracción de mensajes numerados usada en el
 // cliente (app/page.tsx: findNumberedMessage). El numerado real no es
 // consistente entre días ("01." en el día 1, "1." en el día 11), por eso el
@@ -560,7 +552,11 @@ async function processEnrollment(enrollment: ProgramEnrollmentRow, now: Date) {
       await processMeditation(enrollment, moment, now);
       continue;
     }
-    const elapsed = minutesElapsedSince(nowMinutes, targetMinutes);
+    // El catch-up sólo vale si ese horario ya ocurrió en la fecha local actual.
+    // Sin este guard, por ejemplo 00:00 se interpreta como "8 minutos después"
+    // de una noche configurada a las 23:52 y puede avanzar otro día en minutos.
+    const targetOccurredToday = nowMinutes >= targetMinutes;
+    const elapsed = targetOccurredToday ? nowMinutes - targetMinutes : 1440;
     if (elapsed > 0 && elapsed <= MEDITATION_CATCHUP_MINUTES) {
       // El catch-up sólo ocupa el slot actual si la meditación realmente falta.
       // Si ya fue enviada en su horario, no debe bloquear un intermedio posterior

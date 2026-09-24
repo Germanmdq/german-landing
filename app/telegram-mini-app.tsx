@@ -517,17 +517,6 @@ function practiceDuration(enrollment: ProgressEnrollment): number {
   return Math.max(1, enrollment.current_day);
 }
 
-function expectedDeliveriesPerDay(): number {
-  // Formato actual de todos los talleres: 4 meditaciones + 32 textos.
-  return 36;
-}
-
-function progressStatusLabel(status: ProgressEnrollment['status']) {
-  if (status === 'completed') return 'Terminada';
-  if (status === 'abandoned') return 'Abandonada';
-  return 'Activa';
-}
-
 function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   const [history, setHistory] = useState<ProgressEnrollment[]>([]);
   const [deliveries, setDeliveries] = useState<ProgressDelivery[]>([]);
@@ -551,18 +540,15 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
     return () => { cancelled = true; };
   }, [user.id]);
 
-  const primaryEnrollment = history.find((enrollment) => enrollment.status === 'active') ?? history[0] ?? null;
-  const previousEnrollments = primaryEnrollment
-    ? history.filter((enrollment) => enrollment.id !== primaryEnrollment.id)
-    : [];
+  const primaryEnrollment = history.find((enrollment) => enrollment.status === 'active') ?? null;
 
   const renderPrimaryEnrollment = (enrollment: ProgressEnrollment) => {
     const ownDeliveries = deliveries.filter((delivery) => delivery.enrollment_id === enrollment.id);
     const totalDays = practiceDuration(enrollment);
-    const totalExpectedDeliveries = totalDays * expectedDeliveriesPerDay();
-    const progressPct = enrollment.status === 'completed'
-      ? 100
-      : Math.min(100, Math.round((ownDeliveries.length / Math.max(1, totalExpectedDeliveries)) * 100));
+    const deliveredDay = ownDeliveries.reduce((maxDay, delivery) => Math.max(maxDay, delivery.day_number), 1);
+    const displayDay = Math.min(totalDays, deliveredDay);
+    const progressPct = Math.min(100, (displayDay / totalDays) * 100);
+    const progressLabel = Number.isInteger(progressPct) ? String(progressPct) : progressPct.toFixed(1);
     const openedDeliveries = ownDeliveries.filter((delivery) => Boolean(delivery.seen_at)).length;
     const commitmentPct = ownDeliveries.length ? Math.round((openedDeliveries / ownDeliveries.length) * 100) : 0;
     const commitmentState = commitmentPct >= 67 ? 'Bueno' : commitmentPct >= 34 ? 'Regular' : 'Malo';
@@ -573,23 +559,22 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
     return <section className="progress-card progress-card-primary" key={enrollment.id}>
       <div className="progress-primary-heading">
         <p>{title}</p>
-        <b>{progressStatusLabel(enrollment.status)} · Día {Math.min(enrollment.current_day, totalDays)} de {totalDays}</b>
+        <b>Día {displayDay} de {totalDays}</b>
       </div>
       <div className="progress-pies">
-        <div className="progress-pie-block">
-          <div className="progress-pie" style={{ '--progress': `${progressPct * 3.6}deg` } as React.CSSProperties} aria-label={`${progressPct}% de avance`}>
-            <span><b>{progressPct}%</b><small>Avance</small></span>
-          </div>
-          <p>{ownDeliveries.length} de {totalExpectedDeliveries} entregas recibidas</p>
+        <div className="progress-metric">
+          <div className="progress-pie" style={{ '--progress': `${progressPct * 3.6}deg` } as React.CSSProperties} aria-label={`${progressLabel}% de avance`} />
+          <div className="progress-pie-copy"><b>{progressLabel}%</b><small>Avance</small><p>Día {displayDay} de {totalDays}</p></div>
         </div>
-        <div className="progress-pie-block">
-          <div className="progress-pie progress-pie-commitment" style={{ '--progress': `${commitmentPct * 3.6}deg` } as React.CSSProperties} aria-label={`${commitmentPct}% de compromiso`}>
-            <span><b>{commitmentPct}%</b><small>Compromiso</small></span>
-          </div>
-          <p>{openedDeliveries} de {ownDeliveries.length} abiertas · {commitmentState}</p>
+        <div className="progress-metric">
+          <div className="progress-pie progress-pie-commitment" style={{ '--progress': `${commitmentPct * 3.6}deg` } as React.CSSProperties} aria-label={`${commitmentPct}% de compromiso`} />
+          <div className="progress-pie-copy"><b>{commitmentPct}%</b><small>Compromiso</small><p>{openedDeliveries} de {ownDeliveries.length} abiertas · {commitmentState}</p></div>
         </div>
       </div>
-      <small className="progress-started">Comenzó {new Date(enrollment.started_at).toLocaleDateString('es-AR')}</small>
+      <div className="progress-activity-summary">
+        <b>Actividad</b>
+        <span>{ownDeliveries.length} {ownDeliveries.length === 1 ? 'entrega recibida' : 'entregas recibidas'} · {openedDeliveries} {openedDeliveries === 1 ? 'abierta' : 'abiertas'}</span>
+      </div>
       {ownDeliveries.length > 0 && <details className="progress-delivery-details">
         <summary>Ver detalle de entregas</summary>
         <div className="progress-delivery-history">
@@ -617,22 +602,8 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
     <FixedHeader eyebrow="MI PERFIL" title="Estado" subtitle="Tu avance y tu compromiso en el taller." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body progress-screen">
       {loading && <p className="library-empty">Cargando tu historial…</p>}
-      {!loading && !history.length && <p className="library-empty">Todavía no tenés prácticas en tu historial.</p>}
+      {!loading && !primaryEnrollment && <p className="library-empty">No tenés un taller activo en este momento.</p>}
       {!loading && primaryEnrollment && renderPrimaryEnrollment(primaryEnrollment)}
-      {!loading && previousEnrollments.length > 0 && <details className="progress-history">
-        <summary>Historial · {previousEnrollments.length} {previousEnrollments.length === 1 ? 'taller anterior' : 'talleres anteriores'}</summary>
-        <div className="progress-history-list">
-          {previousEnrollments.map((enrollment) => {
-            const totalDays = practiceDuration(enrollment);
-            const customTopic = typeof enrollment.custom_config?.tema === 'string' ? enrollment.custom_config.tema : '';
-            const customDuration = typeof enrollment.custom_config?.duracion === 'string' ? enrollment.custom_config.duracion : '';
-            const title = customTopic ? `${customTopic} · ${customDuration}` : enrollment.collections?.title || 'Práctica';
-            return <div className="progress-history-row" key={enrollment.id}>
-              <span><b>{title}</b><small>{progressStatusLabel(enrollment.status)} · Día {Math.min(enrollment.current_day, totalDays)} de {totalDays}</small></span>
-            </div>;
-          })}
-        </div>
-      </details>}
     </div>
   </section>;
 }
