@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { AlertCircle, ArrowLeft, Heart, MessageCircleMore, Moon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -8,17 +9,25 @@ import { LoginGate } from './login-gate';
 import { AccessPaywall } from './access-paywall';
 import { AudioWaveLoader } from './audio-wave-loader';
 import { AnimatedInterfaceIcon } from './animated-interface-icon';
-import { deliveryTypeLabels, extractDeliveryParagraphs, type TallerDeliveryType } from '../lib/taller-delivery';
+import { deliveryTypeLabels, extractDeliveryParagraphs, intermediateDisplayNumber, type TallerDeliveryType } from '../lib/taller-delivery';
 
 type DeliveryView = {
   dayNumber: number;
   deliveryType: TallerDeliveryType;
   messageIndex: number | null;
+  messageDisplayNumber: number | null;
   title: string;
   deliveredAt: string;
   paragraphs: string[];
   audioUrl?: string;
 };
+
+function renderSimpleBold(text: string): ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return <>{parts.map((part, index) => part.startsWith('**') && part.endsWith('**')
+    ? <strong key={index}>{part.slice(2, -2)}</strong>
+    : <span key={index}>{part}</span>)}</>;
+}
 
 export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -99,6 +108,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
         dayNumber: row.day_number,
         deliveryType,
         messageIndex: row.message_index,
+        messageDisplayNumber: deliveryType === 'intermediate_message' ? intermediateDisplayNumber(item?.body || '', row.message_index) : null,
         title: item?.title || deliveryTypeLabels[deliveryType],
         deliveredAt: row.delivered_at,
         paragraphs,
@@ -137,7 +147,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     const isIntermediate = delivery.deliveryType === 'intermediate_message';
     const isTextMessage = isIntermediate && delivery.paragraphs.length > 0;
     const favoriteTitle = isIntermediate
-      ? `Mensaje ${delivery.messageIndex ?? '—'}`
+      ? `Mensaje ${delivery.messageDisplayNumber ?? delivery.messageIndex ?? '—'}`
       : deliveryTypeLabels[delivery.deliveryType];
     const payload = {
       id,
@@ -207,9 +217,9 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
       <div className="delivery-text-card">
         <div className="delivery-text-icon" aria-hidden="true"><span className="motion-icon motion-icon--message"><MessageCircleMore size={30} strokeWidth={1.8} /></span></div>
         <p className="delivery-text-eyebrow">MENSAJE DE GERMÁN · DÍA {delivery.dayNumber}</p>
-        <h1>Recordatorio {delivery.messageIndex ?? ''}</h1>
+        <h1>Recordatorio {delivery.messageDisplayNumber ?? delivery.messageIndex ?? ''}</h1>
         <div className="delivery-text-body">
-          {delivery.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+          {delivery.paragraphs.map((paragraph, index) => <p key={index}>{renderSimpleBold(paragraph)}</p>)}
         </div>
       </div>
     </section>}

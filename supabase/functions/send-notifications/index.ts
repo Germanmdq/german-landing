@@ -249,12 +249,22 @@ async function getIntermediateAsset(contentId: string, messageIndex: number) {
 
 function getIntermediateText(body: string, messageIndex: number) {
   const normalizedBody = body.replace(/<br\s*\/?>/gi, '\n').replace(/\r\n?/g, '\n');
-  const marker = new RegExp(`(?:^|\\n)\\s*0*${messageIndex}\\.\\s*`, 'm');
+  const marker = new RegExp(`(?:^|\\n)\\s*(?:\\*\\*)?0*${messageIndex}\\.(?:\\*\\*)?\\s*`, 'm');
   const match = marker.exec(normalizedBody);
-  if (!match) return null;
-  const afterMarker = normalizedBody.slice(match.index + match[0].length);
-  const nextMarkerIndex = afterMarker.search(/\n\s*0*\d+\.\s*/m);
-  const text = (nextMarkerIndex >= 0 ? afterMarker.slice(0, nextMarkerIndex) : afterMarker).trim();
+  if (match) {
+    const afterMarker = normalizedBody.slice(match.index + match[0].length);
+    const nextMarkerIndex = afterMarker.search(/\n\s*(?:\*\*)?0*\d+\.(?:\*\*)?\s*/m);
+    const text = (nextMarkerIndex >= 0 ? afterMarker.slice(0, nextMarkerIndex) : afterMarker).trim();
+    return text || null;
+  }
+
+  const matches = [...normalizedBody.matchAll(/(?:^|\n)\s*(?:\*\*)?(\d+)\.(?:\*\*)?\s*/gm)];
+  const current = matches[messageIndex - 1];
+  if (!current || current.index == null) return null;
+  const next = matches[messageIndex];
+  const start = current.index + current[0].length;
+  const end = next?.index ?? normalizedBody.length;
+  const text = normalizedBody.slice(start, end).trim();
   return text || null;
 }
 

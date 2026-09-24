@@ -32,7 +32,7 @@ import { LoginGate } from './components/login-gate';
 import { AccessPaywall } from './components/access-paywall';
 import { AudioWaveLoader } from './components/audio-wave-loader';
 import { AnimatedInterfaceIcon, type AnimatedInterfaceIconName } from './components/animated-interface-icon';
-import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, type TallerDeliveryType } from './lib/taller-delivery';
+import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, intermediateDisplayNumber, type TallerDeliveryType } from './lib/taller-delivery';
 
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'audiolibros' | 'consultas' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string; audios?: { label: string; url: string }[]; highlightQuery?: string };
@@ -70,9 +70,9 @@ const momentIcons = ['🎯', '🌬️', '🌙', '💬', '📰', '🧭', '🤍', 
 
 const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
   talleres: { eyebrow: 'PRÁCTICAS GUIADAS', title: 'Elegí una práctica', subtitle: 'Recorridos preparados para acompañarte paso a paso.', items: [
-    { icon: '🌱', title: 'Práctica de 7 días', detail: 'Recorrido guiado de 7 días.', tone: palette[0], programPanel: { slug: 'practica-guiada-7-dias', title: 'Práctica guiada de 7 días', subtitle: 'Un recorrido preparado de principio a fin.' } },
-    { icon: '🌿', title: 'Práctica de 15 días', detail: 'Recorrido guiado de 15 días.', tone: palette[1], programPanel: { slug: 'practica-guiada-15-dias', title: 'Práctica guiada de 15 días', subtitle: 'Un recorrido preparado de principio a fin.' } },
-    { icon: '🌳', title: 'Prácticas de 40 días', detail: 'Autoconcepto y control de la imaginación.', tone: palette[3], programPanel: { slug: 'taller-40-dias', title: 'Taller de 40 días', subtitle: 'Autoconcepto y control de la imaginación.' } },
+    { icon: '🌱', title: 'Práctica de 7 días', detail: 'Intensidad directa · breve y al grano.', tone: palette[0], programPanel: { slug: 'practica-guiada-7-dias', title: 'Práctica guiada de 7 días', subtitle: 'Autoconcepto · intensidad directa.' } },
+    { icon: '🌿', title: 'Práctica de 15 días', detail: 'Intensidad intermedia · soltar espera, duda y control.', tone: palette[1], programPanel: { slug: 'practica-guiada-15-dias', title: 'Práctica guiada de 15 días', subtitle: 'Autoconcepto · intensidad intermedia.' } },
+    { icon: '🌳', title: 'Prácticas de 40 días', detail: 'Recorrido completo · autoconcepto y control de la imaginación.', tone: palette[3], programPanel: { slug: 'taller-40-dias', title: 'Taller de 40 días', subtitle: 'Autoconcepto · recorrido completo y profundo.' } },
   ] },
   // "Tu propia práctica" ya no es un deck navegable: es un formulario único
   // (PropiaPracticaPanel) que intercepta la pestaña 'propia' directamente.
@@ -518,11 +518,9 @@ function practiceDuration(enrollment: ProgressEnrollment): number {
 }
 
 function expectedDeliveriesPerDay(enrollment: ProgressEnrollment): number {
-  const slug = enrollment.collections?.slug || '';
-  // Las prácticas personalizadas de 7 días usan 4 meditaciones + 32 intermedios.
-  if (/^practica-7-dias-(amor|dinero|salud)$/.test(slug)) return 36;
-  // El resto de los recorridos actuales trabaja con 4 meditaciones + ~26 mensajes.
-  return 30;
+  void enrollment;
+  // Formato común actual: 4 meditaciones + 32 mensajes intermedios.
+  return 36;
 }
 
 function progressStatusLabel(status: ProgressEnrollment['status']) {
@@ -612,10 +610,17 @@ function ConfigurationPanel({ onBack, onNavigate }: { onBack: () => void; onNavi
   </section>;
 }
 
+function renderSimpleBold(text: string): ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return <>{parts.map((part, index) => part.startsWith('**') && part.endsWith('**')
+    ? <strong key={index}>{part.slice(2, -2)}</strong>
+    : <span key={index}>{part}</span>)}</>;
+}
+
 function Reader({ content: reader, onBack, onNavigate, favorite, onFavorite }: { content: ReaderContent; onBack: () => void; onNavigate: (target: NavTarget) => void; favorite: boolean; onFavorite: () => void }) {
   const libraryMode = reader.eyebrow === 'AUDIO' || reader.eyebrow === 'TEXTO';
   const audioOnly = Boolean(reader.audioUrl || reader.audios?.length);
-  return <section className={`reader-section${libraryMode ? ' library-reader-section' : ''}`}><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} onNavigate={onNavigate} /><article className="reader-body"><button className={`reader-favorite${favorite ? ' is-favorite' : ''}`} onClick={onFavorite}><Heart size={18} fill={favorite ? 'currentColor' : 'none'} /></button>{reader.audioUrl && <AudioPlayer title={reader.title} audioUrl={reader.audioUrl} />}{reader.audios?.map((audio) => <AudioPlayer key={audio.label} title={audio.label} audioUrl={audio.url} />)}{!audioOnly && reader.paragraphs.map((paragraph, index) => <p key={index}>{reader.highlightQuery ? highlightText(paragraph, reader.highlightQuery) : paragraph}</p>)}</article></section>;
+  return <section className={`reader-section${libraryMode ? ' library-reader-section' : ''}`}><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} onNavigate={onNavigate} /><article className="reader-body"><button className={`reader-favorite${favorite ? ' is-favorite' : ''}`} onClick={onFavorite}><Heart size={18} fill={favorite ? 'currentColor' : 'none'} /></button>{reader.audioUrl && <AudioPlayer title={reader.title} audioUrl={reader.audioUrl} />}{reader.audios?.map((audio) => <AudioPlayer key={audio.label} title={audio.label} audioUrl={audio.url} />)}{!audioOnly && reader.paragraphs.map((paragraph, index) => <p key={index}>{reader.highlightQuery ? highlightText(paragraph, reader.highlightQuery) : renderSimpleBold(paragraph)}</p>)}</article></section>;
 }
 
 function AccountPanel({ user, fullName, onBack, onNavigate, onNameSaved, onLogout }: { user: User; fullName: string | null; onBack: () => void; onNavigate: (target: NavTarget) => void; onNameSaved: (name: string) => void; onLogout: () => void }) {
@@ -1109,6 +1114,35 @@ const workshopMomentPickerLabels: Record<typeof workshopMomentKeys[number], stri
 const defaultWorkshopSchedule: WorkshopSchedule = { morning: '07:00', noon: '12:00', afternoon: '17:00', night: '22:00' };
 const workshopIntervalOptions = [30, 40, 50, 120] as const;
 const workshopIntervalLabel = (minutes: number) => minutes === 120 ? 'Cada 2 horas' : `Cada ${minutes} min`;
+const guidedProgramMeta: Record<string, { days: number; introSubtitle: string; introParagraphs: string[] }> = {
+  'practica-guiada-7-dias': {
+    days: 7,
+    introSubtitle: '7 días · intensidad directa. Un recorrido breve, concentrado y al grano.',
+    introParagraphs: [
+      'Este es el recorrido más directo. Durante 7 días vas a trabajar el autoconcepto con intensidad: asumir quién elegís ser, sentirlo como real y volver a ese estado cada vez que la vieja identidad intente aparecer.',
+      'Cada día vas a recibir 4 meditaciones guiadas — mañana, mediodía, tarde y noche — y 32 mensajes intermedios para mantener la atención en el estado elegido.',
+      'La idea no es acumular teoría. Es practicar con decisión durante una semana y mover rápido la posición interior desde la que estás viviendo.',
+    ],
+  },
+  'practica-guiada-15-dias': {
+    days: 15,
+    introSubtitle: '15 días · intensidad intermedia. Más espacio para dejar la espera, la duda y el control.',
+    introParagraphs: [
+      'Este recorrido te da más tiempo para hacer natural el nuevo autoconcepto. Durante 15 días vamos a trabajar especialmente la espera, la duda y la necesidad de controlar cuándo o cómo tiene que aparecer el resultado.',
+      'Cada día vas a recibir 4 meditaciones guiadas — mañana, mediodía, tarde y noche — y 32 mensajes intermedios para ayudarte a volver al estado sin convertir la práctica en tensión.',
+      'Acá el trabajo no es una explosión de intensidad: es volver, sostener y dejar que la nueva posición se vuelva cada vez más familiar.',
+    ],
+  },
+  'taller-40-dias': {
+    days: 40,
+    introSubtitle: '40 días · recorrido completo y profundo de autoconcepto y control de la imaginación.',
+    introParagraphs: [
+      'Este es el recorrido más completo. Durante 40 días vas a trabajar de manera sostenida el autoconcepto y el control de la imaginación hasta que la nueva identidad deje de sentirse como una práctica y empiece a sentirse natural.',
+      'Cada día vas a recibir 4 meditaciones guiadas — mañana, mediodía, tarde y noche — y 32 mensajes intermedios para mantener tu atención enfocada. Vos elegís cada cuánto te llegan.',
+      'No se trata de forzar durante 40 días. Se trata de volver una y otra vez a la identidad elegida hasta que sea el lugar desde el que vivís.',
+    ],
+  },
+};
 const detectTimezone = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; } };
 const shiftHours = (time: string, hours: number) => {
   const [h, m] = time.split(':').map(Number);
@@ -1121,6 +1155,8 @@ type WorkshopOnboardingStep = 'intro' | 'schedule' | 'frequency' | 'summary';
 type ActiveProgramEnrollment = { id: string; collection_id: string; current_day: number; morning: string; noon: string; afternoon: string; night: string; timezone: string; message_interval_minutes: number; collections: { title: string } | null };
 
 function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: User; program: ProgramPanelConfig; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (reader: ReaderContent) => void }) {
+  const programMeta = guidedProgramMeta[program.slug] || guidedProgramMeta['taller-40-dias'];
+  const programDays = programMeta.days;
   const [deliveries, setDeliveries] = useState<TallerDelivery[]>([]);
   const [collectionId, setCollectionId] = useState<string | null>(null);
   const [enrollmentId, setEnrollmentId] = useState<string | null>(null);
@@ -1334,7 +1370,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
       </div>
       {confirmingAbandon && <ConfirmDialog
         title={`¿Querés abandonar ${activeTitle}?`}
-        description={`Vas a dejar de recibir sus prácticas y notificaciones. Taller de 40 días comenzará desde el Día 1.`}
+        description={`Vas a dejar de recibir sus prácticas y notificaciones. ${program.title} comenzará desde el Día 1.`}
         confirmLabel={saving ? 'Un momento…' : 'Abandonar y empezar'}
         cancelLabel="Seguir con mi programa"
         onCancel={() => { if (!saving) setConfirmingAbandon(false); }}
@@ -1344,11 +1380,9 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
   }
 
   if (stage === 'onboarding' && step === 'intro') return <section className="reader-section">
-    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de Autoconcepto" subtitle="40 días para transformar cómo te ves y cómo ves la vida." onBack={onBack} onNavigate={onNavigate} />
+    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title={program.title} subtitle={programMeta.introSubtitle} onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body">
-      <p>Este es un recorrido de 40 días diseñado para volver a tu fuente. Cada día vas a recibir 4 meditaciones guiadas — una a la mañana, al mediodía, a la tarde y a la noche — que te van a acompañar a reconstruir tu autoconcepto desde adentro.</p>
-      <p>Además, durante el día vas a recibir mensajes breves con frases e ideas para mantener tu atención enfocada. Vos elegís cada cuánto te llegan.</p>
-      <p>No tenés que hacer nada más que escuchar y estar presente. Todo te llega por notificación, en el momento justo.</p>
+      {programMeta.introParagraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
       <ShimmerButton type="button" className="account-save" onClick={() => setStep('schedule')}>Comenzar configuración →</ShimmerButton>
     </div>
   </section>;
@@ -1389,7 +1423,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
         <div className="ios-row"><span className="ios-row-label">Meditación de la tarde</span><span className="ios-row-value">{schedule.afternoon}</span></div>
         <div className="ios-row"><span className="ios-row-label">Meditación de la noche</span><span className="ios-row-value">{schedule.night}</span></div>
         <div className="ios-row"><span className="ios-row-label">Mensajes intermedios</span><span className="ios-row-value ios-row-value--muted">{workshopIntervalLabel(messageInterval)}</span></div>
-        <div className="ios-row"><span className="ios-row-label">Duración</span><span className="ios-row-value ios-row-value--muted">40 días</span></div>
+        <div className="ios-row"><span className="ios-row-label">Duración</span><span className="ios-row-value ios-row-value--muted">{programDays} días</span></div>
       </div>
       {saveError && <p className="account-message">{saveError}</p>}
       <ShimmerButton type="button" className="account-save" onClick={startWorkshop} disabled={saving}>{saving ? 'Un momento…' : 'Comenzar taller'}</ShimmerButton>
@@ -1397,7 +1431,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
   </section>;
 
   if (stage === 'edit-schedule') return <section className="reader-section workshop-section">
-    <FixedHeader eyebrow="TALLER DE 40 DÍAS" title="Cambiar horarios" subtitle="Los cambios se aplican desde ahora. Tu día y tu progreso no se modifican." onBack={() => { setSaveError(''); setStage('days'); }} onNavigate={onNavigate} />
+    <FixedHeader eyebrow={`TALLER DE ${programDays} DÍAS`} title="Cambiar horarios" subtitle="Los cambios se aplican desde ahora. Tu día y tu progreso no se modifican." onBack={() => { setSaveError(''); setStage('days'); }} onNavigate={onNavigate} />
     <div className="reader-body workshop-browser">
       <div className="workshop-schedule-pills">
         <button className="workshop-schedule-pill" onClick={() => setEditingTimezone(true)} aria-haspopup="dialog"><span className="ios-row-label">Zona horaria</span><span className="ios-row-value ios-row-value--muted">{timezone.replace(/_/g, ' ')}<ChevronRight size={17} /></span></button>
@@ -1418,17 +1452,17 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
   if (stage === 'confirmed') return <section className="reader-section">
     <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="¡Listo!" subtitle="Ya está todo configurado." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body">
-      <p>¡Listo! Tu taller empieza ahora. Vas a recibir tu primera entrega en el próximo horario disponible de tu configuración. Preparate para 40 días que te van a cambiar la vida.</p>
+      <p>¡Listo! Tu taller empieza ahora. Vas a recibir tu primera entrega en el próximo horario disponible de tu configuración. Preparate para {programDays} días de práctica.</p>
       <ShimmerButton type="button" className="account-save" onClick={() => setStage('days')}>Ver el taller</ShimmerButton>
     </div>
   </section>;
 
   return <section className="reader-section workshop-section">
-    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Taller de 40 días" subtitle={currentDay != null ? `Vas por el día ${currentDay} de 40.` : 'Autoconcepto y control de la imaginación.'} onBack={onBack} onNavigate={onNavigate} />
+    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title={program.title} subtitle={currentDay != null ? `Vas por el día ${currentDay} de ${programDays}.` : program.subtitle} onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body workshop-browser">
-      {currentDay != null && <section className="workshop-progress-preview" aria-label={`Día ${currentDay} de 40`}>
-        <div className="workshop-progress-copy"><span>Tu recorrido</span><b>Día {currentDay} de 40</b><small>{Math.max(0, 40 - currentDay)} días por delante</small></div>
-        <div className="workshop-progress-track" aria-hidden="true"><span style={{ width: `${Math.min(100, Math.max(0, (currentDay / 40) * 100))}%` }} /></div>
+      {currentDay != null && <section className="workshop-progress-preview" aria-label={`Día ${currentDay} de ${programDays}`}>
+        <div className="workshop-progress-copy"><span>Tu recorrido</span><b>Día {currentDay} de {programDays}</b><small>{Math.max(0, programDays - currentDay)} días por delante</small></div>
+        <div className="workshop-progress-track" aria-hidden="true"><span style={{ width: `${Math.min(100, Math.max(0, (currentDay / programDays) * 100))}%` }} /></div>
       </section>}
       <div className="workshop-schedule-action">
         <button type="button" className="workshop-schedule-pill" onClick={() => { setSaveError(''); setStage('edit-schedule'); }}><span className="ios-row-label">Cambiar horarios</span><span className="ios-row-value">{schedule.morning} · {schedule.noon} · {schedule.afternoon} · {schedule.night}<ChevronRight size={17} /></span></button>
@@ -1452,7 +1486,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
       <button type="button" className="workshop-abandon" onClick={() => setConfirmingAbandon(true)}>Abandonar programa</button>
     </div>
     {confirmingAbandon && <ConfirmDialog
-      title="¿Querés abandonar Taller de 40 días?"
+      title={`¿Querés abandonar ${program.title}?`}
       description="Vas a dejar de recibir sus prácticas y notificaciones. Podrás empezar otro programa desde el Día 1."
       confirmLabel={saving ? 'Un momento…' : 'Abandonar programa'}
       onCancel={() => { if (!saving) setConfirmingAbandon(false); }}
@@ -1677,8 +1711,11 @@ export default function TelegramMiniApp() {
         const delivery = deliveryMap.get(deliveryId);
         if (!delivery) return favorite;
         const label = deliveryTypeLabels[delivery.delivery_type];
+        const displayNumber = delivery.delivery_type === 'intermediate_message'
+          ? intermediateDisplayNumber(delivery.body, delivery.message_index)
+          : null;
         const title = delivery.delivery_type === 'intermediate_message'
-          ? `Mensaje ${delivery.message_index ?? '—'}`
+          ? `Mensaje ${displayNumber ?? delivery.message_index ?? '—'}`
           : label;
         const detail = `Día ${delivery.day_number} · ${label}`;
         const textParagraphs = delivery.delivery_type === 'intermediate_message' && delivery.message_index != null
