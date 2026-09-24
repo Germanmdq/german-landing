@@ -73,3 +73,23 @@ test('las animaciones son sólo de entrada y respetan movimiento reducido', () =
   assert.match(css, /prefers-reduced-motion: reduce/);
   assert.match(css, /safe-area-inset-bottom/);
 });
+
+test('Consultas: la sección se ve y el bloqueo va al enviar, antes de guardar nada', () => {
+  assert.match(widgets, /consultas: true,/);
+  const submitAt = app.indexOf('const submit = async () => {');
+  const gateAt = app.indexOf("if (isLaunchPending('consultas')) { setNotice(''); setLaunchCardOpen(true); return; }", submitAt);
+  const insertAt = app.indexOf(".from('user_consultations').insert(", submitAt);
+  const workingAt = app.indexOf('setWorking(true);', submitAt);
+  assert.ok(submitAt > 0 && gateAt > submitAt && gateAt < insertAt && gateAt < workingAt, 'el gate corre antes del insert y del loader');
+  assert.match(app, /\{launchCardOpen && <LaunchDateCard \/>\}/);
+  assert.doesNotMatch(app, /tab === 'consultas' && !trail\.length && isLaunchPending/);
+});
+
+test('Fotos de "¿Qué necesitás ahora?": versionadas y el carrusel no deja el shimmer eterno', () => {
+  assert.match(app, /image: `\/images\/meditacion-\$\{String\(index \+ 1\)\.padStart\(2, '0'\)\}\.webp\?v=\$\{MEDITATION_IMAGE_VERSION\}`/);
+  const carousel = read('app/components/day-one-carousel.tsx');
+  assert.match(carousel, /const FALLBACK_IMAGE = '\/images\/momento\.webp';/);
+  assert.match(carousel, /onError=\{\(\) => handleImageError\(index, item\.image!\)\}/);
+  assert.match(carousel, /element\?\.complete && element\.naturalWidth > 0/);
+  assert.match(carousel, /retry=\$\{Date\.now\(\)\}/);
+});

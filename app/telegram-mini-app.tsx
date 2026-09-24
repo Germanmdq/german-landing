@@ -67,6 +67,8 @@ const deckFavorite = (item: DeckItem): FavoriteRecord => ({ id: `deck:${item.tit
 const libraryFavorite = (entry: LibraryEntry): FavoriteRecord => ({ id: `library:${entry.id}`, title: entry.title, detail: entry.excerpt || 'Biblioteca', icon: entry.audioUrl ? '🎙️' : '📖', tone: palette[0], reader: { title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration } });
 const touchContentProgress = (userId: string, contentKey: string, contentType: string, progress: Record<string, unknown> = {}) => { void supabase.from('user_content_progress').upsert({ user_id: userId, content_key: contentKey, content_type: contentType, progress, last_opened_at: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: 'user_id,content_key' }).then(({ error }) => { if (error) console.error('[progress] sync error:', error); }); };
 
+const MEDITATION_IMAGE_VERSION = '20260924-1';
+
 const momentIcons = ['🎯', '🌬️', '🌙', '💬', '📰', '🧭', '🤍', '🌧️', '🎤', '🫶', '☀️', '🌆', '🛡️', '🙏', '✨'] as const;
 
 const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
@@ -152,6 +154,7 @@ function PreguntamePanel({ user, onBack, onNavigate }: { user: User; onBack: () 
   const [working, setWorking] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [notice, setNotice] = useState('');
+  const [launchCardOpen, setLaunchCardOpen] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recognitionRef = useRef<{ stop: () => void } | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -198,6 +201,9 @@ function PreguntamePanel({ user, onBack, onNavigate }: { user: User; onBack: () 
   const submit = async () => {
     const question = prompt.trim();
     if (!question || working) return;
+    // Antes del lanzamiento la consulta no se guarda ni se procesa: sólo se
+    // muestra la fecha. El texto queda en la caja.
+    if (isLaunchPending('consultas')) { setNotice(''); setLaunchCardOpen(true); return; }
     setWorking(true); setElapsed(0); setNotice('');
     timerRef.current = setInterval(() => setElapsed((value) => value + 1), 1000);
     const { error } = await supabase.from('user_consultations').insert({ user_id: user.id, question, source: 'text', status: 'pending' });
@@ -218,6 +224,7 @@ function PreguntamePanel({ user, onBack, onNavigate }: { user: User; onBack: () 
         <div className="prompt-actions"><button type="button" className="prompt-mic" onClick={toggleVoice} aria-label={listening ? 'Detener dictado' : 'Dictar pregunta'}>{listening ? <Square size={16} fill="currentColor" /> : <Mic size={20} />}</button><button type="button" className="prompt-send" disabled={!prompt.trim() || working} onClick={submit} aria-label="Enviar pregunta"><ArrowUp size={20} strokeWidth={2.5} /></button></div>
       </div>
       {notice && <p className="preguntame-notice">{notice}</p>}
+      {launchCardOpen && <LaunchDateCard />}
       <div className="preguntame-suggestions"><button onClick={() => setPrompt('No puedo dejar de pensar en algo que pasó')}>No puedo dejar de pensar</button><button onClick={() => setPrompt('Tengo miedo de que algo salga mal')}>Tengo miedo</button><button onClick={() => setPrompt('¿Cómo vuelvo a sentirme seguro?')}>Quiero sentirme seguro</button></div>
     </div>
   </section>;
@@ -2117,7 +2124,8 @@ export default function TelegramMiniApp() {
             title: row.title || 'Meditación',
             detail: 'Meditación para este momento.',
             tone: palette[index % palette.length],
-            image: `/images/meditacion-${String(index + 1).padStart(2, '0')}.webp`,
+            // Versionada para no depender de una copia vieja en la caché del WebView de Telegram.
+            image: `/images/meditacion-${String(index + 1).padStart(2, '0')}.webp?v=${MEDITATION_IMAGE_VERSION}`,
             launchArea: 'meditaciones',
             reader: { title: row.title || 'Meditación', eyebrow: 'MEDITACIÓN PARA AHORA', detail: 'Escuchá la práctica.', paragraphs: [], audioUrl, duration: asset?.duration_seconds ? `${Math.round(asset.duration_seconds / 60)} min` : undefined },
           } as DeckItem;

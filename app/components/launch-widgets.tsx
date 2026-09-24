@@ -11,6 +11,8 @@ export const LAUNCH_PENDING = {
   meditaciones: true,
   curso365: true,
   libros: true,
+  // Consultas: la sección se ve completa; se bloquea recién al enviar.
+  consultas: true,
 } as const;
 
 export type LaunchArea = keyof typeof LAUNCH_PENDING;

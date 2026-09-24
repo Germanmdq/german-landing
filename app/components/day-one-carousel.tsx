@@ -2,6 +2,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Heart, Video } from 'lucide-react';
 
+// Imagen genérica si una foto no se puede cargar ni reintentando.
+const FALLBACK_IMAGE = '/images/momento.webp';
+
 type Item = { title: string; detail: string; image?: string; imageSize?: 'compact'; placeholder?: boolean; disabled?: boolean };
 export function DayOneCarousel<T extends Item>({
   items,
@@ -33,6 +36,25 @@ export function DayOneCarousel<T extends Item>({
   const [inView, setInView] = useState(true);
   const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set());
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
+  // Reintentos por imagen: 1) la misma URL con cache-buster; 2) una imagen
+  // genérica. Si todo falla, se retira el shimmer para no dejarlo eterno.
+  const [imageSources, setImageSources] = useState<Record<number, string>>({});
+  const imageAttemptsRef = useRef<Record<number, number>>({});
+  const markImageLoaded = (index: number) => setLoadedImages((prev) => (prev.has(index) ? prev : new Set(prev).add(index)));
+  const handleImageError = (index: number, originalSrc: string) => {
+    const attempt = (imageAttemptsRef.current[index] ?? 0) + 1;
+    imageAttemptsRef.current[index] = attempt;
+    if (attempt === 1) {
+      const retrySrc = `${originalSrc}${originalSrc.includes('?') ? '&' : '?'}retry=${Date.now()}`;
+      setImageSources((prev) => ({ ...prev, [index]: retrySrc }));
+      return;
+    }
+    if (attempt === 2 && originalSrc.split('?')[0] !== FALLBACK_IMAGE) {
+      setImageSources((prev) => ({ ...prev, [index]: FALLBACK_IMAGE }));
+      return;
+    }
+    markImageLoaded(index);
+  };
   const reduced = useRef(false);
 
   const move = useCallback((index: number, manual = true) => {
@@ -188,11 +210,16 @@ export function DayOneCarousel<T extends Item>({
             {!loadedImages.has(index) && <span className="day-one-image-placeholder" aria-hidden="true" />}
             <img
               className={`day-one-illustration${item.imageSize === 'compact' ? ' day-one-illustration--compact' : ''}`}
-              src={item.image}
+              src={imageSources[index] ?? item.image}
               alt=""
               draggable={false}
-              loading={index < 3 ? 'eager' : 'lazy'}
-              onLoad={() => setLoadedImages((prev) => (prev.has(index) ? prev : new Set(prev).add(index)))}
+              loading="eager"
+              decoding="async"
+              // Si la imagen ya estaba completa (por ejemplo, desde la caché)
+              // antes de conectar onLoad, igual se retira el shimmer.
+              ref={(element) => { if (element?.complete && element.naturalWidth > 0) markImageLoaded(index); }}
+              onLoad={() => markImageLoaded(index)}
+              onError={() => handleImageError(index, item.image!)}
             />
           </span>}
           {!item.image && item.placeholder && <span className="day-one-visual"><span className="day-one-placeholder" aria-hidden="true"><Video size={40} /></span></span>}
