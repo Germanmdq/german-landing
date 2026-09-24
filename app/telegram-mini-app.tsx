@@ -1369,7 +1369,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
   </section>;
 
   if (stage === 'onboarding' && step === 'frequency') return <section className="reader-section">
-    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Mensajes durante el día" subtitle="Cada día hay ~26 mensajes breves para mantener tu atención. ¿Cada cuánto querés recibirlos?" onBack={onBack} onNavigate={onNavigate} />
+    <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="Mensajes durante el día" subtitle="Cada día hay 32 mensajes breves para mantener tu atención. ¿Cada cuánto querés recibirlos?" onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body">
       <div className="ios-card workshop-pills-card">
         <div className="workshop-pills">{workshopIntervalOptions.map((minutes) => <button key={minutes} type="button" className={`workshop-pill${messageInterval === minutes ? ' active' : ''}`} onClick={() => setMessageInterval(minutes)}>{workshopIntervalLabel(minutes)}</button>)}</div>
@@ -1418,7 +1418,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
   if (stage === 'confirmed') return <section className="reader-section">
     <FixedHeader eyebrow="PRÁCTICAS GUIADAS" title="¡Listo!" subtitle="Ya está todo configurado." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body">
-      <p>¡Listo! Tu primera práctica llega mañana a las {schedule.morning}. Preparate para 40 días que te van a cambiar la mirada.</p>
+      <p>¡Listo! Tu taller empieza ahora. Vas a recibir tu primera entrega en el próximo horario disponible de tu configuración. Preparate para 40 días que te van a cambiar la vida.</p>
       <ShimmerButton type="button" className="account-save" onClick={() => setStage('days')}>Ver el taller</ShimmerButton>
     </div>
   </section>;
@@ -1433,7 +1433,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
       <div className="workshop-schedule-action">
         <button type="button" className="workshop-schedule-pill" onClick={() => { setSaveError(''); setStage('edit-schedule'); }}><span className="ios-row-label">Cambiar horarios</span><span className="ios-row-value">{schedule.morning} · {schedule.noon} · {schedule.afternoon} · {schedule.night}<ChevronRight size={17} /></span></button>
       </div>
-      {!deliveries.length && <p className="library-empty">Tu taller comienza pronto. Vas a recibir tu primera práctica en tu próximo horario configurado.</p>}
+      {!deliveries.length && <p className="library-empty">Tu taller empieza ahora. Vas a recibir tu primera entrega en el próximo horario disponible de tu configuración.</p>}
       {!!deliveries.length && <div className="workshop-days-list">{Array.from(new Set(deliveries.map((delivery) => delivery.dayNumber))).sort((a, b) => b - a).map((dayNumber) => {
         const dayDeliveries = deliveries.filter((delivery) => delivery.dayNumber === dayNumber);
         const isOpen = openDeliveryDays[dayNumber] ?? dayNumber === currentDay;
