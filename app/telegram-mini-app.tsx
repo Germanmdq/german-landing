@@ -43,7 +43,7 @@ type AudiobookChapter = { title: string; anchor: string; order: number; page?: n
 type AudiobookEntry = { id: string; slug: string; title: string; author: string; excerpt: string; body: string; chapters: AudiobookChapter[]; audioUrl?: string; pdfUrl?: string; durationSeconds?: number };
 type FavoriteRecord = { id: string; title: string; detail: string; icon: string; tone: string; reader?: ReaderContent };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
-type TallerDelivery = { id: string; dayNumber: number; deliveryType: TallerDeliveryType; deliveredAt: string; seenAt: string | null; title: string; paragraphs: string[]; audioUrl?: string };
+type TallerDelivery = { id: string; dayNumber: number; deliveryType: TallerDeliveryType; deliveredAt: string; seenAt: string | null; title: string; paragraphs: string[]; messageDisplayNumber?: number | null; audioUrl?: string };
 type WorkshopSchedule = { morning: string; noon: string; afternoon: string; night: string };
 type SectionPermissionKey = 'books' | 'course365' | 'consultations';
 type AccessPermissions = Partial<Record<'all' | SectionPermissionKey, boolean>>;
@@ -1229,6 +1229,9 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
               : undefined;
           const deliveryType = row.delivery_type as TallerDeliveryType;
           const paragraphs = extractDeliveryParagraphs(item?.body || '', deliveryType, row.message_index) || [];
+          const messageDisplayNumber = deliveryType === 'intermediate_message'
+            ? intermediateDisplayNumber(item?.body || '', row.message_index)
+            : null;
           return {
             id: row.id,
             dayNumber: row.day_number,
@@ -1237,6 +1240,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
             seenAt: row.seen_at,
             title: item?.title || `Día ${row.day_number}`,
             paragraphs,
+            messageDisplayNumber,
             audioUrl,
           } as TallerDelivery;
         });
@@ -1477,10 +1481,15 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
             <span><b>Día {dayNumber}</b><small>{dayDeliveries.length} {dayDeliveries.length === 1 ? 'entrega' : 'entregas'}</small></span>
             <ChevronDown size={20} aria-hidden="true" />
           </button>
-          {isOpen && <div className="library-content-list workshop-day-deliveries">{dayDeliveries.map((delivery) => <MagicCard key={delivery.id} className="library-content-card" onClick={() => openDelivery(delivery)}>
-            <div><p>{deliveryTypeLabels[delivery.deliveryType].toUpperCase()}</p><b className="card-title">{deliveryTypeLabels[delivery.deliveryType]}</b><em className="card-subtitle">Recibido {formatDeliveredAt(delivery.deliveredAt)}</em></div>
+          {isOpen && <div className="library-content-list workshop-day-deliveries">{dayDeliveries.map((delivery) => {
+            const isMessage = delivery.deliveryType === 'intermediate_message';
+            const deliveryTitle = isMessage
+              ? `Recordatorio ${delivery.messageDisplayNumber ?? ''}`.trim()
+              : deliveryTypeLabels[delivery.deliveryType];
+            return <MagicCard key={delivery.id} className="library-content-card workshop-delivery-card" onClick={() => openDelivery(delivery)}>
+            <div><p>{isMessage ? 'MENSAJE DE GERMÁN' : deliveryTypeLabels[delivery.deliveryType].toUpperCase()}</p><b className="card-title">{deliveryTitle}</b><em className="card-subtitle">Recibido {formatDeliveredAt(delivery.deliveredAt)}</em></div>
             <span className="library-card-actions">{delivery.seenAt ? <i className="delivery-seen" aria-label="Ya visto"><Check size={16} /></i> : <i className="delivery-unseen" aria-label="Sin ver" />}<i><ChevronRight size={19} /></i></span>
-          </MagicCard>)}</div>}
+          </MagicCard>})}</div>}
         </section>;
       })}</div>}
       {saveError && <p className="account-message" role="alert">{saveError}</p>}

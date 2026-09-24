@@ -704,8 +704,17 @@ body:has(.guided-photo-screen),
 .workshop-day-toggle small { color:#8e8e93; font-size:12px; }
 .workshop-day-toggle svg { color:#8e8e93; transition:transform 180ms ease; }
 .workshop-day-group.is-open .workshop-day-toggle svg { transform:rotate(180deg); }
-.workshop-day-deliveries { padding:0 10px 12px; display:flex; flex-direction:column; gap:8px; }
+.workshop-day-deliveries { padding:2px 14px 18px; display:flex; flex-direction:column; gap:14px; }
 .workshop-day-deliveries .library-content-card { background:#151517 !important; }
+.workshop-day-deliveries .workshop-delivery-card {
+  min-height:82px;
+  padding:16px 17px !important;
+  border:1px solid #2c2c30 !important;
+  border-radius:20px !important;
+  box-shadow:none !important;
+}
+.workshop-day-deliveries .workshop-delivery-card .card-title { margin-top:3px; }
+.workshop-day-deliveries .workshop-delivery-card .card-subtitle { margin-top:5px; }
 @media (prefers-reduced-motion: reduce) { .workshop-day-toggle svg { transition:none; } }
 
 /* Tu propia práctica: un solo lenguaje visual, todo en píldoras. */
