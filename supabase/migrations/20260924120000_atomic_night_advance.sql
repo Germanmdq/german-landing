@@ -58,13 +58,66 @@ $$;
 revoke all on function public.program_total_days(uuid) from public, anon, authenticated;
 grant execute on function public.program_total_days(uuid) to service_role;
 
+-- 3b) Ventana del día lógico (misma regla que schedule.ts).
+--
+-- Una fecha lógica va de 04:00 a 04:00 locales: la madrugada pertenece a la
+-- noche anterior. El día actual sólo puede generar entregas desde su primera
+-- fecha lógica válida: la de la inscripción para el Día 1, o la SIGUIENTE a
+-- la de la noche que cerró el día anterior. Así ninguna entrega del Día N+1
+-- sale la misma noche en que terminó el Día N, aunque cambien los horarios.
+create or replace function public.program_logical_date(p_at timestamptz, p_timezone text)
+returns date
+language sql
+stable
+set search_path = ''
+as $$
+  select ((p_at at time zone p_timezone) - interval '4 hours')::date;
+$$;
+
+create or replace function public.program_day_first_logical_date(p_current_day integer, p_day_started_at timestamptz, p_timezone text)
+returns date
+language sql
+stable
+set search_path = ''
+as $$
+  select public.program_logical_date(p_day_started_at, p_timezone)
+    + case when p_current_day > 1 then 1 else 0 end;
+$$;
+
+revoke all on function public.program_logical_date(timestamptz, text) from public, anon, authenticated;
+revoke all on function public.program_day_first_logical_date(integer, timestamptz, text) from public, anon, authenticated;
+grant execute on function public.program_logical_date(timestamptz, text) to service_role;
+grant execute on function public.program_day_first_logical_date(integer, timestamptz, text) to service_role;
+
+-- 3c) Cada vez que cambia current_day, el día lógico nuevo empieza ahora.
+--     deliver_program_night ya lo fija; esto cubre cualquier otro camino (por
+--     ejemplo, la Edge Function anterior durante el despliegue).
+create or replace function public.program_enrollments_track_day_start()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.current_day is distinct from old.current_day
+     and new.current_day_started_at is not distinct from old.current_day_started_at then
+    new.current_day_started_at := now();
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists program_enrollments_track_day_start on public.program_enrollments;
+create trigger program_enrollments_track_day_start
+before update on public.program_enrollments
+for each row execute function public.program_enrollments_track_day_start();
+
 -- 4) Registro de la noche + avance, en una transacción.
 --
 -- Devuelve jsonb { status, delivery_id, inserted }:
 --   advanced / completed      → la noche quedó registrada y el día avanzó
 --   stale                     → otra ejecución ya avanzó (current_day cambió)
 --   night_already_claimed     → esa fecha local ya tuvo su noche
---   before_day_start          → el horario es del día anterior al actual
+--   before_day_start          → el horario es anterior al día lógico actual
 --   not_yet                   → el horario todavía no llegó
 --   unknown_duration          → no se puede saber cuándo termina el programa
 --   missing_content           → falta contenido o audio: no se consume nada
@@ -104,7 +157,9 @@ begin
 
   -- Instante real del horario de la noche para esa fecha local.
   v_occurrence := (p_local_date + e.night) at time zone e.timezone;
-  if v_occurrence <= e.current_day_started_at then
+  if v_occurrence <= e.current_day_started_at
+     or public.program_logical_date(v_occurrence, e.timezone)
+        < public.program_day_first_logical_date(e.current_day, e.current_day_started_at, e.timezone) then
     return jsonb_build_object('status', 'before_day_start');
   end if;
   if v_occurrence > now() then
@@ -217,6 +272,14 @@ begin
 
   if new.delivery_type like 'meditation\_%' and new.asset_id is null then
     raise exception 'meditation delivery requires an audio asset' using errcode = '23502';
+  end if;
+
+  -- La noche la valida deliver_program_night con su propia ocurrencia. El
+  -- resto nunca puede salir antes de la ventana del día lógico actual.
+  if new.delivery_type <> 'meditation_night'
+     and public.program_logical_date(now(), enrollment.timezone)
+         < public.program_day_first_logical_date(enrollment.current_day, enrollment.current_day_started_at, enrollment.timezone) then
+    raise exception 'delivery is outside the current logical day window' using errcode = '55000';
   end if;
   return new;
 end;

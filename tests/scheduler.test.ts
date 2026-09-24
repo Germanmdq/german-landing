@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { decideMeditationSlot, latestOccurrence, toLocalStamp, type LocalStamp } from '../supabase/functions/send-notifications/schedule.ts';
+import { currentDayFirstLogicalDate, decideMeditationSlot, latestOccurrence, logicalDateOf, toLocalStamp, type LocalStamp } from '../supabase/functions/send-notifications/schedule.ts';
 
 const CATCH_UP = 30;
 const ALERT = 5;
@@ -9,8 +9,9 @@ const at = (date: string, hhmm: string): LocalStamp => {
   return { date, minutes: h * 60 + m };
 };
 const minutes = (hhmm: string) => at('2026-01-01', hhmm).minutes;
-const decide = (now: LocalStamp, target: string, dayStart: LocalStamp | null) =>
-  decideMeditationSlot(now, minutes(target), dayStart, CATCH_UP, ALERT);
+// currentDay = 2 por defecto: el día empezó con la noche anterior.
+const decide = (now: LocalStamp, target: string, dayStart: LocalStamp | null, currentDay = 2) =>
+  decideMeditationSlot(now, minutes(target), dayStart, currentDayFirstLogicalDate(dayStart, currentDay), CATCH_UP, ALERT);
 const occurrenceDate = (decision: ReturnType<typeof decide>) => (decision.kind === 'none' ? null : decision.occurrence.date);
 
 test('la ocurrencia de un horario queda ligada a su fecha local (hoy o ayer)', () => {
@@ -54,20 +55,30 @@ test('tarde 21:40 + noche 22:00: a las 22:01 no llega la tarde del día siguient
 
 test('nunca se recuperan horarios previos a la inscripción', () => {
   const enrolled = at('2026-09-24', '12:05');
-  assert.equal(decide(at('2026-09-24', '12:06'), '12:00', enrolled).kind, 'none');
-  assert.equal(decide(at('2026-09-24', '17:00'), '17:00', enrolled).kind, 'due-now');
+  assert.equal(decide(at('2026-09-24', '12:06'), '12:00', enrolled, 1).kind, 'none');
+  assert.equal(decide(at('2026-09-24', '17:00'), '17:00', enrolled, 1).kind, 'due-now');
   // Inscripción después de medianoche: la noche de ayer no le corresponde.
-  assert.equal(decide(at('2026-09-25', '00:10'), '23:50', at('2026-09-25', '00:02')).kind, 'none');
+  assert.equal(decide(at('2026-09-25', '00:10'), '23:50', at('2026-09-25', '00:02'), 1).kind, 'none');
 });
 
 test('dentro del margen recupera; después sólo alerta; más tarde nada', () => {
   const dayStart = at('2026-09-24', '06:00');
-  assert.equal(decide(at('2026-09-24', '12:30'), '12:00', dayStart).kind, 'catch-up');
-  assert.equal(decide(at('2026-09-24', '12:33'), '12:00', dayStart).kind, 'overdue-alert');
-  assert.equal(decide(at('2026-09-24', '12:40'), '12:00', dayStart).kind, 'none');
+  assert.equal(decide(at('2026-09-24', '12:30'), '12:00', dayStart, 1).kind, 'catch-up');
+  assert.equal(decide(at('2026-09-24', '12:33'), '12:00', dayStart, 1).kind, 'overdue-alert');
+  assert.equal(decide(at('2026-09-24', '12:40'), '12:00', dayStart, 1).kind, 'none');
 });
 
 test('el sello local respeta la zona horaria de la inscripción', () => {
   // 02:52 UTC del 25/09 = 23:52 del 24/09 en Buenos Aires.
   assert.deepEqual(toLocalStamp(new Date('2026-09-25T02:52:30Z'), 'America/Argentina/Buenos_Aires'), at('2026-09-24', '23:52'));
+});
+
+test('fecha lógica: la madrugada pertenece a la noche anterior', () => {
+  assert.equal(logicalDateOf(at('2026-09-25', '00:15')), '2026-09-24');
+  assert.equal(logicalDateOf(at('2026-09-25', '03:59')), '2026-09-24');
+  assert.equal(logicalDateOf(at('2026-09-25', '04:00')), '2026-09-25');
+  // Día 1 empieza en la fecha lógica de la inscripción; el resto, en la siguiente a la noche.
+  assert.equal(currentDayFirstLogicalDate(at('2026-09-24', '12:05'), 1), '2026-09-24');
+  assert.equal(currentDayFirstLogicalDate(at('2026-09-24', '22:00'), 5), '2026-09-25');
+  assert.equal(currentDayFirstLogicalDate(at('2026-09-25', '00:05'), 5), '2026-09-25');
 });
