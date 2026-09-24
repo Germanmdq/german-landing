@@ -30,6 +30,7 @@ import './components/sona/sona.css';
 import './premium-mobile.css';
 import { LoginGate } from './components/login-gate';
 import { AccessPaywall } from './components/access-paywall';
+import { resolveScreen } from './lib/screen';
 import { isLaunchPending, LaunchDateCard, TrialEndedScreen, type LaunchArea } from './components/launch-widgets';
 import { AudioWaveLoader } from './components/audio-wave-loader';
 import { AnimatedInterfaceIcon, type AnimatedInterfaceIconName } from './components/animated-interface-icon';
@@ -1855,10 +1856,8 @@ export default function TelegramMiniApp() {
   const mainCardIndexRef = useRef(0);
   const carouselIndicesRef = useRef<Record<string, number>>({});
   const current = trail.at(-1);
-  const screen = useMemo<Screen>(() => {
-    if (current) return { eyebrow: trail.length === 1 ? screens[tab].title.toUpperCase() : trail.at(-2)?.title.toUpperCase() || screens[tab].eyebrow, title: current.title, subtitle: current.detail, items: current.children || [] };
-    return screens[tab];
-  }, [current, tab, trail]);
+  // Sin useMemo: depende de `screens`, que cambia cuando llegan momentNodes.
+  const screen: Screen = resolveScreen(screens, tab, trail);
 
   const back = () => {
     if (launchLocked) return setLaunchLocked(null);
