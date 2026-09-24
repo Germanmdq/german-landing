@@ -517,59 +517,6 @@ function practiceDuration(enrollment: ProgressEnrollment): number {
   return Math.max(1, enrollment.current_day);
 }
 
-const MEDITATIONS_PER_DAY = 4;
-// Una entrega sin abrir todavía no cuenta como falta hasta que pasa la misma
-// ventana que usa attentionFromDelivery para calificarla como "Malo".
-const PENDING_WINDOW_MINUTES = 15;
-
-function isRecentDelivery(delivery: ProgressDelivery, now: number) {
-  return now - new Date(delivery.delivered_at).getTime() < PENDING_WINDOW_MINUTES * 60000;
-}
-
-type ProgressDay = { dayNumber: number; deliveries: ProgressDelivery[]; meditations: number; opened: number };
-
-function summarizeProgress(deliveries: ProgressDelivery[], totalDays: number, now: number) {
-  const byDay = new Map<number, ProgressDelivery[]>();
-  for (const delivery of deliveries) {
-    const list = byDay.get(delivery.day_number) ?? [];
-    list.push(delivery);
-    byDay.set(delivery.day_number, list);
-  }
-
-  // Las 4 meditaciones son el esqueleto fijo de cada día (la noche cierra el
-  // día en send-notifications). Los mensajes intermedios dependen del
-  // intervalo que eligió cada persona, así que no se usan para medir avance.
-  const days: ProgressDay[] = [...byDay.entries()]
-    .sort(([a], [b]) => b - a)
-    .map(([dayNumber, dayDeliveries]) => ({
-      dayNumber,
-      deliveries: [...dayDeliveries].sort((a, b) => new Date(b.delivered_at).getTime() - new Date(a.delivered_at).getTime()),
-      meditations: new Set(dayDeliveries.filter((delivery) => delivery.delivery_type !== 'intermediate_message').map((delivery) => delivery.delivery_type)).size,
-      opened: dayDeliveries.filter((delivery) => Boolean(delivery.seen_at)).length,
-    }));
-
-  const countedDays = days.filter((day) => day.dayNumber >= 1 && day.dayNumber <= totalDays);
-  const completedDays = countedDays.filter((day) => day.deliveries.some((delivery) => delivery.delivery_type === 'meditation_night')).length;
-  const meditationUnits = countedDays.reduce((sum, day) => sum + Math.min(MEDITATIONS_PER_DAY, day.meditations), 0);
-  const progress = Math.min(1, meditationUnits / (Math.max(1, totalDays) * MEDITATIONS_PER_DAY));
-
-  const openedTotal = deliveries.filter((delivery) => Boolean(delivery.seen_at)).length;
-  const pending = deliveries.filter((delivery) => !delivery.seen_at && isRecentDelivery(delivery, now)).length;
-  const evaluated = deliveries.length - pending;
-  const commitment = evaluated ? openedTotal / evaluated : 0;
-
-  return {
-    days,
-    completedDays,
-    latestDay: days[0]?.dayNumber ?? 0,
-    progress,
-    openedTotal,
-    pending,
-    evaluated,
-    commitment: Math.min(1, commitment),
-  };
-}
-
 function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   const [history, setHistory] = useState<ProgressEnrollment[]>([]);
   const [deliveries, setDeliveries] = useState<ProgressDelivery[]>([]);
@@ -598,11 +545,13 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
   const renderPrimaryEnrollment = (enrollment: ProgressEnrollment) => {
     const ownDeliveries = deliveries.filter((delivery) => delivery.enrollment_id === enrollment.id);
     const totalDays = practiceDuration(enrollment);
-    const summary = summarizeProgress(ownDeliveries, totalDays, Date.now());
-    const displayDay = Math.min(totalDays, Math.max(1, enrollment.current_day, summary.latestDay));
-    const progressPct = Math.round(summary.progress * 100);
-    const commitmentPct = Math.round(summary.commitment * 100);
-    const commitmentState = !summary.evaluated ? 'Sin datos' : commitmentPct >= 67 ? 'Bueno' : commitmentPct >= 34 ? 'Regular' : 'Malo';
+    const deliveredDay = ownDeliveries.reduce((maxDay, delivery) => Math.max(maxDay, delivery.day_number), 1);
+    const displayDay = Math.min(totalDays, deliveredDay);
+    const progressPct = Math.min(100, (displayDay / totalDays) * 100);
+    const progressLabel = Number.isInteger(progressPct) ? String(progressPct) : progressPct.toFixed(1);
+    const openedDeliveries = ownDeliveries.filter((delivery) => Boolean(delivery.seen_at)).length;
+    const commitmentPct = ownDeliveries.length ? Math.round((openedDeliveries / ownDeliveries.length) * 100) : 0;
+    const commitmentState = commitmentPct >= 67 ? 'Bueno' : commitmentPct >= 34 ? 'Regular' : 'Malo';
     const customTopic = typeof enrollment.custom_config?.tema === 'string' ? enrollment.custom_config.tema : '';
     const customDuration = typeof enrollment.custom_config?.duracion === 'string' ? enrollment.custom_config.duracion : '';
     const title = customTopic ? `${customTopic} · ${customDuration}` : enrollment.collections?.title || 'Práctica';
@@ -614,45 +563,36 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
       </div>
       <div className="progress-pies">
         <div className="progress-metric">
-          <div className="progress-pie" role="img" style={{ '--progress': `${progressPct * 3.6}deg` } as React.CSSProperties} aria-label={`${progressPct}% de avance`} />
-          <div className="progress-pie-copy"><b>{progressPct}%</b><small>Avance</small><p>{summary.completedDays} de {totalDays} {totalDays === 1 ? 'día completo' : 'días completos'}</p></div>
+          <div className="progress-pie" style={{ '--progress': `${progressPct * 3.6}deg` } as React.CSSProperties} aria-label={`${progressLabel}% de avance`} />
+          <div className="progress-pie-copy"><b>{progressLabel}%</b><small>Avance</small><p>Día {displayDay} de {totalDays}</p></div>
         </div>
         <div className="progress-metric">
-          <div className="progress-pie progress-pie-commitment" role="img" style={{ '--progress': `${commitmentPct * 3.6}deg` } as React.CSSProperties} aria-label={`${commitmentPct}% de compromiso`} />
-          <div className="progress-pie-copy"><b>{summary.evaluated ? `${commitmentPct}%` : '—'}</b><small>Compromiso</small><p>{summary.evaluated ? `${summary.openedTotal} de ${summary.evaluated} abiertas · ${commitmentState}` : 'Todavía sin entregas para evaluar'}</p></div>
+          <div className="progress-pie progress-pie-commitment" style={{ '--progress': `${commitmentPct * 3.6}deg` } as React.CSSProperties} aria-label={`${commitmentPct}% de compromiso`} />
+          <div className="progress-pie-copy"><b>{commitmentPct}%</b><small>Compromiso</small><p>{openedDeliveries} de {ownDeliveries.length} abiertas · {commitmentState}</p></div>
         </div>
       </div>
       <div className="progress-activity-summary">
         <b>Actividad</b>
-        <span>{ownDeliveries.length} {ownDeliveries.length === 1 ? 'entrega recibida' : 'entregas recibidas'} · {summary.openedTotal} {summary.openedTotal === 1 ? 'abierta' : 'abiertas'}{summary.pending > 0 ? ` · ${summary.pending} ${summary.pending === 1 ? 'recién llegada' : 'recién llegadas'}` : ''}</span>
+        <span>{ownDeliveries.length} {ownDeliveries.length === 1 ? 'entrega recibida' : 'entregas recibidas'} · {openedDeliveries} {openedDeliveries === 1 ? 'abierta' : 'abiertas'}</span>
       </div>
-      {summary.days.length > 0 && <details className="progress-delivery-details">
+      {ownDeliveries.length > 0 && <details className="progress-delivery-details">
         <summary>Ver detalle de entregas</summary>
-        <div className="progress-delivery-days">
-          {summary.days.map((day) => <div className="progress-delivery-day" key={day.dayNumber}>
-            <div className="progress-delivery-day-heading">
-              <b>Día {day.dayNumber}</b>
-              <span>{day.meditations} de {MEDITATIONS_PER_DAY} meditaciones · {day.opened} de {day.deliveries.length} abiertas</span>
-            </div>
-            <div className="progress-delivery-history">
-              {day.deliveries.map((delivery, index) => {
-                const attention = attentionFromDelivery(delivery);
-                const sent = new Date(delivery.delivered_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-                const opened = delivery.seen_at ? new Date(delivery.seen_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '';
-                const deliveryLabel = delivery.delivery_type === 'intermediate_message'
-                  ? `Mensaje ${delivery.message_index ?? '—'}`
-                  : deliveryTypeLabels[delivery.delivery_type];
-                const isPending = !delivery.seen_at && isRecentDelivery(delivery, Date.now());
-                return <div className="progress-delivery-row" key={`${delivery.delivered_at}-${index}`}>
-                  <div className="progress-delivery-copy">
-                    <strong>{deliveryLabel}</strong>
-                    <span>Enviada {sent} · {delivery.seen_at ? `Abierta ${opened}` : 'No abierta'}</span>
-                  </div>
-                  <b className={`progress-attention progress-attention-${isPending ? 'pendiente' : attention.toLowerCase()}`}>{isPending ? 'Nueva' : attention}</b>
-                </div>;
-              })}
-            </div>
-          </div>)}
+        <div className="progress-delivery-history">
+          {ownDeliveries.map((delivery, index) => {
+            const attention = attentionFromDelivery(delivery);
+            const sent = new Date(delivery.delivered_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+            const opened = delivery.seen_at ? new Date(delivery.seen_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : 'No abierta';
+            const deliveryLabel = delivery.delivery_type === 'intermediate_message'
+              ? `Mensaje ${delivery.message_index ?? '—'}`
+              : deliveryTypeLabels[delivery.delivery_type];
+            return <div className="progress-delivery-row" key={`${delivery.delivered_at}-${index}`}>
+              <div className="progress-delivery-copy">
+                <strong>{deliveryLabel}</strong>
+                <span>Día {delivery.day_number} · Enviada {sent} · {delivery.seen_at ? `Abierta ${opened}` : 'No abierta'}</span>
+              </div>
+              <b className={`progress-attention progress-attention-${attention.toLowerCase()}`}>{attention}</b>
+            </div>;
+          })}
         </div>
       </details>}
     </section>;
