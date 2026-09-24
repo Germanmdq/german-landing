@@ -88,7 +88,7 @@ const buildScreens = (momentNodes: DeckItem[]): Record<Tab, Screen> => ({
   espacio: { eyebrow: 'MI PERFIL', title: 'Tu espacio', subtitle: 'Tu cuenta y tus elecciones.', items: [
     { icon: '👤', title: 'Mi cuenta', detail: 'Nombre, mail y acceso.', tone: palette[0], accountPanel: true },
     { icon: '⭐', title: 'Favoritos', detail: 'Prácticas, audios y lecturas guardadas.', tone: palette[1] },
-    { icon: '📈', title: 'Mi avance', detail: 'Tu progreso en las prácticas guiadas.', tone: palette[2] },
+    { icon: '📈', title: 'Estado', detail: 'Tu cumplimiento y respuesta en las prácticas guiadas.', tone: palette[2] },
   ] },
 });
 
@@ -483,7 +483,7 @@ function ProfileScreen({ user, items, onSelect, onBack, onNavigate, onOpenProgre
         physics
         drift={0.5}
         onSelect={(value) => {
-          if (value === 'Mi avance') { onOpenProgress(); return; }
+          if (value === 'Estado') { onOpenProgress(); return; }
           const item = items.find((candidate) => candidate.title === value);
           if (item) onSelect(item);
         }}
@@ -497,12 +497,12 @@ function ProfileScreen({ user, items, onSelect, onBack, onNavigate, onOpenProgre
 type ProgressDelivery = { enrollment_id: string; day_number: number; delivery_type: TallerDeliveryType; message_index: number | null; delivered_at: string; seen_at: string | null };
 type ProgressEnrollment = { id: string; status: 'active' | 'abandoned' | 'completed'; current_day: number; started_at: string; abandoned_at: string | null; completed_at: string | null; custom_config: Record<string, unknown> | null; collections: { title?: string; slug?: string } | null };
 
-function attentionFromDelivery(delivery: ProgressDelivery): 'Excelente' | 'Buena' | 'Mala' {
-  if (!delivery.seen_at) return 'Mala';
+function attentionFromDelivery(delivery: ProgressDelivery): 'Bueno' | 'Regular' | 'Malo' {
+  if (!delivery.seen_at) return 'Malo';
   const minutes = (new Date(delivery.seen_at).getTime() - new Date(delivery.delivered_at).getTime()) / 60000;
-  if (minutes <= 5) return 'Excelente';
-  if (minutes <= 10) return 'Buena';
-  return 'Mala';
+  if (minutes <= 5) return 'Bueno';
+  if (minutes <= 15) return 'Regular';
+  return 'Malo';
 }
 
 function practiceDuration(enrollment: ProgressEnrollment): number {
@@ -515,12 +515,6 @@ function practiceDuration(enrollment: ProgressEnrollment): number {
   if (slug.includes('15')) return 15;
   if (slug.includes('7')) return 7;
   return Math.max(1, enrollment.current_day);
-}
-
-function expectedDeliveriesPerDay(enrollment: ProgressEnrollment): number {
-  void enrollment;
-  // Formato común actual: 4 meditaciones + 32 mensajes intermedios.
-  return 36;
 }
 
 function progressStatusLabel(status: ProgressEnrollment['status']) {
@@ -553,15 +547,20 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
   }, [user.id]);
 
   return <section className="reader-section profile-section">
-    <FixedHeader eyebrow="MI PERFIL" title="Mi avance" subtitle="Historial de tus prácticas y tus entregas." onBack={onBack} onNavigate={onNavigate} />
+    <FixedHeader eyebrow="MI PERFIL" title="Avance y compromiso" subtitle="Cómo avanzás y cuánto de lo recibido estás abriendo." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body progress-screen">
       {loading && <p className="library-empty">Cargando tu historial…</p>}
       {!loading && !history.length && <p className="library-empty">Todavía no tenés prácticas en tu historial.</p>}
       {!loading && history.map((enrollment) => {
-        const totalDays = practiceDuration(enrollment);
         const ownDeliveries = deliveries.filter((delivery) => delivery.enrollment_id === enrollment.id);
+        const totalDays = practiceDuration(enrollment);
         const totalExpectedDeliveries = totalDays * expectedDeliveriesPerDay(enrollment);
-        const pct = enrollment.status === 'completed' ? 100 : Math.min(100, Math.round((ownDeliveries.length / totalExpectedDeliveries) * 100));
+        const progressPct = enrollment.status === 'completed'
+          ? 100
+          : Math.min(100, Math.round((ownDeliveries.length / Math.max(1, totalExpectedDeliveries)) * 100));
+        const openedDeliveries = ownDeliveries.filter((delivery) => Boolean(delivery.seen_at)).length;
+        const commitmentPct = ownDeliveries.length ? Math.round((openedDeliveries / ownDeliveries.length) * 100) : 0;
+        const commitmentState = commitmentPct >= 67 ? 'Bueno' : commitmentPct >= 34 ? 'Regular' : 'Malo';
         const customTopic = typeof enrollment.custom_config?.tema === 'string' ? enrollment.custom_config.tema : '';
         const customDuration = typeof enrollment.custom_config?.duracion === 'string' ? enrollment.custom_config.duracion : '';
         const title = customTopic ? `${customTopic} · ${customDuration}` : enrollment.collections?.title || 'Práctica';
@@ -573,8 +572,20 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
             </span>
             <ChevronDown size={22} aria-hidden="true" />
           </summary>
-          <div className="progress-track" aria-label={`${pct}% del recorrido`}><span style={{ width: `${pct}%` }} /></div>
-          <small>{pct}% del recorrido · {ownDeliveries.length} entregas recibidas</small>
+          <div className="progress-pies">
+            <div className="progress-pie-block">
+              <div className="progress-pie" style={{ '--progress': `${progressPct * 3.6}deg` } as React.CSSProperties} aria-label={`${progressPct}% de avance`}>
+                <span><b>{progressPct}%</b><small>Avance</small></span>
+              </div>
+              <p>{ownDeliveries.length} de {totalExpectedDeliveries} entregas recibidas</p>
+            </div>
+            <div className="progress-pie-block">
+              <div className="progress-pie progress-pie-commitment" style={{ '--progress': `${commitmentPct * 3.6}deg` } as React.CSSProperties} aria-label={`${commitmentPct}% de compromiso`}>
+                <span><b>{commitmentPct}%</b><small>Compromiso</small></span>
+              </div>
+              <p>{openedDeliveries} de {ownDeliveries.length} abiertas · {commitmentState}</p>
+            </div>
+          </div>
           <div className="progress-card-details">
           <small>Comenzó {new Date(enrollment.started_at).toLocaleDateString('es-AR')}</small>
           {ownDeliveries.length > 0 && <div className="progress-delivery-history">
@@ -2235,5 +2246,5 @@ export default function TelegramMiniApp() {
   // "Meditaciones para ahora" ya trae su propia imagen en cada DeckItem
   // (momentNodes, asignada por posición 1..15), así que no se pisa acá.
   const meditacionesPhotoScreen = tab === 'meditaciones' && trail.length === 0;
-  return <main className={`app-shell app-main section-app day-one-screen${photoCardsScreen ? ' photo-cards-screen' : ''}${meditacionesPhotoScreen ? ' meditaciones-photo-screen' : ''}`}><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><DayOneCarousel key={carouselKey} label={screen.title} items={screen.items.map((item) => item.accountPanel ? { ...item, image: '/images/mi-cuenta-acceso.webp' } : item.title === 'Favoritos' ? { ...item, image: '/images/favoritos-guardados.webp' } : item.title === 'Mi avance' ? { ...item, image: '/images/mi-avance-progreso.webp' } : item.title === 'Configuración' ? { ...item, image: '/images/configuracion-horarios-zona.webp' } : item.title === 'Activar notificaciones' ? { ...item, image: '/images/activar-notificaciones.webp' } : item.title === 'Horarios de práctica' ? { ...item, image: '/images/horarios-practica.webp' } : item.title === 'Preferencias' ? { ...item, image: '/images/preferencias-avisos.webp' } : item.title === 'Prácticas de 7 días' ? { ...item, image: '/images/interno-7dias.webp' } : item.title === 'Prácticas de 15 días' ? { ...item, image: '/images/interno-15dias.webp' } : item.title === 'Prácticas de 40 días' ? { ...item, image: '/images/interno-40dias.webp' } : item.title === 'Amor y relaciones' ? { ...item, image: '/images/interno-amor.webp' } : item.title === 'Dinero y trabajo' ? { ...item, image: '/images/interno-dinero.webp' } : item.title === 'Salud y bienestar' ? { ...item, image: '/images/interno-salud.webp' } : item.title === 'Preguntar' ? { ...item, image: '/images/interno-preguntar.webp' } : item.title === 'Escuchar' ? { ...item, image: '/images/interno-escuchar.webp' } : item.title === 'Guardadas' ? { ...item, image: '/images/interno-guardadas.webp' } : item)} initialIndex={carouselIndicesRef.current[carouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[carouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[carouselKey] = index; select(item); }} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section>{dock}</main>;
+  return <main className={`app-shell app-main section-app day-one-screen${photoCardsScreen ? ' photo-cards-screen' : ''}${meditacionesPhotoScreen ? ' meditaciones-photo-screen' : ''}`}><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><DayOneCarousel key={carouselKey} label={screen.title} items={screen.items.map((item) => item.accountPanel ? { ...item, image: '/images/mi-cuenta-acceso.webp' } : item.title === 'Favoritos' ? { ...item, image: '/images/favoritos-guardados.webp' } : item.title === 'Estado' ? { ...item, image: '/images/mi-avance-progreso.webp' } : item.title === 'Configuración' ? { ...item, image: '/images/configuracion-horarios-zona.webp' } : item.title === 'Activar notificaciones' ? { ...item, image: '/images/activar-notificaciones.webp' } : item.title === 'Horarios de práctica' ? { ...item, image: '/images/horarios-practica.webp' } : item.title === 'Preferencias' ? { ...item, image: '/images/preferencias-avisos.webp' } : item.title === 'Prácticas de 7 días' ? { ...item, image: '/images/interno-7dias.webp' } : item.title === 'Prácticas de 15 días' ? { ...item, image: '/images/interno-15dias.webp' } : item.title === 'Prácticas de 40 días' ? { ...item, image: '/images/interno-40dias.webp' } : item.title === 'Amor y relaciones' ? { ...item, image: '/images/interno-amor.webp' } : item.title === 'Dinero y trabajo' ? { ...item, image: '/images/interno-dinero.webp' } : item.title === 'Salud y bienestar' ? { ...item, image: '/images/interno-salud.webp' } : item.title === 'Preguntar' ? { ...item, image: '/images/interno-preguntar.webp' } : item.title === 'Escuchar' ? { ...item, image: '/images/interno-escuchar.webp' } : item.title === 'Guardadas' ? { ...item, image: '/images/interno-guardadas.webp' } : item)} initialIndex={carouselIndicesRef.current[carouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[carouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[carouselKey] = index; select(item); }} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section>{dock}</main>;
 }
