@@ -32,7 +32,7 @@ import { LoginGate } from './components/login-gate';
 import { AccessPaywall } from './components/access-paywall';
 import { AudioWaveLoader } from './components/audio-wave-loader';
 import { AnimatedInterfaceIcon, type AnimatedInterfaceIconName } from './components/animated-interface-icon';
-import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, intermediateDisplayNumber, type TallerDeliveryType } from './lib/taller-delivery';
+import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, INTERMEDIATE_MESSAGE_TITLE, userFacingDeliveryTitle, type TallerDeliveryType } from './lib/taller-delivery';
 
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'audiolibros' | 'consultas' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string; audios?: { label: string; url: string }[]; highlightQuery?: string };
@@ -43,7 +43,7 @@ type AudiobookChapter = { title: string; anchor: string; order: number; page?: n
 type AudiobookEntry = { id: string; slug: string; title: string; author: string; excerpt: string; body: string; chapters: AudiobookChapter[]; audioUrl?: string; pdfUrl?: string; durationSeconds?: number };
 type FavoriteRecord = { id: string; title: string; detail: string; icon: string; tone: string; reader?: ReaderContent };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
-type TallerDelivery = { id: string; dayNumber: number; deliveryType: TallerDeliveryType; deliveredAt: string; seenAt: string | null; title: string; paragraphs: string[]; messageDisplayNumber?: number | null; audioUrl?: string };
+type TallerDelivery = { id: string; dayNumber: number; deliveryType: TallerDeliveryType; deliveredAt: string; seenAt: string | null; title: string; paragraphs: string[]; audioUrl?: string };
 type WorkshopSchedule = { morning: string; noon: string; afternoon: string; night: string };
 type SectionPermissionKey = 'books' | 'course365' | 'consultations';
 type AccessPermissions = Partial<Record<'all' | SectionPermissionKey, boolean>>;
@@ -601,7 +601,7 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
             const sent = new Date(delivery.delivered_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
             const opened = delivery.seen_at ? new Date(delivery.seen_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : 'No abierta';
             const deliveryLabel = delivery.delivery_type === 'intermediate_message'
-              ? `Mensaje ${delivery.message_index ?? '—'}`
+              ? INTERMEDIATE_MESSAGE_TITLE
               : deliveryTypeLabels[delivery.delivery_type];
             return <div className="progress-delivery-row" key={`${delivery.delivered_at}-${index}`}>
               <div className="progress-delivery-copy">
@@ -1260,9 +1260,6 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
               : undefined;
           const deliveryType = row.delivery_type as TallerDeliveryType;
           const paragraphs = extractDeliveryParagraphs(item?.body || '', deliveryType, row.message_index) || [];
-          const messageDisplayNumber = deliveryType === 'intermediate_message'
-            ? intermediateDisplayNumber(item?.body || '', row.message_index)
-            : null;
           return {
             id: row.id,
             dayNumber: row.day_number,
@@ -1271,7 +1268,6 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
             seenAt: row.seen_at,
             title: item?.title || `Día ${row.day_number}`,
             paragraphs,
-            messageDisplayNumber,
             audioUrl,
           } as TallerDelivery;
         });
@@ -1517,7 +1513,7 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
           {isOpen && <div className="library-content-list workshop-day-deliveries">{dayDeliveries.map((delivery) => {
             const isMessage = delivery.deliveryType === 'intermediate_message';
             const deliveryTitle = isMessage
-              ? `Recordatorio ${delivery.messageDisplayNumber ?? ''}`.trim()
+              ? INTERMEDIATE_MESSAGE_TITLE
               : deliveryTypeLabels[delivery.deliveryType];
             return <MagicCard key={delivery.id} className="library-content-card workshop-delivery-card" onClick={() => openDelivery(delivery)}>
             <div><p>{isMessage ? 'MENSAJE DE GERMÁN' : deliveryTypeLabels[delivery.deliveryType].toUpperCase()}</p><b className="card-title">{deliveryTitle}</b><em className="card-subtitle">Recibido {formatDeliveredAt(delivery.deliveredAt)}</em></div>
@@ -1752,13 +1748,16 @@ export default function TelegramMiniApp() {
         if (typeof row.favorite_id !== 'string' || !row.favorite_id.startsWith('delivery:')) return favorite;
         const deliveryId = row.favorite_id.slice('delivery:'.length);
         const delivery = deliveryMap.get(deliveryId);
-        if (!delivery) return favorite;
+        // Si la entrega ya no se puede leer, se usa lo guardado, pero sin el
+        // número interno que tenían los títulos viejos.
+        if (!delivery) return {
+          ...favorite,
+          title: userFacingDeliveryTitle(favorite.title),
+          reader: favorite.reader ? { ...favorite.reader, title: userFacingDeliveryTitle(favorite.reader.title) } : favorite.reader,
+        };
         const label = deliveryTypeLabels[delivery.delivery_type];
-        const displayNumber = delivery.delivery_type === 'intermediate_message'
-          ? intermediateDisplayNumber(delivery.body, delivery.message_index)
-          : null;
         const title = delivery.delivery_type === 'intermediate_message'
-          ? `Mensaje ${displayNumber ?? delivery.message_index ?? '—'}`
+          ? INTERMEDIATE_MESSAGE_TITLE
           : label;
         const detail = `Día ${delivery.day_number} · ${label}`;
         const textParagraphs = delivery.delivery_type === 'intermediate_message' && delivery.message_index != null

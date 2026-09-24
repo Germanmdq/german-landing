@@ -8,6 +8,17 @@ export const deliveryTypeLabels: Record<TallerDeliveryType, string> = {
   intermediate_message: 'Mensaje de Germán',
 };
 
+// Título visible de todo mensaje intermedio. message_index y la numeración
+// maestra (por ejemplo 6337) son identificadores internos: sirven para elegir
+// el texto, ordenar, deduplicar y el scheduler, pero nunca se muestran.
+export const INTERMEDIATE_MESSAGE_TITLE = 'Recordatorio';
+
+// Favoritos guardados antes de este cambio pueden tener títulos como
+// "Mensaje 6337" o "Recordatorio 14": se muestran sin el número interno.
+export function userFacingDeliveryTitle(title: string): string {
+  return /^(mensaje|recordatorio)\s*(n[º°o]\.?\s*)?[#\d—-]+$/i.test(title.trim()) ? INTERMEDIATE_MESSAGE_TITLE : title;
+}
+
 const deliveryMomentPatterns: Partial<Record<TallerDeliveryType, RegExp>> = {
   meditation_morning: /ma(ñ|n)ana/i,
   meditation_noon: /mediod(í|i)a/i,

@@ -9,13 +9,12 @@ import { LoginGate } from './login-gate';
 import { AccessPaywall } from './access-paywall';
 import { AudioWaveLoader } from './audio-wave-loader';
 import { AnimatedInterfaceIcon } from './animated-interface-icon';
-import { deliveryTypeLabels, extractDeliveryParagraphs, intermediateDisplayNumber, type TallerDeliveryType } from '../lib/taller-delivery';
+import { deliveryTypeLabels, extractDeliveryParagraphs, INTERMEDIATE_MESSAGE_TITLE, type TallerDeliveryType } from '../lib/taller-delivery';
 
 type DeliveryView = {
   dayNumber: number;
   deliveryType: TallerDeliveryType;
   messageIndex: number | null;
-  messageDisplayNumber: number | null;
   title: string;
   deliveredAt: string;
   paragraphs: string[];
@@ -108,7 +107,6 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
         dayNumber: row.day_number,
         deliveryType,
         messageIndex: row.message_index,
-        messageDisplayNumber: deliveryType === 'intermediate_message' ? intermediateDisplayNumber(item?.body || '', row.message_index) : null,
         title: item?.title || deliveryTypeLabels[deliveryType],
         deliveredAt: row.delivered_at,
         paragraphs,
@@ -147,7 +145,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     const isIntermediate = delivery.deliveryType === 'intermediate_message';
     const isTextMessage = isIntermediate && delivery.paragraphs.length > 0;
     const favoriteTitle = isIntermediate
-      ? `Mensaje ${delivery.messageDisplayNumber ?? delivery.messageIndex ?? '—'}`
+      ? INTERMEDIATE_MESSAGE_TITLE
       : deliveryTypeLabels[delivery.deliveryType];
     const payload = {
       id,
@@ -217,7 +215,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
       <div className="delivery-text-card">
         <div className="delivery-text-icon" aria-hidden="true"><span className="motion-icon motion-icon--message"><MessageCircleMore size={30} strokeWidth={1.8} /></span></div>
         <p className="delivery-text-eyebrow">MENSAJE DE GERMÁN · DÍA {delivery.dayNumber}</p>
-        <h1>Recordatorio {delivery.messageDisplayNumber ?? delivery.messageIndex ?? ''}</h1>
+        <h1>{INTERMEDIATE_MESSAGE_TITLE}</h1>
         <div className="delivery-text-body">
           {delivery.paragraphs.map((paragraph, index) => <p key={index}>{renderSimpleBold(paragraph)}</p>)}
         </div>
