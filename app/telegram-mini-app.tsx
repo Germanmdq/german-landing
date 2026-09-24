@@ -559,7 +559,7 @@ function ProgressScreen({ user, onBack, onNavigate }: { user: User; onBack: () =
       {!loading && history.map((enrollment) => {
         const ownDeliveries = deliveries.filter((delivery) => delivery.enrollment_id === enrollment.id);
         const totalDays = practiceDuration(enrollment);
-        const totalExpectedDeliveries = totalDays * expectedDeliveriesPerDay(enrollment);
+        const totalExpectedDeliveries = totalDays * expectedDeliveriesPerDay();
         const progressPct = enrollment.status === 'completed'
           ? 100
           : Math.min(100, Math.round((ownDeliveries.length / Math.max(1, totalExpectedDeliveries)) * 100));
