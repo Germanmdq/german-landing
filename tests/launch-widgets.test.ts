@@ -13,13 +13,25 @@ test('la tarjeta de lanzamiento muestra la fecha y el texto corto', () => {
   assert.doesNotMatch(widgets, /[Pp]r[oó]ximamente/);
 });
 
-test('las tres áreas quedan detrás de la tarjeta mientras LAUNCH_PENDING esté activo', () => {
+test('preview visible y contenido real bloqueado en las tres áreas, con un solo gate', () => {
   assert.match(widgets, /meditaciones: true,\s*curso365: true,\s*libros: true/);
-  assert.match(app, /tab === 'meditaciones' && !trail\.length && LAUNCH_PENDING\.meditaciones/);
-  assert.match(app, /courseOpen && LAUNCH_PENDING\.curso365/);
-  assert.match(app, /tab === 'audiolibros' && !trail\.length && LAUNCH_PENDING\.libros/);
-  assert.match(app, /\/Libros\/\.test\(filter\) && LAUNCH_PENDING\.libros && <LaunchDateCard \/>/);
-  assert.match(app, /if \(isBook && LAUNCH_PENDING\.libros\) return false;/);
+  assert.match(widgets, /export function isLaunchPending\(area: LaunchArea\)/);
+  // Ninguna sección completa se reemplaza al entrar.
+  assert.doesNotMatch(app, /tab === 'meditaciones' && !trail\.length && LAUNCH_PENDING/);
+  assert.doesNotMatch(app, /tab === 'audiolibros' && !trail\.length && LAUNCH_PENDING/);
+  assert.doesNotMatch(app, /courseOpen && LAUNCH_PENDING/);
+  // Meditaciones: el listado se ve; al abrir una aparece la tarjeta.
+  assert.match(app, /launchArea: 'meditaciones'/);
+  assert.match(app, /if \(selected\.launchArea && isLaunchPending\(selected\.launchArea\)\)/);
+  // Audiolibros: índice visible; el capítulo muestra la tarjeta. Sin la lógica vieja del viernes.
+  assert.match(app, /chaptersLaunchPending\s*\? <LaunchDateCard \/>/);
+  assert.doesNotMatch(app, /firstChapterUnlockAt|chaptersLocked|Disponible día viernes/);
+  // Libros en texto: aparecen en listados y búsqueda; al abrir uno, tarjeta.
+  assert.doesNotMatch(app, /if \(isBook && LAUNCH_PENDING\.libros\) return false;/);
+  assert.match(app, /\/book\|libro\/i\.test\(entry\.type\) && isLaunchPending\('libros'\)/);
+  // 365: días visibles y abribles; el día muestra la tarjeta y no se pide contenido.
+  assert.match(app, /if \(courseLaunchPending\) \{ setAudioUrl\(undefined\); setDayContent\(\{\}\); return; \}/);
+  assert.match(app, /\{courseLaunchPending \? <LaunchDateCard \/> :/);
 });
 
 test('fin de prueba: copy corto, botón con WhatsApp y mensaje prearmado, sin precios ni urgencia', () => {
@@ -45,11 +57,14 @@ test('dentro de Telegram el enlace sale por WebApp.openLink', () => {
   assert.match(widgets, /webApp\?\.openLink/);
 });
 
-test('fin de prueba se muestra después de bloqueado y antes que el cartel genérico', () => {
+test('fin de prueba: la home queda visible y el cartel aparece al abrir contenido', () => {
   const blockedAt = app.indexOf('if (fullyBlocked || accessPermissions.all === false) return <AccessPaywall />;');
-  const trialAt = app.indexOf('if (trialExpired) return <TrialEndedScreen />;');
-  const inactiveAt = app.indexOf("if (accessState === 'inactive') return <AccessPaywall />;");
-  assert.ok(blockedAt > 0 && blockedAt < trialAt && trialAt < inactiveAt);
+  const inactiveAt = app.indexOf("if (accessState === 'inactive' && !trialExpired) return <AccessPaywall />;");
+  const trialGateAt = app.indexOf('if (trialGateOpen) return <TrialEndedScreen');
+  assert.ok(blockedAt > 0 && blockedAt < inactiveAt && inactiveAt < trialGateAt, 'bloqueado → inactivo sin trial → fin de prueba');
+  // Con el trial vencido, navegar a contenido abre el cartel; la home y el perfil siguen accesibles.
+  assert.match(app, /const homeSafeTargets: NavTarget\[\] = \['home', 'espacio', 'configuracion', 'notificaciones'\];/);
+  assert.match(app, /if \(trialExpired && !homeSafeTargets\.includes\(target\)\) \{[\s\S]{0,120}setTrialGateOpen\(true\);/);
   assert.match(read('app/components/delivery-screen.tsx'), /if \(trialExpired\) return <TrialEndedScreen \/>;/);
 });
 

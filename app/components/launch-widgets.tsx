@@ -3,14 +3,22 @@
 import './launch-widgets.css';
 import { ArrowLeft } from 'lucide-react';
 
-// Áreas que todavía no se habilitan en el lanzamiento inicial. Para abrir una
-// sección, alcanza con pasar su valor a false: la navegación y el contenido
-// real siguen intactos detrás de esta tarjeta.
+// Contenido que todavía no se habilita en el lanzamiento inicial. La previa
+// (listados, índices, títulos, estructura) se ve siempre; el contenido real
+// (texto o audio) se reemplaza por LaunchDateCard mientras el área esté en
+// true. Para habilitar un área alcanza con pasar su valor a false.
 export const LAUNCH_PENDING = {
   meditaciones: true,
   curso365: true,
   libros: true,
 } as const;
+
+export type LaunchArea = keyof typeof LAUNCH_PENDING;
+
+// Único punto de decisión del bloqueo de lanzamiento.
+export function isLaunchPending(area: LaunchArea): boolean {
+  return LAUNCH_PENDING[area];
+}
 
 const WHATSAPP_NUMBER = '5492236151152';
 export const TRIAL_ENDED_WHATSAPP_TEXT = 'Hola Germán, quiero seguir usando el Asistente Germán.';

@@ -30,7 +30,7 @@ import './components/sona/sona.css';
 import './premium-mobile.css';
 import { LoginGate } from './components/login-gate';
 import { AccessPaywall } from './components/access-paywall';
-import { LAUNCH_PENDING, LaunchDateCard, TrialEndedScreen } from './components/launch-widgets';
+import { isLaunchPending, LaunchDateCard, TrialEndedScreen, type LaunchArea } from './components/launch-widgets';
 import { AudioWaveLoader } from './components/audio-wave-loader';
 import { AnimatedInterfaceIcon, type AnimatedInterfaceIconName } from './components/animated-interface-icon';
 import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, INTERMEDIATE_MESSAGE_TITLE, userFacingDeliveryTitle, type TallerDeliveryType } from './lib/taller-delivery';
@@ -38,7 +38,7 @@ import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, INTER
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'audiolibros' | 'consultas' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string; audios?: { label: string; url: string }[]; highlightQuery?: string };
 type ProgramPanelConfig = { slug: string; title: string; subtitle: string };
-type DeckItem = { icon: string; title: string; detail: string; tone: string; image?: string; imageSize?: 'compact'; disabled?: boolean; children?: DeckItem[]; reader?: ReaderContent; notificationPanel?: boolean; accountPanel?: boolean; workshopPanel?: boolean; programPanel?: ProgramPanelConfig; action?: 'logout' };
+type DeckItem = { icon: string; title: string; detail: string; tone: string; image?: string; imageSize?: 'compact'; disabled?: boolean; children?: DeckItem[]; reader?: ReaderContent; launchArea?: LaunchArea; notificationPanel?: boolean; accountPanel?: boolean; workshopPanel?: boolean; programPanel?: ProgramPanelConfig; action?: 'logout' };
 type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string; year?: number };
 type AudiobookChapter = { title: string; anchor: string; order: number; page?: number };
 type AudiobookEntry = { id: string; slug: string; title: string; author: string; excerpt: string; body: string; chapters: AudiobookChapter[]; audioUrl?: string; pdfUrl?: string; durationSeconds?: number };
@@ -281,7 +281,8 @@ function MainNavigationDock({ current, onSelect }: { current: NavTarget; onSelec
   </>;
 }
 
-// Sección que todavía no se habilita en el lanzamiento (ver LAUNCH_PENDING).
+// Contenido que todavía no se habilita en el lanzamiento (ver LAUNCH_PENDING):
+// se muestra su título y, en lugar del contenido real, la tarjeta del 27.
 function LaunchPendingPanel({ eyebrow, title, subtitle, onBack, onNavigate }: { eyebrow: string; title: string; subtitle: string; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
   return <section className="reader-section">
     <FixedHeader eyebrow={eyebrow} title={title} subtitle={subtitle} onBack={onBack} onNavigate={onNavigate} />
@@ -350,8 +351,12 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
     return () => { cancelled = true; };
   }, [user.id]);
 
+  const courseLaunchPending = isLaunchPending('curso365');
+
   useEffect(() => {
     if (selectedDay === null) { setAudioUrl(undefined); setDayContent({}); return; }
+    // Antes del lanzamiento no se pide ni el texto ni el audio del día.
+    if (courseLaunchPending) { setAudioUrl(undefined); setDayContent({}); return; }
     let cancelled = false;
     supabase
       .from('content_items')
@@ -374,13 +379,13 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
         setAudioUrl(asset?.source_url || (asset?.storage_path ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/${asset.storage_path}` : undefined));
       });
     return () => { cancelled = true; };
-  }, [selectedDay]);
+  }, [selectedDay, courseLaunchPending]);
 
   if (selectedDay !== null) {
     return <section className="reader-section law-course-section">
       <FixedHeader eyebrow="TALLER DE 365 DÍAS" title={`Día ${formatCourseDayLabel(selectedDay)}`} subtitle={dayContent.title || 'Ley de Asunción'} onBack={() => setSelectedDay(null)} onNavigate={onNavigate} />
       <article className="reader-body law-course-day">
-        {audioUrl ? <AudioPlayer title={`Día ${formatCourseDayLabel(selectedDay)}${dayContent.title ? ` · ${dayContent.title}` : ''}`} audioUrl={audioUrl} /> : <div className="law-course-audio-missing"><AnimatedInterfaceIcon name="ear" size={22} /><span>Audio pendiente para este día.</span></div>}
+        {courseLaunchPending ? <LaunchDateCard /> : audioUrl ? <AudioPlayer title={`Día ${formatCourseDayLabel(selectedDay)}${dayContent.title ? ` · ${dayContent.title}` : ''}`} audioUrl={audioUrl} /> : <div className="law-course-audio-missing"><AnimatedInterfaceIcon name="ear" size={22} /><span>Audio pendiente para este día.</span></div>}
       </article>
     </section>;
   }
@@ -398,7 +403,9 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
               <ChevronDown size={20} aria-hidden="true" />
             </button>
             {expanded && <div className="law-course-days">{Array.from({ length: chapter.end - chapter.start + 1 }, (_, i) => chapter.start + i).map((day) => {
-              const locked = progressLoading || day > unlockedDay;
+              // Antes del lanzamiento todos los días se pueden tocar: al abrirlos
+              // aparece la tarjeta del 27 en lugar del contenido.
+              const locked = !courseLaunchPending && (progressLoading || day > unlockedDay);
               return <button key={day} type="button" className={`law-course-day-row${locked ? ' is-locked' : ''}`} disabled={locked} onClick={() => { if (!locked) setSelectedDay(day); }}><span>Día {formatCourseDayLabel(day)}</span>{locked ? <span className="law-course-lock"><Lock size={15} aria-hidden="true" />Bloqueado</span> : <ChevronRight size={18} aria-hidden="true" />}</button>;
             })}</div>}
           </section>;
@@ -843,8 +850,7 @@ function AudiobookReader({ book, onBack, onNavigate }: { book: AudiobookEntry; o
   const chapters = sections.filter((section) => section.anchor !== 'prologo');
   const [chaptersOpen, setChaptersOpen] = useState(false);
   const [selectedChapter, setSelectedChapter] = useState<(typeof sections)[number] | null>(null);
-  const firstChapterUnlockAt = new Date('2026-09-25T00:00:00-03:00').getTime();
-  const chaptersLocked = Date.now() < firstChapterUnlockAt;
+  const chaptersLaunchPending = isLaunchPending('libros');
   const selectChapter = (chapter: (typeof sections)[number]) => {
     setSelectedChapter(chapter);
     setChaptersOpen(false);
@@ -869,8 +875,8 @@ function AudiobookReader({ book, onBack, onNavigate }: { book: AudiobookEntry; o
       {selectedChapter && <section className="audiobook-chapter audiobook-selected-chapter">
         <small>CAPÍTULO {selectedChapter.order}</small>
         <h2>{selectedChapter.title}</h2>
-        {chaptersLocked || selectedChapter.paragraphs.length === 0
-          ? <div className="audiobook-availability"><Lock size={18} aria-hidden="true" /><b>Disponible día viernes</b></div>
+        {chaptersLaunchPending
+          ? <LaunchDateCard />
           : selectedChapter.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
       </section>}
     </article>
@@ -976,8 +982,6 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
     );
     const isConference = /conference|conferencia/i.test(entry.type);
     const isBook = /book|libro/i.test(entry.type);
-    // Mientras los libros no estén habilitados, tampoco aparecen en la búsqueda.
-    if (isBook && LAUNCH_PENDING.libros) return false;
     const matchesFilter = !filter ||
       (filter === 'Conferencias' && isConference) ||
       (filter === 'Audios' && isConference) ||
@@ -1060,13 +1064,13 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           bounce={0.3}
         />
       </div>}
-      {filter && /Libros/.test(filter) && LAUNCH_PENDING.libros && <LaunchDateCard />}
-      {filter === 'Libros en audio' && !query && !LAUNCH_PENDING.libros && <div className="library-coming-soon">
+      {filter === 'Libros en audio' && !query && isLaunchPending('libros') && <LaunchDateCard />}
+      {filter === 'Libros en audio' && !query && !isLaunchPending('libros') && <div className="library-coming-soon">
         <span>PRÓXIMAMENTE</span>
         <b>Libros en audio</b>
         <p>Estamos preparando los audiolibros. Próximamente van a estar disponibles narrados por Germán.</p>
       </div>}
-      {filter && !query && filter !== 'Libros en audio' && !(/Libros/.test(filter) && LAUNCH_PENDING.libros) && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p><div className="library-content-list">{conferenceGroups.map((group) => {
+      {filter && !query && filter !== 'Libros en audio' && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p><div className="library-content-list">{conferenceGroups.map((group) => {
         return <section key={group.label || 'all'} className="library-year-group is-open">
           {group.entries.map((entry,index) => <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index*.025,.2)} className={`library-content-card${filter === 'Audios' ? ' is-coming-soon' : ''}`} disabled={filter === 'Audios'} onClick={filter === 'Audios' ? undefined : () => onRead(entry, undefined, 'text')}><div><p>{filter === 'Audios' ? 'Audio' : 'Texto'}</p><b className="card-title">{entry.title}</b>{filter === 'Audios' ? <em className="card-subtitle">Próximamente · leída por Germán</em> : <em className="card-subtitle">{entry.excerpt || 'Abrir conferencia'}</em>}</div><span className="library-card-actions"><i>{filter === 'Audios' ? <AnimatedInterfaceIcon name="ear" size={19} /> : <ChevronRight size={19}/>}</i></span></MagicCard></div>)}
         </section>;
@@ -1833,6 +1837,7 @@ export default function TelegramMiniApp() {
   const [interactiveBookOpen, setInteractiveBookOpen] = useState(false);
   const [preguntameOpen, setPreguntameOpen] = useState(false);
   const [blockedSection, setBlockedSection] = useState<string | null>(null);
+  const [launchLocked, setLaunchLocked] = useState<{ eyebrow: string; title: string; subtitle: string } | null>(null);
   const [libraryItems, setLibraryItems] = useState<LibraryEntry[]>([]);
   const [audiobookItems, setAudiobookItems] = useState<AudiobookEntry[]>([]);
   const [audiobooksLoading, setAudiobooksLoading] = useState(true);
@@ -1849,6 +1854,7 @@ export default function TelegramMiniApp() {
   }, [current, tab, trail]);
 
   const back = () => {
+    if (launchLocked) return setLaunchLocked(null);
     if (preguntameOpen) return setPreguntameOpen(false);
     if (selectedAudiobook) return setSelectedAudiobook(null);
     if (reader) return setReader(null);
@@ -1897,6 +1903,7 @@ export default function TelegramMiniApp() {
       return;
     }
     setBlockedSection(null);
+    setLaunchLocked(null);
     setSelectedAudiobook(null);
     setReader(null);
     setNotificationsOpen(false);
@@ -1941,6 +1948,10 @@ export default function TelegramMiniApp() {
   const select = (selected: DeckItem) => {
     if (selected.action === 'logout') {
       logout();
+      return;
+    }
+    if (selected.launchArea && isLaunchPending(selected.launchArea)) {
+      setLaunchLocked({ eyebrow: selected.reader?.eyebrow || 'PRÓXIMAMENTE', title: selected.title, subtitle: selected.detail });
       return;
     }
     if (selected.reader) return setReader(selected.reader);
@@ -2087,7 +2098,8 @@ export default function TelegramMiniApp() {
   }, []);
 
   useEffect(() => {
-    if (mainMenu || tab !== 'biblioteca' || libraryItems.length > 0) return;
+    // Se cargan al entrar a Meditaciones (o a la Biblioteca, que las incluye).
+    if (mainMenu || momentNodes.length > 0 || (tab !== 'meditaciones' && tab !== 'biblioteca')) return;
     supabase
       .from('content_items')
       .select('id,title,body,metadata,content_assets(asset_type,source_url,storage_path,duration_seconds,sort_order)')
@@ -2106,6 +2118,7 @@ export default function TelegramMiniApp() {
             detail: 'Meditación para este momento.',
             tone: palette[index % palette.length],
             image: `/images/meditacion-${String(index + 1).padStart(2, '0')}.webp`,
+            launchArea: 'meditaciones',
             reader: { title: row.title || 'Meditación', eyebrow: 'MEDITACIÓN PARA AHORA', detail: 'Escuchá la práctica.', paragraphs: [], audioUrl, duration: asset?.duration_seconds ? `${Math.round(asset.duration_seconds / 60)} min` : undefined },
           } as DeckItem;
         }));
@@ -2196,6 +2209,10 @@ export default function TelegramMiniApp() {
   }, [mainMenu, tab, libraryItems.length]);
 
   const openLibraryEntry = async (entry: LibraryEntry, searchQuery?: string, mode: 'audio' | 'text' = 'text') => {
+    if (/book|libro/i.test(entry.type) && isLaunchPending('libros')) {
+      setLaunchLocked({ eyebrow: 'LIBRO', title: entry.title, subtitle: entry.excerpt || 'Biblioteca' });
+      return;
+    }
     if (mode === 'audio') {
       setReader({
         title: entry.title,
@@ -2271,9 +2288,9 @@ export default function TelegramMiniApp() {
     return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; navigateTo(item.target); }} /></section>{dock}</main>;
   }
   if (interactiveBookOpen) return <main className="app-shell app-main section-app"><InteractiveBookIntro onBack={back} onNavigate={navigateTo} />{dock}</main>;
-  if (courseOpen && LAUNCH_PENDING.curso365) return <main className="app-shell app-main section-app"><LaunchPendingPanel eyebrow="TALLER DE 365 DÍAS" title="Taller de 365 días" subtitle="Ley de Asunción · recorrido completo." onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (courseOpen) return <main className="app-shell app-main section-app"><LawCoursePanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} onBack={back} onNavigate={navigateTo} onNameSaved={setFullName} onLogout={logout} />{dock}</main>;
+  if (launchLocked) return <main className="app-shell app-main section-app"><LaunchPendingPanel eyebrow={launchLocked.eyebrow} title={launchLocked.title} subtitle={launchLocked.subtitle} onBack={() => setLaunchLocked(null)} onNavigate={(target) => { setLaunchLocked(null); navigateTo(target); }} />{dock}</main>;
   if (selectedAudiobook) return <main className="app-shell app-main section-app"><AudiobookReader book={selectedAudiobook} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (reader) { const favorite = deckFavorite({ icon: '📖', title: reader.title, detail: reader.detail, tone: palette[0], reader }); return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} onNavigate={navigateTo} favorite={favorites.some((item) => item.title === reader.title)} onFavorite={() => { const exact = favorites.find((item) => item.title === reader.title); toggleFavorite(exact || favorite); }} />{dock}</main>; }
   if (favoritesOpen) return <main className="app-shell app-main section-app"><FavoritesPanel favorites={favorites} onBack={back} onNavigate={navigateTo} onOpen={(favorite) => { if (favorite.reader) setReader(favorite.reader); }} onRemove={toggleFavorite} />{dock}</main>;
@@ -2281,8 +2298,6 @@ export default function TelegramMiniApp() {
   if (notificationsOpen) return <main className="app-shell app-main section-app"><NotificationsPanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (configurationOpen) return <main className="app-shell app-main section-app"><ConfigurationPanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (preguntameOpen) return <main className="app-shell app-main section-app preguntame-shell"><PreguntamePanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
-  if (tab === 'audiolibros' && !trail.length && LAUNCH_PENDING.libros) return <main className="app-shell app-main section-app"><LaunchPendingPanel eyebrow="AUDIOLIBROS DE GERMÁN" title="Libros" subtitle="Libros completos de Germán." onBack={back} onNavigate={navigateTo} />{dock}</main>;
-  if (tab === 'meditaciones' && !trail.length && LAUNCH_PENDING.meditaciones) return <main className="app-shell app-main section-app"><LaunchPendingPanel eyebrow="MEDITACIONES" title="Meditaciones para ahora" subtitle="Prácticas para situaciones puntuales." onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'audiolibros' && !trail.length) {
     return <main className="app-shell app-main section-app"><AudiobookLibraryPanel entries={audiobookItems} loading={audiobooksLoading} error={audiobooksError} onBack={back} onNavigate={navigateTo} onOpen={(entry) => { touchContentProgress(session.user.id, `audiobook:${entry.id}`, 'audiobook'); setSelectedAudiobook(entry); }} />{dock}</main>;
   }
