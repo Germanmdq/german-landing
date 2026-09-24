@@ -1536,6 +1536,13 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
         <div className="workshop-progress-copy"><span>Tu recorrido</span><b>Día {currentDay} de {programDays}</b><small>{Math.max(0, programDays - currentDay)} días por delante</small></div>
         <div className="workshop-progress-track" aria-hidden="true"><span style={{ width: `${Math.min(100, Math.max(0, (currentDay / programDays) * 100))}%` }} /></div>
       </section>}
+      <section className="workshop-description-card" aria-labelledby={`workshop-description-${program.slug}`}>
+        <span>Sobre este taller</span>
+        <h3 id={`workshop-description-${program.slug}`}>{programMeta.introSubtitle}</h3>
+        <div className="workshop-description-copy">
+          {programMeta.introParagraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+        </div>
+      </section>
       <div className="workshop-schedule-action">
         <button type="button" className="workshop-schedule-pill" onClick={() => { setSaveError(''); setStage('edit-schedule'); }}><span className="ios-row-label">Cambiar horarios</span><span className="ios-row-value">{schedule.morning} · {schedule.noon} · {schedule.afternoon} · {schedule.night}<ChevronRight size={17} /></span></button>
       </div>
