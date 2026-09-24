@@ -44,3 +44,16 @@ test('la Mini App calcula screen en cada render a partir de screens (sin useMemo
   assert.match(source, /const screen: Screen = resolveScreen\(screens, tab, trail\);/);
   assert.match(source, /const screens = useMemo\(\(\) => buildScreens\(momentNodes\), \[momentNodes\]\);/);
 });
+
+test('el efecto que carga los moments depende de mainMenu, tab y momentNodes.length (no de [])', () => {
+  const source = readFileSync(new URL('../app/telegram-mini-app.tsx', import.meta.url), 'utf8');
+  const guard = "if (mainMenu || momentNodes.length > 0 || (tab !== 'meditaciones' && tab !== 'biblioteca')) return;";
+  const start = source.indexOf(guard);
+  assert.ok(start > 0, 'existe el guard del efecto de moments');
+  assert.match(source.slice(start, start + 600), /\.eq\('content_type', 'moment'\)/);
+  // El primer cierre de efecto después del guard es el de este efecto.
+  const closing = source.slice(start).match(/\n {2}\}, \[([^\]]*)\]\);/);
+  assert.ok(closing, 'se encuentra el cierre del efecto');
+  assert.notEqual(closing![1].trim(), '', 'no puede quedar con [] (correría sólo al montar, desde la home)');
+  assert.deepEqual(closing![1].split(',').map((dep) => dep.trim()).sort(), ['mainMenu', 'momentNodes.length', 'tab'].sort());
+});

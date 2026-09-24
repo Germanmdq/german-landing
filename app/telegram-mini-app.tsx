@@ -2130,7 +2130,7 @@ export default function TelegramMiniApp() {
           } as DeckItem;
         }));
       });
-  }, []);
+  }, [mainMenu, tab, momentNodes.length]);
 
   useEffect(() => {
     if (!session?.user || accessState !== 'active') return;
