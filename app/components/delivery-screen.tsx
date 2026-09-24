@@ -210,7 +210,7 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
         onEnded={() => setPlaying(false)}
       />
       <button type="button" className={`delivery-audio-ear${playing ? ' is-playing' : ''}`} onClick={() => { void toggleAudio(); }} aria-label={playing ? 'Pausar audio' : 'Escuchar audio'} aria-pressed={playing}>
-        <AnimatedInterfaceIcon name="ear" size={42} />
+        <AnimatedInterfaceIcon name="ear" size={28} />
       </button>
     </section>}
     {delivery.deliveryType === 'intermediate_message' && delivery.paragraphs.length > 0 && <section className="delivery-text-modern">
