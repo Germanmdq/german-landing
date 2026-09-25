@@ -127,3 +127,12 @@ test('Meditaciones para ahora: las tarjetas internas muestran oreja y mantienen 
   assert.match(idsMigration, /9071,9072,9073,9074,9075/);
   assert.doesNotMatch(idsMigration, /insert into public\.content_assets/i);
 });
+
+test('las pantallas internas mantienen Volver visible y las meditaciones usan tarjeta compacta', () => {
+  const carouselCss = read('app/components/day-one-carousel.css');
+  assert.match(app, /<button type="button" className="header-back" onClick=\{onBack\}>/);
+  assert.match(app, /const meditationDetailScreen = tab === 'meditaciones' && trail\.length > 0;/);
+  assert.match(app, /meditation-detail-screen/);
+  assert.match(carouselCss, /\.meditation-detail-screen \.day-one-track/);
+  assert.match(carouselCss, /height: min\(82%, 640px\)/);
+});

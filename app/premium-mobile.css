@@ -17,6 +17,15 @@
 .feature-header .header-menu svg { color:#fff !important; stroke:#fff !important; width:26px; height:26px; stroke-width:2.6; }
 .feature-header .header-menu:active { background:transparent !important; opacity:.65; }
 .day-one-screen .feature-header .header-back { min-height: 44px; }
+.app-shell.section-app:not(.welcome-carousel-screen) .feature-header .header-back {
+  background:#1c1c1e !important;
+  color:#f5f5f7 !important;
+}
+.app-shell.section-app.meditaciones-photo-screen .feature-header .header-back,
+.app-shell.section-app.guided-photo-screen .feature-header .header-back {
+  background:#f2f2f7 !important;
+  color:#1c1c1e !important;
+}
 .nav-menu-sheet { z-index: 100; }
 .nav-menu-row, .nav-menu-cancel, .time-sheet header button, .timezone-option, .notification-time-row { transition: background-color .16s ease, transform .16s ease; }
 .nav-menu-row:focus-visible, .nav-menu-cancel:focus-visible, .timezone-option:focus-visible, .notification-time-row:focus-visible, .time-wheel:focus-visible { outline: 3px solid #a91e29 !important; outline-offset: -3px; box-shadow: none; }

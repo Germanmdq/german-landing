@@ -89,16 +89,18 @@
   display: flex;
   align-items: center;
   align-self: stretch;
+  width: 100%;
   min-height: 32px;
-  margin: 0 0 6px;
+  margin: 10px 0 0;
 }
 .header-back {
   display: inline-flex;
   align-items: center;
   gap: 2px;
   border: 0;
-  background: none;
-  padding: 0;
+  border-radius: 999px;
+  background: rgba(118,118,128,.16);
+  padding: 8px 12px 8px 8px;
   margin: 0;
   color: var(--ui-accent);
   font-size: 17px;
@@ -179,6 +181,21 @@
 .day-one-subtitle.is-availability {
   color: #D92D35;
   font-weight: 600;
+}
+
+/* Las cinco opciones dentro de una situación de "Meditaciones para ahora"
+   no necesitan ocupar toda la altura. Una tarjeta más compacta deja claro
+   que es una elección de audio y mantiene visibles los controles. */
+.meditation-detail-screen .day-one-scroll {
+  align-items: center;
+}
+.meditation-detail-screen .day-one-track {
+  height: min(82%, 640px);
+  min-height: 380px;
+  align-self: center;
+}
+.meditation-detail-screen .day-one-card {
+  height: 100%;
 }
 .day-one-audio-cue {
   position: absolute;
