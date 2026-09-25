@@ -13,6 +13,7 @@ type MagicCardProps = Omit<HTMLMotionProps<'button'>, 'children'> & {
 export function MagicCard({ children, className = '', delay = 0, style, ...props }: MagicCardProps) {
   const cardRef = useRef<HTMLButtonElement>(null);
   const [visible, setVisible] = useState(false);
+  const instant = className.includes('library-content-card--instant');
 
   // IntersectionObserver: cuando la card entra al viewport le agregamos la
   // clase "card-visible", que dispara en CSS la animación de .card-title/
@@ -38,9 +39,9 @@ export function MagicCard({ children, className = '', delay = 0, style, ...props
       ref={cardRef}
       className={`magic-card${visible ? ' card-visible' : ''} ${className}`}
       style={style}
-      initial={className.includes('category-card') ? false : { opacity: 0, y: 18, scale: 0.985 }}
+      initial={className.includes('category-card') || instant ? false : { opacity: 0, y: 18, scale: 0.985 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.42, delay, ease: [0.22, 1, 0.36, 1] }}
+      transition={instant ? { duration: 0 } : { duration: 0.42, delay, ease: [0.22, 1, 0.36, 1] }}
       whileTap={className.includes('category-card') ? undefined : { scale: 0.985 }}
       onPointerMove={(event) => {
         const rect = event.currentTarget.getBoundingClientRect();

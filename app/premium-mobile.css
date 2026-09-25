@@ -136,6 +136,18 @@ html:has(.library-section), body:has(.library-section) { background:#09090a !imp
 .library-master-folder.is-open .library-master-folder-shape i { transform:translateY(11px) rotate(-14deg); }
 .library-section .library-content-card { background:#111113 !important; border-color:#111113 !important; color:#f5f5f7 !important; box-shadow:none !important; }
 .library-section .library-content-card p,.library-section .library-content-card b,.library-section .library-content-card em,.library-section .library-content-card span { color:#f5f5f7 !important; }
+.library-section .library-content-card--instant,
+.library-section .library-content-card--instant .card-title,
+.library-section .library-content-card--instant .card-subtitle,
+.library-section .library-content-card--instant p,
+.library-section .library-content-card--instant b,
+.library-section .library-content-card--instant em,
+.library-section .library-content-card--instant span {
+  opacity:1 !important;
+  transform:none !important;
+  transition:none !important;
+  animation:none !important;
+}
 .library-section .library-content-list { gap:18px; }
 .library-section .library-year-group .library-card-row + .library-card-row { margin-top:14px; }
 .library-section .library-card-row { border-radius:26px; }
