@@ -235,6 +235,13 @@ html:has(.preguntame-shell), body:has(.preguntame-shell) { background:#09090a !i
 .preguntame-shell .feature-header > span, .preguntame-shell .feature-header > small { width:100%; text-align:center !important; }
 .preguntame-stage { box-sizing:border-box; height:calc(100dvh - 255px - 82px - env(safe-area-inset-bottom)); min-height:0; padding:18px 20px 28px; display:grid; grid-template-rows:1fr auto auto auto; align-content:stretch; gap:12px; }
 .preguntame-copy { align-self:center; margin:0; padding:0 5px; transform:translateY(-34px); }
+/* Consultas antes del lanzamiento: la tarjeta ocupa el lugar del composer, compacta y siempre por encima del dock. */
+.preguntame-stage.is-launch-pending { grid-template-rows:minmax(0,1fr) auto; }
+.preguntame-stage.is-launch-pending .preguntame-copy { min-height:0; overflow:hidden; }
+.preguntame-launch-card .launch-card { margin:0; padding:18px; grid-template-columns:auto 1fr; justify-items:start; align-items:center; gap:16px; text-align:left; }
+.preguntame-launch-card .launch-card-copy { gap:6px; }
+.preguntame-launch-card .launch-card-copy h2 { font-size:20px; }
+.preguntame-launch-card .launch-card-copy p { font-size:13px; }
 .preguntame-copy h2 { font-size:clamp(44px,12vw,62px); }
 .prompt-bar { align-self:end; margin-bottom:24px; }
 .preguntame-notice { margin-top:-16px; }

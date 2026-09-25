@@ -74,15 +74,36 @@ test('las animaciones son sólo de entrada y respetan movimiento reducido', () =
   assert.match(css, /safe-area-inset-bottom/);
 });
 
-test('Consultas: la sección se ve y el bloqueo va al enviar, antes de guardar nada', () => {
+test('Consultas pendiente: tarjeta en lugar del composer, sin grabar, transcribir ni guardar', () => {
+  // 1. consultas: true
   assert.match(widgets, /consultas: true,/);
-  const submitAt = app.indexOf('const submit = async () => {');
-  const gateAt = app.indexOf("if (isLaunchPending('consultas')) { setNotice(''); setLaunchCardOpen(true); return; }", submitAt);
-  const insertAt = app.indexOf(".from('user_consultations').insert(", submitAt);
-  const workingAt = app.indexOf('setWorking(true);', submitAt);
-  assert.ok(submitAt > 0 && gateAt > submitAt && gateAt < insertAt && gateAt < workingAt, 'el gate corre antes del insert y del loader');
-  assert.match(app, /\{launchCardOpen && <LaunchDateCard \/>\}/);
-  assert.doesNotMatch(app, /tab === 'consultas' && !trail\.length && isLaunchPending/);
+  const panelAt = app.indexOf('function PreguntamePanel(');
+  const panel = app.slice(panelAt, app.indexOf('\nfunction ', panelAt + 10));
+  // 2. Preguntame usa isLaunchPending('consultas') en una sola bandera
+  assert.match(panel, /const consultasLaunchPending = isLaunchPending\('consultas'\);/);
+  // 3. Mientras está pendiente se renderiza LaunchDateCard en lugar del composer
+  assert.match(panel, /\{consultasLaunchPending\s*\? <div className="preguntame-launch-card"><LaunchDateCard \/><\/div>\s*: <>/);
+  const pendingBranch = panel.slice(panel.indexOf('{consultasLaunchPending'), panel.indexOf(': <>'));
+  assert.doesNotMatch(pendingBranch, /prompt-bar|textarea|prompt-mic|prompt-send|preguntame-suggestions/);
+  // 4 y 5. toggleVoice corta antes de getUserMedia y antes de /api/transcribe
+  const voiceAt = panel.indexOf('const toggleVoice = async () => {');
+  const voiceGateAt = panel.indexOf('if (consultasLaunchPending) return;', voiceAt);
+  assert.ok(voiceAt > 0 && voiceGateAt > voiceAt, 'toggleVoice tiene el gate');
+  assert.ok(voiceGateAt < panel.indexOf('navigator.mediaDevices.getUserMedia', voiceAt), 'gate antes de getUserMedia');
+  assert.ok(voiceGateAt < panel.indexOf("fetch('/api/transcribe'", voiceAt), 'gate antes de /api/transcribe');
+  // 6. submit sigue bloqueado antes del insert y del loader
+  const submitAt = panel.indexOf('const submit = async () => {');
+  const submitGateAt = panel.indexOf('if (consultasLaunchPending) return;', submitAt);
+  assert.ok(submitGateAt > submitAt, 'submit tiene el gate');
+  assert.ok(submitGateAt < panel.indexOf(".from('user_consultations').insert(", submitAt), 'gate antes del insert');
+  assert.ok(submitGateAt < panel.indexOf('setWorking(true);', submitAt), 'gate antes del loader');
+  // 7. Sin el bloqueo, el composer existente sigue igual
+  const composer = panel.slice(panel.indexOf(': <>'));
+  assert.match(composer, /<div className=\{`prompt-bar\$\{listening \? ' is-listening' : ''\}`\}>/);
+  assert.match(composer, /<textarea ref=\{promptRef\}/);
+  assert.match(composer, /className="prompt-mic" onClick=\{toggleVoice\}/);
+  assert.match(composer, /className="prompt-send"/);
+  assert.match(composer, /className="preguntame-suggestions"/);
 });
 
 test('Fotos de "¿Qué necesitás ahora?": versionadas y el carrusel no deja el shimmer eterno', () => {

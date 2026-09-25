@@ -155,7 +155,8 @@ function PreguntamePanel({ user, onBack, onNavigate }: { user: User; onBack: () 
   const [working, setWorking] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [notice, setNotice] = useState('');
-  const [launchCardOpen, setLaunchCardOpen] = useState(false);
+  // Antes del lanzamiento no se muestra el composer ni se graba/transcribe/guarda nada.
+  const consultasLaunchPending = isLaunchPending('consultas');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recognitionRef = useRef<{ stop: () => void } | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -173,6 +174,7 @@ function PreguntamePanel({ user, onBack, onNavigate }: { user: User; onBack: () 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); recognitionRef.current?.stop(); recorderRef.current?.stop(); streamRef.current?.getTracks().forEach((track) => track.stop()); }, []);
 
   const toggleVoice = async () => {
+    if (consultasLaunchPending) return;
     setNotice('');
     if (listening) { recorderRef.current?.stop(); setListening(false); return; }
     try {
@@ -202,9 +204,8 @@ function PreguntamePanel({ user, onBack, onNavigate }: { user: User; onBack: () 
   const submit = async () => {
     const question = prompt.trim();
     if (!question || working) return;
-    // Antes del lanzamiento la consulta no se guarda ni se procesa: sólo se
-    // muestra la fecha. El texto queda en la caja.
-    if (isLaunchPending('consultas')) { setNotice(''); setLaunchCardOpen(true); return; }
+    // Defensa extra: antes del lanzamiento no hay composer y nada se guarda ni procesa.
+    if (consultasLaunchPending) return;
     setWorking(true); setElapsed(0); setNotice('');
     timerRef.current = setInterval(() => setElapsed((value) => value + 1), 1000);
     const { error } = await supabase.from('user_consultations').insert({ user_id: user.id, question, source: 'text', status: 'pending' });
@@ -217,16 +218,19 @@ function PreguntamePanel({ user, onBack, onNavigate }: { user: User; onBack: () 
 
   return <section className="preguntame-panel">
     <FixedHeader eyebrow="PREGUNTAME" title="¿Qué te está pasando?" subtitle="Escribilo o decímelo con tu voz." onBack={onBack} onNavigate={onNavigate} />
-    <div className="preguntame-stage">
+    <div className={`preguntame-stage${consultasLaunchPending ? ' is-launch-pending' : ''}`}>
       <div className="preguntame-copy"><span>GERMÁN</span><h2>Contame.</h2><p>No hace falta que armes bien la pregunta. Decime qué te pasa como te salga.</p></div>
-      {working && <div className="lattice-loader" role="status" aria-live="polite"><span className="lattice-grid">{Array.from({ length: 9 }, (_, index) => <i key={index} />)}</span><p>Buscando la mejor respuesta… <small>{elapsed}s</small></p></div>}
-      <div className={`prompt-bar${listening ? ' is-listening' : ''}`}>
-        <textarea ref={promptRef} value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} rows={1} placeholder="Preguntame lo que quieras…" aria-label="Tu pregunta" />
-        <div className="prompt-actions"><button type="button" className="prompt-mic" onClick={toggleVoice} aria-label={listening ? 'Detener dictado' : 'Dictar pregunta'}>{listening ? <Square size={16} fill="currentColor" /> : <Mic size={20} />}</button><button type="button" className="prompt-send" disabled={!prompt.trim() || working} onClick={submit} aria-label="Enviar pregunta"><ArrowUp size={20} strokeWidth={2.5} /></button></div>
-      </div>
-      {notice && <p className="preguntame-notice">{notice}</p>}
-      {launchCardOpen && <LaunchDateCard />}
-      <div className="preguntame-suggestions"><button onClick={() => setPrompt('No puedo dejar de pensar en algo que pasó')}>No puedo dejar de pensar</button><button onClick={() => setPrompt('Tengo miedo de que algo salga mal')}>Tengo miedo</button><button onClick={() => setPrompt('¿Cómo vuelvo a sentirme seguro?')}>Quiero sentirme seguro</button></div>
+      {consultasLaunchPending
+        ? <div className="preguntame-launch-card"><LaunchDateCard /></div>
+        : <>
+        {working && <div className="lattice-loader" role="status" aria-live="polite"><span className="lattice-grid">{Array.from({ length: 9 }, (_, index) => <i key={index} />)}</span><p>Buscando la mejor respuesta… <small>{elapsed}s</small></p></div>}
+        <div className={`prompt-bar${listening ? ' is-listening' : ''}`}>
+          <textarea ref={promptRef} value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} rows={1} placeholder="Preguntame lo que quieras…" aria-label="Tu pregunta" />
+          <div className="prompt-actions"><button type="button" className="prompt-mic" onClick={toggleVoice} aria-label={listening ? 'Detener dictado' : 'Dictar pregunta'}>{listening ? <Square size={16} fill="currentColor" /> : <Mic size={20} />}</button><button type="button" className="prompt-send" disabled={!prompt.trim() || working} onClick={submit} aria-label="Enviar pregunta"><ArrowUp size={20} strokeWidth={2.5} /></button></div>
+        </div>
+        {notice && <p className="preguntame-notice">{notice}</p>}
+        <div className="preguntame-suggestions"><button onClick={() => setPrompt('No puedo dejar de pensar en algo que pasó')}>No puedo dejar de pensar</button><button onClick={() => setPrompt('Tengo miedo de que algo salga mal')}>Tengo miedo</button><button onClick={() => setPrompt('¿Cómo vuelvo a sentirme seguro?')}>Quiero sentirme seguro</button></div>
+        </>}
     </div>
   </section>;
 }
