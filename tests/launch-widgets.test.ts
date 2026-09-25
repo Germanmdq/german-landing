@@ -133,6 +133,8 @@ test('las pantallas internas mantienen Volver visible y las meditaciones usan ta
   assert.match(app, /<button type="button" className="header-back" onClick=\{onBack\}>/);
   assert.match(app, /const meditationDetailScreen = tab === 'meditaciones' && trail\.length > 0;/);
   assert.match(app, /meditation-detail-screen/);
-  assert.match(carouselCss, /\.meditation-detail-screen \.day-one-track/);
-  assert.match(carouselCss, /height: min\(82%, 640px\)/);
+  assert.match(carouselCss, /\.meditation-detail-screen \.day-one-carousel/);
+  assert.match(carouselCss, /--day-card-width: calc\(80cqw - 20px\)/);
+  assert.match(carouselCss, /\.meditation-detail-screen \.day-one-card[\s\S]{0,120}height: 86%/);
+  assert.doesNotMatch(carouselCss, /height: min\(82%, 640px\)/);
 });

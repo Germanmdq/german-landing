@@ -184,18 +184,18 @@
 }
 
 /* Las cinco opciones dentro de una situación de "Meditaciones para ahora"
-   no necesitan ocupar toda la altura. Una tarjeta más compacta deja claro
-   que es una elección de audio y mantiene visibles los controles. */
-.meditation-detail-screen .day-one-scroll {
-  align-items: center;
+   conservan EXACTAMENTE la misma tarjeta: mismo radio, misma composición y
+   todo el contenido visible. Se achica la tarjeta real, no su viewport. */
+.meditation-detail-screen .day-one-carousel {
+  --day-card-width: calc(80cqw - 20px);
 }
 .meditation-detail-screen .day-one-track {
-  height: min(82%, 640px);
-  min-height: 380px;
-  align-self: center;
+  align-items: center;
 }
 .meditation-detail-screen .day-one-card {
-  height: 100%;
+  height: 86%;
+  min-height: 0;
+  align-self: center;
 }
 .day-one-audio-cue {
   position: absolute;
