@@ -2126,18 +2126,39 @@ export default function TelegramMiniApp() {
         if (error) { console.error('[moments] error cargando content_items:', error); return; }
         const rows = [...(data || [])].sort((a, b) => Number((a.metadata as Record<string, unknown> | null)?.sort_order || 0) - Number((b.metadata as Record<string, unknown> | null)?.sort_order || 0));
         setMomentNodes(rows.map((row, index) => {
+          const metadata = row.metadata && typeof row.metadata === 'object' && !Array.isArray(row.metadata) ? row.metadata as Record<string, unknown> : {};
           const assets = Array.isArray(row.content_assets) ? row.content_assets as Array<{ asset_type?: string; source_url?: string; storage_path?: string; duration_seconds?: number; sort_order?: number }> : [];
-          const asset = assets.filter((item) => item.asset_type === 'audio').sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))[0];
-          const audioUrl = asset?.source_url || (asset?.storage_path ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/${asset.storage_path}` : undefined);
+          const audioAssets = assets.filter((item) => item.asset_type === 'audio').sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
+          const meditationTitles = Array.isArray(metadata.meditation_titles)
+            ? metadata.meditation_titles.filter((value): value is string => typeof value === 'string' && value.trim().length > 0).slice(0, 5)
+            : [];
+          const children: DeckItem[] = meditationTitles.map((title, meditationIndex) => {
+            const asset = audioAssets.find((item) => Number(item.sort_order || 0) === meditationIndex + 1);
+            const audioUrl = asset?.source_url || (asset?.storage_path ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/${asset.storage_path}` : undefined);
+            return {
+              icon: '▶️',
+              title,
+              detail: isLaunchPending('meditaciones') ? 'Disponible el domingo 27' : 'Meditación para ahora',
+              tone: palette[meditationIndex % palette.length],
+              launchArea: 'meditaciones',
+              reader: {
+                title,
+                eyebrow: 'MEDITACIÓN PARA AHORA',
+                detail: row.title || 'Meditación para ahora',
+                paragraphs: [],
+                audioUrl,
+                duration: asset?.duration_seconds ? `${Math.round(asset.duration_seconds / 60)} min` : undefined,
+              },
+            };
+          });
           return {
             icon: momentIcons[index] || '✨',
             title: row.title || 'Meditación',
-            detail: 'Meditación para este momento.',
+            detail: isLaunchPending('meditaciones') ? 'Disponible el domingo 27' : 'Elegí una meditación',
             tone: palette[index % palette.length],
             // Versionada para no depender de una copia vieja en la caché del WebView de Telegram.
             image: `/images/meditacion-${String(index + 1).padStart(2, '0')}.webp?v=${MEDITATION_IMAGE_VERSION}`,
-            launchArea: 'meditaciones',
-            reader: { title: row.title || 'Meditación', eyebrow: 'MEDITACIÓN PARA AHORA', detail: 'Escuchá la práctica.', paragraphs: [], audioUrl, duration: asset?.duration_seconds ? `${Math.round(asset.duration_seconds / 60)} min` : undefined },
+            children,
           } as DeckItem;
         }));
       });
@@ -2359,5 +2380,6 @@ export default function TelegramMiniApp() {
   // "Meditaciones para ahora" ya trae su propia imagen en cada DeckItem
   // (momentNodes, asignada por posición 1..15), así que no se pisa acá.
   const meditacionesPhotoScreen = tab === 'meditaciones' && trail.length === 0;
-  return <main className={`app-shell app-main section-app day-one-screen${photoCardsScreen ? ' photo-cards-screen' : ''}${meditacionesPhotoScreen ? ' meditaciones-photo-screen' : ''}`}><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><DayOneCarousel key={carouselKey} label={screen.title} items={screen.items.map((item) => item.accountPanel ? { ...item, image: '/images/mi-cuenta-acceso.webp' } : item.title === 'Favoritos' ? { ...item, image: '/images/favoritos-guardados.webp' } : item.title === 'Estado' ? { ...item, image: '/images/mi-avance-progreso.webp' } : item.title === 'Configuración' ? { ...item, image: '/images/configuracion-horarios-zona.webp' } : item.title === 'Activar notificaciones' ? { ...item, image: '/images/activar-notificaciones.webp' } : item.title === 'Horarios de práctica' ? { ...item, image: '/images/horarios-practica.webp' } : item.title === 'Preferencias' ? { ...item, image: '/images/preferencias-avisos.webp' } : item.title === 'Prácticas de 7 días' ? { ...item, image: '/images/interno-7dias.webp' } : item.title === 'Prácticas de 15 días' ? { ...item, image: '/images/interno-15dias.webp' } : item.title === 'Prácticas de 40 días' ? { ...item, image: '/images/interno-40dias.webp' } : item.title === 'Amor y relaciones' ? { ...item, image: '/images/interno-amor.webp' } : item.title === 'Dinero y trabajo' ? { ...item, image: '/images/interno-dinero.webp' } : item.title === 'Salud y bienestar' ? { ...item, image: '/images/interno-salud.webp' } : item.title === 'Preguntar' ? { ...item, image: '/images/interno-preguntar.webp' } : item.title === 'Escuchar' ? { ...item, image: '/images/interno-escuchar.webp' } : item.title === 'Guardadas' ? { ...item, image: '/images/interno-guardadas.webp' } : item)} initialIndex={carouselIndicesRef.current[carouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[carouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[carouselKey] = index; select(item); }} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section>{dock}</main>;
+  const meditacionesSectionScreen = tab === 'meditaciones';
+  return <main className={`app-shell app-main section-app day-one-screen${photoCardsScreen ? ' photo-cards-screen' : ''}${meditacionesPhotoScreen ? ' meditaciones-photo-screen' : ''}${meditacionesSectionScreen ? ' meditaciones-section-screen' : ''}`}><section className="day-one-section"><FixedHeader eyebrow={screen.eyebrow} title={screen.title} subtitle={screen.subtitle} onBack={back} onNavigate={navigateTo} /><DayOneCarousel key={carouselKey} label={screen.title} items={screen.items.map((item) => item.accountPanel ? { ...item, image: '/images/mi-cuenta-acceso.webp' } : item.title === 'Favoritos' ? { ...item, image: '/images/favoritos-guardados.webp' } : item.title === 'Estado' ? { ...item, image: '/images/mi-avance-progreso.webp' } : item.title === 'Configuración' ? { ...item, image: '/images/configuracion-horarios-zona.webp' } : item.title === 'Activar notificaciones' ? { ...item, image: '/images/activar-notificaciones.webp' } : item.title === 'Horarios de práctica' ? { ...item, image: '/images/horarios-practica.webp' } : item.title === 'Preferencias' ? { ...item, image: '/images/preferencias-avisos.webp' } : item.title === 'Prácticas de 7 días' ? { ...item, image: '/images/interno-7dias.webp' } : item.title === 'Prácticas de 15 días' ? { ...item, image: '/images/interno-15dias.webp' } : item.title === 'Prácticas de 40 días' ? { ...item, image: '/images/interno-40dias.webp' } : item.title === 'Amor y relaciones' ? { ...item, image: '/images/interno-amor.webp' } : item.title === 'Dinero y trabajo' ? { ...item, image: '/images/interno-dinero.webp' } : item.title === 'Salud y bienestar' ? { ...item, image: '/images/interno-salud.webp' } : item.title === 'Preguntar' ? { ...item, image: '/images/interno-preguntar.webp' } : item.title === 'Escuchar' ? { ...item, image: '/images/interno-escuchar.webp' } : item.title === 'Guardadas' ? { ...item, image: '/images/interno-guardadas.webp' } : item)} initialIndex={carouselIndicesRef.current[carouselKey] ?? 0} onIndexChange={(index) => { carouselIndicesRef.current[carouselKey] = index; }} onSelect={(item, index) => { carouselIndicesRef.current[carouselKey] = index; select(item); }} isFavorite={(item) => item.reader ? favorites.some((favorite) => favorite.id === deckFavorite(item).id) : undefined} onFavorite={(item) => toggleFavorite(deckFavorite(item))} /></section>{dock}</main>;
 }

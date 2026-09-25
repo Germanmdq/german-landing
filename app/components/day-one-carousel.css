@@ -176,6 +176,10 @@
   letter-spacing: -.015em;
   display: block;
 }
+.meditaciones-section-screen .day-one-subtitle {
+  color: #D92D35;
+  font-weight: 600;
+}
 /* Solo el carrusel principal: el subtítulo de la card es más
    prominente, como label secundario de navegación. */
 .welcome-carousel-screen .day-one-subtitle,
