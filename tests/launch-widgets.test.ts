@@ -114,3 +114,16 @@ test('Fotos de "¿Qué necesitás ahora?": versionadas y el carrusel no deja el 
   assert.match(carousel, /element\?\.complete && element\.naturalWidth > 0/);
   assert.match(carousel, /retry=\$\{Date\.now\(\)\}/);
 });
+
+
+test('Meditaciones para ahora: las tarjetas internas muestran oreja y mantienen el bloqueo hasta cargar audio', () => {
+  const carousel = read('app/components/day-one-carousel.tsx');
+  const carouselCss = read('app/components/day-one-carousel.css');
+  const idsMigration = read('supabase/migrations/20260925235000_reserve_meditation_audio_ids.sql');
+  assert.match(app, /audioCue: true/);
+  assert.match(carousel, /AnimatedInterfaceIcon name=\"ear\"/);
+  assert.match(carouselCss, /\.day-one-audio-cue/);
+  assert.match(idsMigration, /9001,9002,9003,9004,9005/);
+  assert.match(idsMigration, /9071,9072,9073,9074,9075/);
+  assert.doesNotMatch(idsMigration, /insert into public\.content_assets/i);
+});

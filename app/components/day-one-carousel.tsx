@@ -1,11 +1,12 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Heart, Video } from 'lucide-react';
+import { AnimatedInterfaceIcon } from './animated-interface-icon';
 
 // Imagen genérica si una foto no se puede cargar ni reintentando.
 const FALLBACK_IMAGE = '/images/momento.webp';
 
-type Item = { title: string; detail: string; image?: string; imageSize?: 'compact'; placeholder?: boolean; disabled?: boolean; availability?: boolean };
+type Item = { title: string; detail: string; image?: string; imageSize?: 'compact'; placeholder?: boolean; disabled?: boolean; availability?: boolean; audioCue?: boolean };
 export function DayOneCarousel<T extends Item>({
   items,
   onSelect,
@@ -206,6 +207,7 @@ export function DayOneCarousel<T extends Item>({
             <strong className="day-one-title">{item.title}</strong>
             {item.detail && <span className={`day-one-subtitle${item.availability ? ' is-availability' : ''}`}>{item.detail}</span>}
           </span>
+          {item.audioCue && <span className="day-one-audio-cue" aria-hidden="true"><AnimatedInterfaceIcon name="ear" size={46} /></span>}
           {item.image && <span className="day-one-visual">
             {!loadedImages.has(index) && <span className="day-one-image-placeholder" aria-hidden="true" />}
             <img

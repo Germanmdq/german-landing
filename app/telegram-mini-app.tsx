@@ -39,7 +39,7 @@ import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, INTER
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'audiolibros' | 'consultas' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string; audios?: { label: string; url: string }[]; highlightQuery?: string };
 type ProgramPanelConfig = { slug: string; title: string; subtitle: string };
-type DeckItem = { icon: string; title: string; detail: string; tone: string; image?: string; imageSize?: 'compact'; disabled?: boolean; availability?: boolean; children?: DeckItem[]; reader?: ReaderContent; launchArea?: LaunchArea; notificationPanel?: boolean; accountPanel?: boolean; workshopPanel?: boolean; programPanel?: ProgramPanelConfig; action?: 'logout' };
+type DeckItem = { icon: string; title: string; detail: string; tone: string; image?: string; imageSize?: 'compact'; disabled?: boolean; availability?: boolean; audioCue?: boolean; children?: DeckItem[]; reader?: ReaderContent; launchArea?: LaunchArea; notificationPanel?: boolean; accountPanel?: boolean; workshopPanel?: boolean; programPanel?: ProgramPanelConfig; action?: 'logout' };
 type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string; year?: number };
 type AudiobookChapter = { title: string; anchor: string; order: number; page?: number };
 type AudiobookEntry = { id: string; slug: string; title: string; author: string; excerpt: string; body: string; chapters: AudiobookChapter[]; audioUrl?: string; pdfUrl?: string; durationSeconds?: number };
@@ -2140,6 +2140,7 @@ export default function TelegramMiniApp() {
               title,
               detail: isLaunchPending('meditaciones') ? 'Disponible el domingo 27' : 'Meditación para ahora',
               availability: isLaunchPending('meditaciones'),
+              audioCue: true,
               tone: palette[meditationIndex % palette.length],
               launchArea: 'meditaciones',
               reader: {

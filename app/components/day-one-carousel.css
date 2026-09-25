@@ -180,6 +180,21 @@
   color: #D92D35;
   font-weight: 600;
 }
+.day-one-audio-cue {
+  position: absolute;
+  left: 50%;
+  top: 56%;
+  width: 78px;
+  height: 78px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: #F5F5F7;
+  color: #D92D35;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.05);
+  pointer-events: none;
+}
 /* Solo el carrusel principal: el subtítulo de la card es más
    prominente, como label secundario de navegación. */
 .welcome-carousel-screen .day-one-subtitle,
