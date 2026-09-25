@@ -176,7 +176,7 @@
   letter-spacing: -.015em;
   display: block;
 }
-.meditaciones-section-screen .day-one-subtitle {
+.day-one-subtitle.is-availability {
   color: #D92D35;
   font-weight: 600;
 }

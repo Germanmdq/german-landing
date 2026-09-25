@@ -5,7 +5,7 @@ import { Heart, Video } from 'lucide-react';
 // Imagen genérica si una foto no se puede cargar ni reintentando.
 const FALLBACK_IMAGE = '/images/momento.webp';
 
-type Item = { title: string; detail: string; image?: string; imageSize?: 'compact'; placeholder?: boolean; disabled?: boolean };
+type Item = { title: string; detail: string; image?: string; imageSize?: 'compact'; placeholder?: boolean; disabled?: boolean; availability?: boolean };
 export function DayOneCarousel<T extends Item>({
   items,
   onSelect,
@@ -204,7 +204,7 @@ export function DayOneCarousel<T extends Item>({
         <button className="day-one-open" disabled={item.disabled} onClick={() => { interrupt(); onSelect(item, index); }} tabIndex={active === index && !item.disabled ? 0 : -1}>
           <span className="day-one-caption">
             <strong className="day-one-title">{item.title}</strong>
-            {item.detail && <span className="day-one-subtitle">{item.detail}</span>}
+            {item.detail && <span className={`day-one-subtitle${item.availability ? ' is-availability' : ''}`}>{item.detail}</span>}
           </span>
           {item.image && <span className="day-one-visual">
             {!loadedImages.has(index) && <span className="day-one-image-placeholder" aria-hidden="true" />}
