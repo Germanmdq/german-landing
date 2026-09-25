@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   if (!user) return NextResponse.json({ error: 'Necesitás iniciar sesión.' }, { status: 401 });
 
   // El acceso general queda abierto salvo dos casos: cuenta bloqueada o prueba
-  // de 48 horas vencida (sólo access_tier = 'trial'). Las excepciones por
+  // de 72 horas vencida (sólo access_tier = 'trial'). Las excepciones por
   // sección se administran desde telegram_accounts.permissions: un permiso
   // ausente significa permitido; sólo un `false` explícito bloquea esa sección.
   const { data: telegramAccount, error } = await getAdminClient()

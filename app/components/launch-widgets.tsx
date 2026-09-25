@@ -62,7 +62,7 @@ export function WhatsAppIcon({ size = 22 }: { size?: number }) {
   </svg>;
 }
 
-// Fin de la prueba de 48 horas. El progreso no se toca: al habilitar el acceso
+// Fin de la prueba de 72 horas. El progreso no se toca: al habilitar el acceso
 // la persona sigue exactamente donde estaba.
 export function TrialEndedScreen({ onBack }: { onBack?: () => void }) {
   return <main className="app-shell trial-ended-screen">
