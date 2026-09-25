@@ -1080,7 +1080,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
       </div>}
       {filter && !query && filter !== 'Libros en audio' && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p><div className="library-content-list">{conferenceGroups.map((group) => {
         return <section key={group.label || 'all'} className="library-year-group is-open">
-          {group.entries.map((entry,index) => <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index*.025,.2)} className={`library-content-card${filter === 'Audios' ? ' is-coming-soon' : ''}`} disabled={filter === 'Audios'} onClick={filter === 'Audios' ? undefined : () => onRead(entry, undefined, 'text')}><div><p>{filter === 'Audios' ? 'Audio' : 'Texto'}</p><b className="card-title">{entry.title}</b>{filter === 'Audios' ? <em className="card-subtitle">Próximamente · leída por Germán</em> : <em className="card-subtitle">{entry.excerpt || 'Abrir conferencia'}</em>}</div><span className="library-card-actions"><i>{filter === 'Audios' ? <AnimatedInterfaceIcon name="ear" size={19} /> : <ChevronRight size={19}/>}</i></span></MagicCard></div>)}
+          {group.entries.map((entry,index) => { const audioLocked = filter === 'Audios' && !entry.audioUrl; return <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index*.025,.2)} className={`library-content-card${audioLocked ? ' is-coming-soon' : ''}`} disabled={audioLocked} onClick={audioLocked ? undefined : filter === 'Audios' ? () => onRead(entry, undefined, 'audio') : () => onRead(entry, undefined, 'text')}><div><p>{filter === 'Audios' ? 'Audio' : 'Texto'}</p><b className="card-title">{entry.title}</b>{filter === 'Audios' ? <em className="card-subtitle">{entry.audioUrl ? 'Audio disponible · Próximamente leída por Germán' : 'Próximamente · leída por Germán'}</em> : <em className="card-subtitle">{entry.excerpt || 'Abrir conferencia'}</em>}</div><span className="library-card-actions"><i>{filter === 'Audios' ? <AnimatedInterfaceIcon name="ear" size={19} /> : <ChevronRight size={19}/>}</i></span></MagicCard></div>; })}
         </section>;
       })}</div></>}
       {query && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p>
@@ -1102,7 +1102,9 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
             preview = entry.excerpt || 'Abrí para leer o escuchar.';
           }
         }
-        return <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index * .025, .2)} className="library-content-card" onClick={() => { blurSearch(); onRead(entry, q); }}>
+        // Dentro de "Conferencias en audio": con audio abre el audio; sin audio queda bloqueada.
+        const audioSearchLocked = filter === 'Audios' && !entry.audioUrl;
+        return <div key={entry.id} className="library-card-row"><MagicCard delay={Math.min(index * .025, .2)} className={`library-content-card${audioSearchLocked ? ' is-coming-soon' : ''}`} disabled={audioSearchLocked} onClick={audioSearchLocked ? undefined : filter === 'Audios' ? () => { blurSearch(); onRead(entry, q, 'audio'); } : () => { blurSearch(); onRead(entry, q); }}>
           <div>
             <p>{entry.type || 'Contenido'}</p>
             <b className="card-title">{q ? highlightText(entry.title, q) : entry.title}</b>
@@ -1111,7 +1113,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           <span className="library-card-actions">
             <i><ChevronRight size={19} /></i>
           </span>
-        </MagicCard><button type="button" className={`favorite-button library-row-favorite${saved ? ' is-favorite' : ''}`} onClick={() => onToggleFavorite(libraryFavorite(entry))} aria-label={saved ? `Quitar ${entry.title} de favoritos` : `Guardar ${entry.title} en favoritos`}><Heart size={18} fill={saved ? 'currentColor' : 'none'} /></button></div>;
+        </MagicCard><button type="button" className={`favorite-button library-row-favorite${saved ? ' is-favorite' : ''}`} onClick={() => onToggleFavorite(libraryFavorite({ ...entry, audioUrl: undefined, duration: undefined }))} aria-label={saved ? `Quitar ${entry.title} de favoritos` : `Guardar ${entry.title} en favoritos`}><Heart size={18} fill={saved ? 'currentColor' : 'none'} /></button></div>;
       })}
         </section>;
       })}</div>
@@ -2192,7 +2194,7 @@ export default function TelegramMiniApp() {
   useEffect(() => {
     supabase
       .from('content_items')
-      .select('id,title,excerpt,content_type,metadata,published_at')
+      .select('id,title,excerpt,content_type,metadata,published_at,content_assets(asset_type,source_url,storage_path,duration_seconds,sort_order)')
       .eq('is_published', true)
       .in('content_type', ['conference', 'book'])
       .order('published_at', { ascending: false })
@@ -2202,6 +2204,14 @@ export default function TelegramMiniApp() {
         if (!data) return;
         setLibraryItems(data.map((value) => {
           const item = value as Record<string, unknown>;
+          // Audio actual de la conferencia (si tiene): primer asset 'audio' por sort_order.
+          const assets = Array.isArray(item.content_assets) ? item.content_assets as Array<{ asset_type?: string; source_url?: string; storage_path?: string; duration_seconds?: number; sort_order?: number }> : [];
+          const audioAsset = assets.filter((asset) => asset.asset_type === 'audio').sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))[0];
+          const audioUrl = audioAsset?.source_url && !audioAsset.source_url.startsWith('storage://')
+            ? audioAsset.source_url
+            : audioAsset?.storage_path
+              ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/${audioAsset.storage_path}`
+              : undefined;
           return {
             id: String(item.id),
             title: firstText(item, ['title', 'name']) || 'Sin título',
@@ -2210,6 +2220,8 @@ export default function TelegramMiniApp() {
             type: firstText(item, ['content_type', 'type', 'category']) || 'Contenido',
             tags: toTags(item.tags || item.tag_list || item.labels || item.topics),
             year: extractConferenceYear(item),
+            audioUrl,
+            duration: audioAsset?.duration_seconds ? `${Math.round(audioAsset.duration_seconds / 60)} min` : undefined,
           };
         }));
       }, (err: unknown) => console.error('[library] excepción cargando content_items:', err));
