@@ -9,7 +9,7 @@ import { ArrowLeft } from 'lucide-react';
 // true. Para habilitar un área alcanza con pasar su valor a false.
 export const LAUNCH_PENDING = {
   meditaciones: true,
-  curso365: true,
+  curso365: false,
   libros: true,
   // Consultas: la sección se ve completa; se bloquea recién al enviar.
   consultas: true,

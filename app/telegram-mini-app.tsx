@@ -360,7 +360,17 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
       if (cancelled) return;
       if (readError) { console.error('[365] error leyendo progreso:', readError); setProgressLoading(false); return; }
       let startedAt = existing?.started_at as string | undefined;
-      if (!startedAt) { setProgressLoading(false); return; }
+      if (!startedAt) {
+        const nowIso = new Date().toISOString();
+        const { data: startedRow, error: startError } = await supabase
+          .from('law_course_progress')
+          .insert({ user_id: user.id, started_at: nowIso, updated_at: nowIso })
+          .select('started_at')
+          .single();
+        if (cancelled) return;
+        if (startError) { console.error('[365] error iniciando recorrido:', startError); setProgressLoading(false); return; }
+        startedAt = startedRow.started_at as string;
+      }
       const started = new Date(startedAt);
       const now = new Date();
       const startDay = new Date(started.getFullYear(), started.getMonth(), started.getDate()).getTime();
@@ -372,12 +382,8 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
     return () => { cancelled = true; };
   }, [user.id]);
 
-  const courseLaunchPending = isLaunchPending('curso365');
-
   useEffect(() => {
     if (selectedDay === null) { setAudioUrl(undefined); setDayContent({}); return; }
-    // Antes del lanzamiento no se pide ni el texto ni el audio del día.
-    if (courseLaunchPending) { setAudioUrl(undefined); setDayContent({}); return; }
     let cancelled = false;
     supabase
       .from('content_items')
@@ -400,13 +406,22 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
         setAudioUrl(asset?.source_url || (asset?.storage_path ? `https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/${asset.storage_path}` : undefined));
       });
     return () => { cancelled = true; };
-  }, [selectedDay, courseLaunchPending]);
+  }, [selectedDay]);
 
   if (selectedDay !== null) {
     return <section className="reader-section law-course-section">
       <FixedHeader eyebrow="TALLER DE 365 DÍAS" title={`Día ${formatCourseDayLabel(selectedDay)}`} subtitle={dayContent.title || 'Ley de Asunción'} onBack={() => setSelectedDay(null)} onNavigate={onNavigate} />
       <article className="reader-body law-course-day">
-        {courseLaunchPending ? <LaunchDateCard /> : audioUrl ? <AudioPlayer title={`Día ${formatCourseDayLabel(selectedDay)}${dayContent.title ? ` · ${dayContent.title}` : ''}`} audioUrl={audioUrl} /> : <div className="law-course-audio-missing"><AnimatedInterfaceIcon name="ear" size={22} /><span>Audio pendiente para este día.</span></div>}
+        {audioUrl ? <AudioPlayer title={`Día ${formatCourseDayLabel(selectedDay)}${dayContent.title ? ` · ${dayContent.title}` : ''}`} audioUrl={audioUrl} /> : <div className="law-course-audio-missing"><AnimatedInterfaceIcon name="ear" size={22} /><span>Audio pendiente para este día.</span></div>}
+        {(dayContent.foundation || dayContent.psychology) && <section className="law-course-support-card">
+          <small>ESQUEMA DEL DÍA</small>
+          {dayContent.foundation && <p>{dayContent.foundation}</p>}
+          {dayContent.psychology && <p>{dayContent.psychology}</p>}
+        </section>}
+        {dayContent.exercise && <section className="law-course-support-card law-course-practice-card">
+          <small>TRABAJO PRÁCTICO</small>
+          <p>{dayContent.exercise}</p>
+        </section>}
       </article>
     </section>;
   }
@@ -414,6 +429,7 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
   return <section className="reader-section law-course-section">
     <FixedHeader eyebrow="LEY DE ASUNCIÓN" title="Taller de 365 días" subtitle="365 días para entenderla, practicarla y vivirla." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body law-course-browser">
+      <div className="law-course-support-card law-course-intro-card"><small>UN DÍA A LA VEZ</small><p>Este es un taller diario. El Día 1 se habilita cuando empezás el recorrido y, a partir de ahí, se desbloquea un nuevo día por cada día calendario. Los días futuros quedan con candado hasta que llegue su momento.</p></div>
       <div className="law-course-progress-card"><div><span>TU RECORRIDO</span><b>{progressLoading ? 'Cargando…' : unlockedDay ? `Día ${unlockedDay} de 365` : 'Todavía no iniciado'}</b></div><AnimatedInterfaceIcon name="history" size={22} /></div>
       <div className="law-course-chapters">
         {lawCourseChapters.map((chapter) => {
@@ -424,9 +440,7 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
               <ChevronDown size={20} aria-hidden="true" />
             </button>
             {expanded && <div className="law-course-days">{Array.from({ length: chapter.end - chapter.start + 1 }, (_, i) => chapter.start + i).map((day) => {
-              // Antes del lanzamiento todos los días se pueden tocar: al abrirlos
-              // aparece la tarjeta del 27 en lugar del contenido.
-              const locked = !courseLaunchPending && (progressLoading || day > unlockedDay);
+              const locked = progressLoading || day > unlockedDay;
               return <button key={day} type="button" className={`law-course-day-row${locked ? ' is-locked' : ''}`} disabled={locked} onClick={() => { if (!locked) setSelectedDay(day); }}><span>Día {formatCourseDayLabel(day)}</span>{locked ? <span className="law-course-lock"><Lock size={15} aria-hidden="true" />Bloqueado</span> : <ChevronRight size={18} aria-hidden="true" />}</button>;
             })}</div>}
           </section>;
