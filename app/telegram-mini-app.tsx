@@ -67,6 +67,11 @@ const formatMediaTime = (seconds: number) => {
 const deckFavorite = (item: DeckItem): FavoriteRecord => ({ id: `deck:${item.title}`, title: item.title, detail: item.detail, icon: item.icon, tone: item.tone, reader: item.reader });
 const libraryFavorite = (entry: LibraryEntry): FavoriteRecord => ({ id: `library:${entry.id}`, title: entry.title, detail: entry.excerpt || 'Biblioteca', icon: entry.audioUrl ? '🎙️' : '📖', tone: palette[0], reader: { title: entry.title, eyebrow: entry.type.toUpperCase(), detail: entry.excerpt || 'Biblioteca', paragraphs: cleanParagraphs(entry.body || entry.excerpt || ''), audioUrl: entry.audioUrl, duration: entry.duration } });
 const touchContentProgress = (userId: string, contentKey: string, contentType: string, progress: Record<string, unknown> = {}) => { void supabase.from('user_content_progress').upsert({ user_id: userId, content_key: contentKey, content_type: contentType, progress, last_opened_at: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: 'user_id,content_key' }).then(({ error }) => { if (error) console.error('[progress] sync error:', error); }); };
+const trackUiClick = (userId: string, eventName: string, target: string, source: string, metadata: Record<string, unknown> = {}) => {
+  void supabase.from('ui_click_events').insert({ user_id: userId, event_name: eventName, target, source, metadata }).then(({ error }) => {
+    if (error) console.error('[analytics] click tracking error:', error);
+  });
+};
 
 const MEDITATION_IMAGE_VERSION = '20260924-1';
 
@@ -2064,6 +2069,7 @@ export default function TelegramMiniApp() {
   };
 
   const select = (selected: DeckItem) => {
+    if (session?.user) trackUiClick(session.user.id, 'internal_card_click', selected.title, tab, { trail: trail.map((item) => item.title) });
     if (selected.action === 'logout') {
       logout();
       return;
@@ -2434,7 +2440,7 @@ export default function TelegramMiniApp() {
     const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, renewal: renewalCopyByTarget[target], image: target === 'espacio' ? '/images/german-perfil.webp' : target === 'biblioteca' ? '/images/german-biblioteca.webp' : target === 'audiolibros' ? '/images/german-audiolibros.webp' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
     const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
     const items = [...welcomeItems.slice(0, meditIndex + 1), courseCard, ...welcomeItems.slice(meditIndex + 1)];
-    return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; navigateTo(item.target); }} /></section>{dock}</main>;
+    return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; trackUiClick(session.user.id, 'home_card_click', item.title, 'home', { target: item.target, index }); navigateTo(item.target); }} /></section>{dock}</main>;
   }
   if (interactiveBookOpen) return <main className="app-shell app-main section-app"><InteractiveBookIntro onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (courseOpen) return <main className="app-shell app-main section-app"><LawCoursePanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
