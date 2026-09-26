@@ -11,8 +11,6 @@
     "conference:kimi": "node scripts/kimi-conference.mjs"
   },
   "dependencies": {
-    "@astryxdesign/core": "^0.6.3",
-    "@astryxdesign/theme-neutral": "^0.6.3",
     "@base-ui/react": "^1.8.0",
     "@hugeicons/core-free-icons": "^4.3.3",
     "@hugeicons/react": "^1.1.10",
@@ -28,7 +26,6 @@
     "react-dom": "19.0.0"
   },
   "devDependencies": {
-    "@astryxdesign/cli": "^0.6.3",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
