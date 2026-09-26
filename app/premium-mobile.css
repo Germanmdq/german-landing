@@ -850,3 +850,30 @@ body:has(.guided-photo-screen),
 .progress-attention-regular { color:#d1d1d6 !important; }
 .progress-attention-malo { color:#8e8e93 !important; }
 @media(max-width:360px){.progress-pies{gap:10px}.progress-metric{padding:14px 9px}.progress-pie{width:78px}}
+
+/* Audiolibros: el texto está disponible; el audio se prepara aparte. */
+.audiobook-narration-cue {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 14px 0 22px;
+  padding: 14px 16px;
+  border: 1px solid #2c2c2e;
+  border-radius: 22px;
+  background: #151517;
+  color: #f5f5f7;
+}
+.audiobook-narration-ear {
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #f2f2f7;
+  color: #1c1c1e;
+}
+.audiobook-narration-copy { min-width: 0; display: grid; gap: 4px; }
+.audiobook-narration-copy strong { color: #f5f5f7 !important; font-size: 16px; line-height: 1.2; }
+.audiobook-narration-copy small { color: #f2555a !important; font-size: 13px; font-weight: 650; line-height: 1.3; }

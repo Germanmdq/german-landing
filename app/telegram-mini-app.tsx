@@ -42,7 +42,7 @@ type ProgramPanelConfig = { slug: string; title: string; subtitle: string };
 type DeckItem = { icon: string; title: string; detail: string; tone: string; image?: string; imageSize?: 'compact'; disabled?: boolean; availability?: boolean; audioCue?: boolean; children?: DeckItem[]; reader?: ReaderContent; launchArea?: LaunchArea; notificationPanel?: boolean; accountPanel?: boolean; workshopPanel?: boolean; programPanel?: ProgramPanelConfig; action?: 'logout' };
 type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string; year?: number };
 type AudiobookChapter = { title: string; anchor: string; order: number; page?: number };
-type AudiobookEntry = { id: string; slug: string; title: string; author: string; excerpt: string; body: string; chapters: AudiobookChapter[]; audioUrl?: string; pdfUrl?: string; durationSeconds?: number };
+type AudiobookEntry = { id: string; slug: string; title: string; author: string; excerpt: string; body: string; chapters: AudiobookChapter[]; audioUrl?: string; pdfUrl?: string; durationSeconds?: number; sourcePath?: string };
 type FavoriteRecord = { id: string; title: string; detail: string; icon: string; tone: string; reader?: ReaderContent };
 type Screen = { eyebrow: string; title: string; subtitle: string; items: DeckItem[] };
 type TallerDelivery = { id: string; dayNumber: number; deliveryType: TallerDeliveryType; deliveredAt: string; seenAt: string | null; title: string; paragraphs: string[]; audioUrl?: string };
@@ -787,8 +787,45 @@ function splitAudiobookSections(body: string, chapters: AudiobookChapter[]) {
   });
 }
 
+function parseGermanAudiobookMarkdown(markdown: string, chapters: AudiobookChapter[]) {
+  const normalized = markdown.replace(/\r\n/g, '\n');
+  const matches = [...normalized.matchAll(/^###\s+(.+)\s*$/gm)];
+  return matches.map((match, index) => {
+    const sourceHeading = (match[1] || '').trim();
+    const contentStart = (match.index || 0) + match[0].length;
+    const contentEnd = matches[index + 1]?.index ?? normalized.length;
+    const raw = normalized
+      .slice(contentStart, contentEnd)
+      .replace(/^\s*---\s*$/gm, '')
+      .replace(/^\s*\*[^*\n]*Un audiobook de German Gonzalez[^*\n]*\*\s*$/gim, '')
+      .replace(/^\s*\*Basado en la Ley de Asuncion\.\*\s*$/gim, '')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .trim();
+    const known = chapters[index];
+    const fallbackTitle = /^Practica final$/i.test(sourceHeading)
+      ? 'Práctica final'
+      : sourceHeading.replace(/^Capitulo\s+\d+:\s*/i, '').trim();
+    return {
+      ...(known ?? {
+        title: fallbackTitle || `Sección ${index + 1}`,
+        anchor: /^Practica final$/i.test(sourceHeading) ? 'practica-final' : `capitulo-${index}`,
+        order: index,
+      }),
+      paragraphs: cleanParagraphs(raw),
+    };
+  });
+}
+
+function AudiobookNarrationCue() {
+  return <div className="audiobook-narration-cue" aria-label="Audio narrado por Germán, disponible próximamente">
+    <span className="audiobook-narration-ear" aria-hidden="true"><AnimatedInterfaceIcon name="ear" size={29} /></span>
+    <span className="audiobook-narration-copy"><strong>Leído por Germán</strong><small>Audio disponible a partir del sábado 26</small></span>
+  </div>;
+}
+
 function AudiobookLibraryPanel({ entries, loading, error, onBack, onNavigate, onOpen }: { entries: AudiobookEntry[]; loading: boolean; error: string; onBack: () => void; onNavigate: (target: NavTarget) => void; onOpen: (entry: AudiobookEntry) => void }) {
   const collectionTitles = ['Revisión — Cambiar el pasado desde el presente', 'Persistir — Hasta que se vuelva natural', 'Vivir desde el final', 'La imaginación aplicada', 'El arte de asumir'];
+  const collectionSourcePaths = ['/audiolibros-german/revision.md', '/audiolibros-german/persistir.md', '/audiolibros-german/vivir-desde-el-final.md', '/audiolibros-german/la-imaginacion-aplicada.md', '/audiolibros-german/el-arte-de-asumir.md'];
   const revisionChapters: AudiobookChapter[] = [
     'Prólogo', 'Qué es la revisión', 'El perdón real', 'Cómo funciona', 'El método paso a paso', 'La revisión diaria', 'Revisión de eventos lejanos', 'Revisar por otros', 'Los muebles de tu mente', 'La carta que no querés recibir', 'Revisar las conversaciones internas', 'Errores comunes', 'Revisión y relaciones', 'La revisión y la salud', 'Revisión instantánea', 'La libertad está en el perdón'
   ].map((title, index) => ({ title, anchor: index === 0 ? 'prologo' : `capitulo-${index}`, order: index }));
@@ -825,7 +862,7 @@ function AudiobookLibraryPanel({ entries, loading, error, onBack, onNavigate, on
       body: '',
       chapters: []
     } satisfies AudiobookEntry;
-    const book = existing ?? fallback;
+    const book = { ...(existing ?? fallback), sourcePath: collectionSourcePaths[index] };
     if (index === 0) return { ...book, body: revisionPrologue, chapters: revisionChapters };
     const scaffold = extraBooks[index - 1];
     return scaffold ? { ...book, body: scaffold.body, chapters: scaffold.chapters } : book;
@@ -857,25 +894,63 @@ function AudiobookLibraryPanel({ entries, loading, error, onBack, onNavigate, on
 }
 
 function AudiobookReader({ book, onBack, onNavigate }: { book: AudiobookEntry; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
-  const sections = useMemo(() => splitAudiobookSections(book.body, book.chapters), [book.body, book.chapters]);
+  const [sourceMarkdown, setSourceMarkdown] = useState<string | null>(null);
+  const [sourceLoading, setSourceLoading] = useState(Boolean(book.sourcePath));
+  const [sourceError, setSourceError] = useState('');
+  const sections = useMemo(() => sourceMarkdown
+    ? parseGermanAudiobookMarkdown(sourceMarkdown, book.chapters)
+    : splitAudiobookSections(book.body, book.chapters), [book.body, book.chapters, sourceMarkdown]);
+  const sourceReady = !book.sourcePath || Boolean(sourceMarkdown);
   const prologue = sections.find((section) => section.anchor === 'prologo') ?? sections[0];
   const chapters = sections.filter((section) => section.anchor !== 'prologo');
   const [chaptersOpen, setChaptersOpen] = useState(false);
   const [selectedChapter, setSelectedChapter] = useState<(typeof sections)[number] | null>(null);
-  const chaptersLaunchPending = isLaunchPending('libros');
+  const indexRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    setSelectedChapter(null);
+    setChaptersOpen(false);
+    setSourceMarkdown(null);
+    setSourceError('');
+    if (!book.sourcePath) { setSourceLoading(false); return; }
+    let cancelled = false;
+    setSourceLoading(true);
+    fetch(book.sourcePath, { cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.text();
+      })
+      .then((text) => { if (!cancelled) setSourceMarkdown(text); })
+      .catch((error: unknown) => {
+        console.error('[audiobooks] error cargando texto completo:', error);
+        if (!cancelled) setSourceError('No pudimos cargar el texto completo. Probá de nuevo.');
+      })
+      .finally(() => { if (!cancelled) setSourceLoading(false); });
+    return () => { cancelled = true; };
+  }, [book.id, book.sourcePath]);
   const selectChapter = (chapter: (typeof sections)[number]) => {
     setSelectedChapter(chapter);
     setChaptersOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+  const readerBack = selectedChapter
+    ? () => {
+        setSelectedChapter(null);
+        setChaptersOpen(true);
+        requestAnimationFrame(() => indexRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      }
+    : onBack;
   return <section className="reader-section audiobook-reader-section">
-    <FixedHeader eyebrow="AUDIOLIBRO" title={book.title} subtitle={book.author} onBack={onBack} onNavigate={onNavigate} />
+    <FixedHeader eyebrow="AUDIOLIBRO" title={book.title} subtitle={book.author} onBack={readerBack} onNavigate={onNavigate} />
     <article className="reader-body audiobook-reader">
-      {prologue && !selectedChapter && <section className="audiobook-chapter audiobook-prologue">
+      {sourceLoading && <p className="library-empty">Cargando libro…</p>}
+      {sourceError && <p className="library-empty">{sourceError}</p>}
+      {sourceReady && prologue && !selectedChapter && <section className="audiobook-chapter audiobook-prologue">
         <small>PRÓLOGO</small>
         <h2>Prólogo</h2>
+        <AudiobookNarrationCue />
         {prologue.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
       </section>}
-      <section className="audiobook-index" aria-labelledby="audiobook-chapters-title">
+      {sourceReady && !selectedChapter && <section ref={indexRef} className="audiobook-index" aria-labelledby="audiobook-chapters-title">
         <button type="button" className="audiobook-chapters-toggle" aria-expanded={chaptersOpen} aria-controls="audiobook-chapters-list" onClick={() => setChaptersOpen((open) => !open)}>
           <span><small>ÍNDICE</small><b id="audiobook-chapters-title">Capítulos</b><em>{chapters.length} capítulos</em></span>
           <ChevronDown size={19} aria-hidden="true" />
@@ -883,13 +958,12 @@ function AudiobookReader({ book, onBack, onNavigate }: { book: AudiobookEntry; o
         {chaptersOpen && <nav id="audiobook-chapters-list" aria-label={`Capítulos de ${book.title}`}>
           {chapters.map((chapter) => <button type="button" key={chapter.anchor} onClick={() => selectChapter(chapter)}><span>{String(chapter.order).padStart(2, '0')}</span><b>Capítulo {chapter.order} — {chapter.title}</b><ChevronDown size={17} aria-hidden="true" /></button>)}
         </nav>}
-      </section>
-      {selectedChapter && <section className="audiobook-chapter audiobook-selected-chapter">
+      </section>}
+      {sourceReady && selectedChapter && <section className="audiobook-chapter audiobook-selected-chapter">
         <small>CAPÍTULO {selectedChapter.order}</small>
         <h2>{selectedChapter.title}</h2>
-        {chaptersLaunchPending
-          ? <LaunchDateCard />
-          : selectedChapter.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+        <AudiobookNarrationCue />
+        {selectedChapter.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
       </section>}
     </article>
   </section>;

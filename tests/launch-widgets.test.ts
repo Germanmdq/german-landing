@@ -23,8 +23,10 @@ test('preview visible y contenido real bloqueado en las tres áreas, con un solo
   // Meditaciones: el listado se ve; al abrir una aparece la tarjeta.
   assert.match(app, /launchArea: 'meditaciones'/);
   assert.match(app, /if \(selected\.launchArea && isLaunchPending\(selected\.launchArea\)\)/);
-  // Audiolibros: índice visible; el capítulo muestra la tarjeta. Sin la lógica vieja del viernes.
-  assert.match(app, /chaptersLaunchPending\s*\? <LaunchDateCard \/>/);
+  // Audiolibros de Germán: índice y texto real visibles; el audio se anuncia aparte.
+  assert.doesNotMatch(app, /chaptersLaunchPending\s*\? <LaunchDateCard \/>/);
+  assert.match(app, /<AudiobookNarrationCue \/>/);
+  assert.match(app, /Audio disponible a partir del sábado 26/);
   assert.doesNotMatch(app, /firstChapterUnlockAt|chaptersLocked|Disponible día viernes/);
   // Libros en texto de la Biblioteca: están disponibles y no pasan por el gate del 27.
   assert.doesNotMatch(app, /if \(isBook && LAUNCH_PENDING\.libros\) return false;/);
@@ -32,6 +34,27 @@ test('preview visible y contenido real bloqueado en las tres áreas, con un solo
   // 365: días visibles y abribles; el día muestra la tarjeta y no se pide contenido.
   assert.match(app, /if \(courseLaunchPending\) \{ setAudioUrl\(undefined\); setDayContent\(\{\}\); return; \}/);
   assert.match(app, /\{courseLaunchPending \? <LaunchDateCard \/> :/);
+});
+
+test('los cinco audiolibros de Germán cargan los markdown completos y vuelven al índice del mismo libro', () => {
+  const fs = (name: string) => read(`public/audiolibros-german/${name}.md`);
+  const books = [
+    ['revision', 17],
+    ['persistir', 21],
+    ['vivir-desde-el-final', 20],
+    ['la-imaginacion-aplicada', 22],
+    ['el-arte-de-asumir', 21],
+  ] as const;
+  for (const [name, expectedSections] of books) {
+    assert.equal((fs(name).match(/^###\s+/gm) || []).length, expectedSections, `${name} conserva todas sus secciones`);
+  }
+  assert.match(app, /function parseGermanAudiobookMarkdown/);
+  assert.match(app, /\/audiolibros-german\/revision\.md/);
+  assert.match(app, /\/audiolibros-german\/el-arte-de-asumir\.md/);
+  assert.match(app, /const readerBack = selectedChapter/);
+  assert.match(app, /setSelectedChapter\(null\);[\s\S]{0,120}setChaptersOpen\(true\);/);
+  assert.match(app, /ref=\{indexRef\}/);
+  assert.doesNotMatch(app, /chaptersLaunchPending/);
 });
 
 test('fin de prueba: copy corto, botón con WhatsApp y mensaje prearmado, sin precios ni urgencia', () => {
