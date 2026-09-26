@@ -877,3 +877,65 @@ body:has(.guided-photo-screen),
 .audiobook-narration-copy { min-width: 0; display: grid; gap: 4px; }
 .audiobook-narration-copy strong { color: #f5f5f7 !important; font-size: 16px; line-height: 1.2; }
 .audiobook-narration-copy small { color: #f2555a !important; font-size: 13px; font-weight: 650; line-height: 1.3; }
+
+/* Audiolibros de Germán: un solo recorrido, todo en acordeones. */
+.audiobook-book-accordion {
+  margin: 8px 0 34px;
+  border: 1px solid #2c2c2e;
+  border-radius: 24px;
+  background: #111113;
+  overflow: hidden;
+}
+.audiobook-book-accordion summary {
+  list-style: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.audiobook-book-accordion summary::-webkit-details-marker { display: none; }
+.audiobook-book-summary {
+  min-height: 86px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 18px 17px;
+  color: #f5f5f7;
+}
+.audiobook-book-summary > span { min-width: 0; display: grid; gap: 4px; }
+.audiobook-book-summary small,
+.audiobook-section-summary small {
+  color: #8e8e93 !important;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .12em;
+}
+.audiobook-book-summary b { color: #f5f5f7 !important; font-size: 21px; line-height: 1.15; letter-spacing: -.025em; }
+.audiobook-book-summary em { color: #a1a1a6 !important; font-size: 12px; font-style: normal; }
+.audiobook-book-summary > svg,
+.audiobook-section-summary > svg { flex: 0 0 auto; color: #8e8e93; transition: transform .2s ease; }
+.audiobook-book-accordion[open] > .audiobook-book-summary > svg,
+.audiobook-section-accordion[open] > .audiobook-section-summary > svg { transform: rotate(180deg); }
+.audiobook-book-sections { border-top: 1px solid #2c2c2e; }
+.audiobook-section-accordion { border-top: 1px solid #2c2c2e; }
+.audiobook-section-accordion:first-child { border-top: 0; }
+.audiobook-section-summary {
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 18px;
+  color: #f5f5f7;
+}
+.audiobook-section-summary > span { min-width: 0; display: grid; gap: 5px; }
+.audiobook-section-summary b { color: #f5f5f7 !important; font-size: 15px; line-height: 1.32; font-weight: 650; }
+.audiobook-section-content { padding: 0 18px 24px; }
+.audiobook-section-content .audiobook-narration-cue { margin-top: 4px; }
+.audiobook-section-content p {
+  margin: 0 0 1.2em;
+  color: #f5f5f7 !important;
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  font-size: 18px;
+  line-height: 1.68;
+}
+.audiobook-section-content p:last-child { margin-bottom: 0; }

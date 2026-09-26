@@ -901,14 +901,9 @@ function AudiobookReader({ book, onBack, onNavigate }: { book: AudiobookEntry; o
     ? parseGermanAudiobookMarkdown(sourceMarkdown, book.chapters)
     : splitAudiobookSections(book.body, book.chapters), [book.body, book.chapters, sourceMarkdown]);
   const sourceReady = !book.sourcePath || Boolean(sourceMarkdown);
-  const prologue = sections.find((section) => section.anchor === 'prologo') ?? sections[0];
-  const chapters = sections.filter((section) => section.anchor !== 'prologo');
-  const [chaptersOpen, setChaptersOpen] = useState(false);
-  const [selectedChapter, setSelectedChapter] = useState<(typeof sections)[number] | null>(null);
-  const indexRef = useRef<HTMLElement>(null);
+  const chapterCount = sections.filter((section) => section.anchor.startsWith('capitulo-')).length;
+  const hasFinalPractice = sections.some((section) => section.anchor === 'practica-final');
   useEffect(() => {
-    setSelectedChapter(null);
-    setChaptersOpen(false);
     setSourceMarkdown(null);
     setSourceError('');
     if (!book.sourcePath) { setSourceLoading(false); return; }
@@ -927,44 +922,39 @@ function AudiobookReader({ book, onBack, onNavigate }: { book: AudiobookEntry; o
       .finally(() => { if (!cancelled) setSourceLoading(false); });
     return () => { cancelled = true; };
   }, [book.id, book.sourcePath]);
-  const selectChapter = (chapter: (typeof sections)[number]) => {
-    setSelectedChapter(chapter);
-    setChaptersOpen(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-  const readerBack = selectedChapter
-    ? () => {
-        setSelectedChapter(null);
-        setChaptersOpen(true);
-        requestAnimationFrame(() => indexRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-      }
-    : onBack;
   return <section className="reader-section audiobook-reader-section">
-    <FixedHeader eyebrow="AUDIOLIBRO" title={book.title} subtitle={book.author} onBack={readerBack} onNavigate={onNavigate} />
+    <FixedHeader eyebrow="AUDIOLIBRO" title={book.title} subtitle={book.author} onBack={onBack} onNavigate={onNavigate} />
     <article className="reader-body audiobook-reader">
       {sourceLoading && <p className="library-empty">Cargando libro…</p>}
       {sourceError && <p className="library-empty">{sourceError}</p>}
-      {sourceReady && prologue && !selectedChapter && <section className="audiobook-chapter audiobook-prologue">
-        <small>PRÓLOGO</small>
-        <h2>Prólogo</h2>
-        <AudiobookNarrationCue />
-        {prologue.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
-      </section>}
-      {sourceReady && !selectedChapter && <section ref={indexRef} className="audiobook-index" aria-labelledby="audiobook-chapters-title">
-        <button type="button" className="audiobook-chapters-toggle" aria-expanded={chaptersOpen} aria-controls="audiobook-chapters-list" onClick={() => setChaptersOpen((open) => !open)}>
-          <span><small>ÍNDICE</small><b id="audiobook-chapters-title">Capítulos</b><em>{chapters.length} capítulos</em></span>
-          <ChevronDown size={19} aria-hidden="true" />
-        </button>
-        {chaptersOpen && <nav id="audiobook-chapters-list" aria-label={`Capítulos de ${book.title}`}>
-          {chapters.map((chapter) => <button type="button" key={chapter.anchor} onClick={() => selectChapter(chapter)}><span>{String(chapter.order).padStart(2, '0')}</span><b>Capítulo {chapter.order} — {chapter.title}</b><ChevronDown size={17} aria-hidden="true" /></button>)}
-        </nav>}
-      </section>}
-      {sourceReady && selectedChapter && <section className="audiobook-chapter audiobook-selected-chapter">
-        <small>CAPÍTULO {selectedChapter.order}</small>
-        <h2>{selectedChapter.title}</h2>
-        <AudiobookNarrationCue />
-        {selectedChapter.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
-      </section>}
+      {sourceReady && <details className="audiobook-book-accordion">
+        <summary className="audiobook-book-summary">
+          <span>
+            <small>LIBRO</small>
+            <b>{book.title}</b>
+            <em>Prólogo + {chapterCount} capítulos{hasFinalPractice ? ' + práctica final' : ''}</em>
+          </span>
+          <ChevronDown size={20} aria-hidden="true" />
+        </summary>
+        <div className="audiobook-book-sections">
+          {sections.map((section) => {
+            const isPrologue = section.anchor === 'prologo';
+            const isPractice = section.anchor === 'practica-final';
+            const eyebrow = isPrologue ? 'PRÓLOGO' : isPractice ? 'PRÁCTICA FINAL' : `CAPÍTULO ${section.order}`;
+            const title = isPrologue ? 'Prólogo' : isPractice ? section.title : `Capítulo ${section.order} — ${section.title}`;
+            return <details className="audiobook-section-accordion" key={section.anchor}>
+              <summary className="audiobook-section-summary">
+                <span><small>{eyebrow}</small><b>{title}</b></span>
+                <ChevronDown size={18} aria-hidden="true" />
+              </summary>
+              <div className="audiobook-section-content">
+                <AudiobookNarrationCue />
+                {section.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+              </div>
+            </details>;
+          })}
+        </div>
+      </details>}
     </article>
   </section>;
 }

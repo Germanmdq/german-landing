@@ -36,7 +36,7 @@ test('preview visible y contenido real bloqueado en las tres áreas, con un solo
   assert.match(app, /\{courseLaunchPending \? <LaunchDateCard \/> :/);
 });
 
-test('los cinco audiolibros de Germán cargan los markdown completos y vuelven al índice del mismo libro', () => {
+test('los cinco audiolibros de Germán cargan los markdown completos en acordeones dentro del mismo libro', () => {
   const fs = (name: string) => read(`public/audiolibros-german/${name}.md`);
   const books = [
     ['revision', 17],
@@ -51,9 +51,11 @@ test('los cinco audiolibros de Germán cargan los markdown completos y vuelven a
   assert.match(app, /function parseGermanAudiobookMarkdown/);
   assert.match(app, /\/audiolibros-german\/revision\.md/);
   assert.match(app, /\/audiolibros-german\/el-arte-de-asumir\.md/);
-  assert.match(app, /const readerBack = selectedChapter/);
-  assert.match(app, /setSelectedChapter\(null\);[\s\S]{0,120}setChaptersOpen\(true\);/);
-  assert.match(app, /ref=\{indexRef\}/);
+  assert.match(app, /<details className="audiobook-book-accordion">/);
+  assert.match(app, /<details className="audiobook-section-accordion" key=\{section\.anchor\}>/);
+  assert.match(app, /Prólogo \+ \{chapterCount\} capítulos/);
+  assert.match(app, /<AudiobookNarrationCue \/>[\s\S]{0,160}section\.paragraphs\.map/);
+  assert.doesNotMatch(app, /selectedChapter|selectChapter|readerBack|indexRef/);
   assert.doesNotMatch(app, /chaptersLaunchPending/);
 });
 
