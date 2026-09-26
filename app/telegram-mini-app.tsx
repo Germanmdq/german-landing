@@ -412,11 +412,10 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
     return <section className="reader-section law-course-section">
       <FixedHeader eyebrow="TALLER DE 365 DÍAS" title={`Día ${formatCourseDayLabel(selectedDay)}`} subtitle={dayContent.title || 'Ley de Asunción'} onBack={() => setSelectedDay(null)} onNavigate={onNavigate} />
       <article className="reader-body law-course-day">
-        {audioUrl ? <AudioPlayer title={`Día ${formatCourseDayLabel(selectedDay)}${dayContent.title ? ` · ${dayContent.title}` : ''}`} audioUrl={audioUrl} /> : <div className="law-course-audio-missing"><AnimatedInterfaceIcon name="ear" size={22} /><span>Audio pendiente para este día.</span></div>}
-        {(dayContent.foundation || dayContent.psychology) && <section className="law-course-support-card">
+        {audioUrl ? <AudioPlayer title={`Día ${formatCourseDayLabel(selectedDay)}${dayContent.title ? ` · ${dayContent.title}` : ''}`} audioUrl={audioUrl} showTitle={false} /> : <div className="law-course-audio-missing"><AnimatedInterfaceIcon name="ear" size={22} /><span>Audio pendiente para este día.</span></div>}
+        {dayContent.foundation && <section className="law-course-support-card">
           <small>ESQUEMA DEL DÍA</small>
-          {dayContent.foundation && <p>{dayContent.foundation}</p>}
-          {dayContent.psychology && <p>{dayContent.psychology}</p>}
+          <p>{dayContent.foundation}</p>
         </section>}
         {dayContent.exercise && <section className="law-course-support-card law-course-practice-card">
           <small>TRABAJO PRÁCTICO</small>
@@ -435,7 +434,11 @@ function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () =
         {lawCourseChapters.map((chapter) => {
           const expanded = openChapter === chapter.number;
           return <section key={chapter.number} className={`law-course-chapter${expanded ? ' is-open' : ''}`}>
-            <button type="button" className="law-course-chapter-toggle" aria-expanded={expanded} onClick={() => setOpenChapter(expanded ? null : chapter.number)}>
+            <button type="button" className="law-course-chapter-toggle" aria-expanded={expanded} onClick={(event) => {
+              const section = event.currentTarget.parentElement;
+              setOpenChapter(expanded ? null : chapter.number);
+              if (!expanded && section) requestAnimationFrame(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+            }}>
               <div><small>CAPÍTULO {chapter.number}</small><b>{chapter.title}</b><span>Días {formatCourseDayLabel(chapter.start)}–{formatCourseDayLabel(chapter.end)}</span></div>
               <ChevronDown size={20} aria-hidden="true" />
             </button>
@@ -732,7 +735,7 @@ function AccountPanel({ user, fullName, onBack, onNavigate, onNameSaved, onLogou
   </section>;
 }
 
-function AudioPlayer({ title, audioUrl }: { title: string; audioUrl: string }) {
+function AudioPlayer({ title, audioUrl, showTitle = true }: { title: string; audioUrl: string; showTitle?: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -753,12 +756,12 @@ function AudioPlayer({ title, audioUrl }: { title: string; audioUrl: string }) {
       navigator.mediaSession.setActionHandler('pause', null);
     };
   }, [title]);
-  return <section className="audio-player-card">
+  return <section className={`audio-player-card${showTitle ? '' : ' is-titleless'}`}>
     <audio ref={audioRef} src={audioUrl} preload="metadata" playsInline onPlay={() => { setPlaying(true); (window as Window & { __germanAudioPlaying?: boolean }).__germanAudioPlaying = true; if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; }} onPause={() => { setPlaying(false); (window as Window & { __germanAudioPlaying?: boolean }).__germanAudioPlaying = false; if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'; }} onEnded={() => { setPlaying(false); setProgress(0); (window as Window & { __germanAudioPlaying?: boolean }).__germanAudioPlaying = false; if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'none'; }} onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)} onTimeUpdate={(event) => setProgress(event.currentTarget.currentTime)} />
     <button type="button" className={`audio-ear-button${playing ? ' is-playing' : ''}`} onClick={() => { void toggle(); }} aria-label={playing ? 'Pausar audio' : 'Escuchar audio'} aria-pressed={playing}>
       <AnimatedInterfaceIcon name="ear" size={28} />
     </button>
-    <div className="audio-player-copy"><b>{title}</b></div>
+    {showTitle && <div className="audio-player-copy"><b>{title}</b></div>}
   </section>;
 }
 
