@@ -107,12 +107,12 @@ const mainCategories: Array<[Tab, string, string, string, string]> = [
 ];
 
 const renewalCopyByTarget: Partial<Record<NavTarget, string>> = {
-  biblioteca: 'Nuevo material todos los meses.',
-  audiolibros: '5 libros nuevos de Germán todos los meses.',
-  talleres: 'Nuevos planes disponibles todos los meses.',
-  propia: 'Nuevas prácticas creadas por Germán todos los meses.',
-  meditaciones: 'Nuevas meditaciones y situaciones todos los meses.',
-  curso: 'Nuevos audios y material durante el recorrido.',
+  biblioteca: 'Contenido en renovación permanente · nuevo material todos los meses.',
+  audiolibros: 'Contenido en renovación permanente · 5 libros nuevos de Germán todos los meses.',
+  talleres: 'Contenido en renovación permanente · nuevos planes todos los meses.',
+  propia: 'Contenido en renovación permanente · nuevas prácticas todos los meses.',
+  meditaciones: 'Contenido en renovación permanente · nuevas meditaciones y situaciones todos los meses.',
+  curso: 'Contenido en renovación permanente · nuevos audios y material durante el recorrido.',
 };
 
 function CategoryIcon({ item }: { item: DeckItem }) {
