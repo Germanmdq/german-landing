@@ -188,6 +188,20 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     if (audio.paused) await audio.play().catch(() => undefined);
     else audio.pause();
   };
+  useEffect(() => {
+    if (!delivery?.audioUrl || !('mediaSession' in navigator)) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: delivery.title,
+      artist: 'Germán Asistente',
+      album: 'Meditaciones',
+    });
+    navigator.mediaSession.setActionHandler('play', () => { void audioRef.current?.play(); });
+    navigator.mediaSession.setActionHandler('pause', () => { audioRef.current?.pause(); });
+    return () => {
+      navigator.mediaSession.setActionHandler('play', null);
+      navigator.mediaSession.setActionHandler('pause', null);
+    };
+  }, [delivery?.audioUrl, delivery?.title]);
   if (!sessionChecked) return <AudioWaveLoader label="Abriendo tu entrega" dark />;
   if (!session) return <LoginGate redirectPath={`/delivery/${encodeURIComponent(deliveryId)}`} />;
   if (!accessChecked) return <AudioWaveLoader label="Comprobando tu acceso" dark />;
@@ -207,13 +221,14 @@ export function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
         src={delivery.audioUrl}
         preload="metadata"
         playsInline
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onEnded={() => setPlaying(false)}
+        onPlay={() => { setPlaying(true); (window as Window & { __germanAudioPlaying?: boolean }).__germanAudioPlaying = true; if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; }}
+        onPause={() => { setPlaying(false); (window as Window & { __germanAudioPlaying?: boolean }).__germanAudioPlaying = false; if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'; }}
+        onEnded={() => { setPlaying(false); (window as Window & { __germanAudioPlaying?: boolean }).__germanAudioPlaying = false; if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'none'; }}
       />
       <button type="button" className={`delivery-audio-ear${playing ? ' is-playing' : ''}`} onClick={() => { void toggleAudio(); }} aria-label={playing ? 'Pausar audio' : 'Escuchar audio'} aria-pressed={playing}>
         <AnimatedInterfaceIcon name="ear" size={28} />
       </button>
+      <p className={`delivery-audio-hint${playing ? ' is-playing' : ''}`}>{playing ? 'Reproduciendo · tocá la oreja para pausar' : 'Hacé clic en la oreja para escuchar'}</p>
     </section>}
     {delivery.deliveryType === 'intermediate_message' && delivery.paragraphs.length > 0 && <section className="delivery-text-modern">
       <div className="delivery-text-card">

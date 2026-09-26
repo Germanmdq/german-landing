@@ -7,9 +7,11 @@
 .delivery-audio-modern{position:absolute;inset:0;display:grid;place-items:center;background:#000;color:#f5f5f7}
 .delivery-audio-label{position:absolute;top:calc(50% - 78px);left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;width:max-content;max-width:calc(100% - 48px);min-height:30px;padding:6px 11px;border:1px solid #2c2c2e;border-radius:999px;background:#111113;color:#c7c7cc;font-size:12px;line-height:1;font-weight:600;letter-spacing:.01em;white-space:nowrap;box-shadow:0 8px 24px #0006}
 .delivery-audio-label svg{flex:0 0 auto;color:#8e8e93}
-.delivery-audio-ear{position:absolute;top:56%;left:50%;width:46px;height:46px;display:grid;place-items:center;padding:0;border:1px solid #d1d1d6;border-radius:50%;background:#fff;color:#d92d35;box-shadow:none;transform:translate(-50%,-50%)}
+.delivery-audio-ear{position:absolute;top:56%;left:50%;width:50px;height:50px;display:grid;place-items:center;padding:0;border:2px solid #d92d35;border-radius:50%;background:#fff;color:#d92d35;box-shadow:0 0 0 5px rgba(217,45,53,.08);transform:translate(-50%,-50%);transition:background-color .2s ease,color .2s ease,border-color .2s ease,box-shadow .2s ease,transform .15s ease}
 .delivery-audio-ear:active{transform:translate(-50%,-50%) scale(.96)}
-.delivery-audio-ear.is-playing{border-color:#d92d35;background:#fff1f2;box-shadow:none}
+.delivery-audio-ear.is-playing{border-color:#ff5b63;background:#d92d35;color:#fff;box-shadow:0 0 0 7px rgba(217,45,53,.20),0 10px 34px rgba(217,45,53,.45)}
+.delivery-audio-hint{position:absolute;top:calc(56% + 42px);left:50%;width:max-content;max-width:calc(100% - 44px);margin:0;transform:translateX(-50%);color:#d1d1d6;font-size:13px;line-height:1.3;font-weight:650;text-align:center;letter-spacing:.005em;transition:color .2s ease,font-weight .2s ease}
+.delivery-audio-hint.is-playing{color:#ff6b72;font-weight:750}
 .delivery-text-modern{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;padding:max(86px,calc(env(safe-area-inset-top) + 72px)) 18px max(34px,calc(env(safe-area-inset-bottom) + 24px));background:#000;color:#f5f5f7;-webkit-overflow-scrolling:touch}
 .delivery-text-card{width:min(100%,410px);min-height:min(520px,calc(100dvh - 130px));margin:0 auto;padding:30px 26px 32px;border:1px solid #29292d;border-radius:28px;background:#111113;box-shadow:0 24px 70px #0008;overflow-wrap:anywhere}
 .delivery-text-icon{width:58px;height:58px;display:grid;place-items:center;margin:2px 0 28px;border:1px solid #343438;border-radius:18px;background:#1c1c1e;color:#f5f5f7}

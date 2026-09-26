@@ -730,12 +730,17 @@ function AudioPlayer({ title, audioUrl }: { title: string; audioUrl: string }) {
     else audio.pause();
   };
   useEffect(() => {
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({ title, artist: 'Germán Asistente', album: 'Biblioteca' });
-    }
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.metadata = new MediaMetadata({ title, artist: 'Germán Asistente', album: 'Biblioteca' });
+    navigator.mediaSession.setActionHandler('play', () => { void audioRef.current?.play(); });
+    navigator.mediaSession.setActionHandler('pause', () => { audioRef.current?.pause(); });
+    return () => {
+      navigator.mediaSession.setActionHandler('play', null);
+      navigator.mediaSession.setActionHandler('pause', null);
+    };
   }, [title]);
   return <section className="audio-player-card">
-    <audio ref={audioRef} src={audioUrl} preload="metadata" playsInline onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => { setPlaying(false); setProgress(0); }} onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)} onTimeUpdate={(event) => setProgress(event.currentTarget.currentTime)} />
+    <audio ref={audioRef} src={audioUrl} preload="metadata" playsInline onPlay={() => { setPlaying(true); (window as Window & { __germanAudioPlaying?: boolean }).__germanAudioPlaying = true; if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; }} onPause={() => { setPlaying(false); (window as Window & { __germanAudioPlaying?: boolean }).__germanAudioPlaying = false; if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'; }} onEnded={() => { setPlaying(false); setProgress(0); (window as Window & { __germanAudioPlaying?: boolean }).__germanAudioPlaying = false; if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'none'; }} onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)} onTimeUpdate={(event) => setProgress(event.currentTarget.currentTime)} />
     <button type="button" className={`audio-ear-button${playing ? ' is-playing' : ''}`} onClick={() => { void toggle(); }} aria-label={playing ? 'Pausar audio' : 'Escuchar audio'} aria-pressed={playing}>
       <AnimatedInterfaceIcon name="ear" size={28} />
     </button>
@@ -757,6 +762,12 @@ function AudiobookPlayer({ title, author, audioUrl, durationSeconds }: { title: 
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
     navigator.mediaSession.metadata = new MediaMetadata({ title, artist: author, album: 'Audiolibros de Germán' });
+    navigator.mediaSession.setActionHandler('play', () => { void audioRef.current?.play(); });
+    navigator.mediaSession.setActionHandler('pause', () => { audioRef.current?.pause(); });
+    return () => {
+      navigator.mediaSession.setActionHandler('play', null);
+      navigator.mediaSession.setActionHandler('pause', null);
+    };
   }, [author, title]);
   return <section className="audiobook-player" aria-label={`Reproductor de ${title}`}>
     <audio
@@ -764,9 +775,9 @@ function AudiobookPlayer({ title, author, audioUrl, durationSeconds }: { title: 
       src={audioUrl}
       preload="metadata"
       playsInline
-      onPlay={() => setPlaying(true)}
-      onPause={() => setPlaying(false)}
-      onEnded={() => setPlaying(false)}
+      onPlay={() => { setPlaying(true); (window as Window & { __germanAudioPlaying?: boolean }).__germanAudioPlaying = true; if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; }}
+      onPause={() => { setPlaying(false); (window as Window & { __germanAudioPlaying?: boolean }).__germanAudioPlaying = false; if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'; }}
+      onEnded={() => { setPlaying(false); (window as Window & { __germanAudioPlaying?: boolean }).__germanAudioPlaying = false; if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'none'; }}
       onLoadedMetadata={(event) => setDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : durationSeconds || 0)}
       onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
     />

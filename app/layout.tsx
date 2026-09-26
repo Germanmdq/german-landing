@@ -41,14 +41,17 @@ export default function Layout({ children }: Readonly<{ children: React.ReactNod
                 if (webApp.onEvent && !window.__germanCloseOnTelegramDeactivate) {
                   window.__germanCloseOnTelegramDeactivate = true;
                   webApp.onEvent('deactivated', function () {
+                    if (window.__germanAudioPlaying === true) return;
                     try { if (webApp.close) webApp.close(); } catch (_) {}
                   });
                   var closeWhenHidden = function () {
                     if (document.visibilityState !== 'hidden') return;
+                    if (window.__germanAudioPlaying === true) return;
                     try { if (webApp.close) webApp.close(); } catch (_) {}
                   };
                   document.addEventListener('visibilitychange', closeWhenHidden);
                   window.addEventListener('pagehide', function () {
+                    if (window.__germanAudioPlaying === true) return;
                     try { if (webApp.close) webApp.close(); } catch (_) {}
                   });
                 }
