@@ -26,9 +26,9 @@ test('preview visible y contenido real bloqueado en las tres áreas, con un solo
   // Audiolibros: índice visible; el capítulo muestra la tarjeta. Sin la lógica vieja del viernes.
   assert.match(app, /chaptersLaunchPending\s*\? <LaunchDateCard \/>/);
   assert.doesNotMatch(app, /firstChapterUnlockAt|chaptersLocked|Disponible día viernes/);
-  // Libros en texto: aparecen en listados y búsqueda; al abrir uno, tarjeta.
+  // Libros en texto de la Biblioteca: están disponibles y no pasan por el gate del 27.
   assert.doesNotMatch(app, /if \(isBook && LAUNCH_PENDING\.libros\) return false;/);
-  assert.match(app, /\/book\|libro\/i\.test\(entry\.type\) && isLaunchPending\('libros'\)/);
+  assert.doesNotMatch(app, /\/book\|libro\/i\.test\(entry\.type\) && isLaunchPending\('libros'\)/);
   // 365: días visibles y abribles; el día muestra la tarjeta y no se pide contenido.
   assert.match(app, /if \(courseLaunchPending\) \{ setAudioUrl\(undefined\); setDayContent\(\{\}\); return; \}/);
   assert.match(app, /\{courseLaunchPending \? <LaunchDateCard \/> :/);

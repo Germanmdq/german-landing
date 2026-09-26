@@ -2261,10 +2261,6 @@ export default function TelegramMiniApp() {
   }, [mainMenu, tab, libraryItems.length]);
 
   const openLibraryEntry = async (entry: LibraryEntry, searchQuery?: string, mode: 'audio' | 'text' = 'text') => {
-    if (/book|libro/i.test(entry.type) && isLaunchPending('libros')) {
-      setLaunchLocked({ eyebrow: 'LIBRO', title: entry.title, subtitle: entry.excerpt || 'Biblioteca' });
-      return;
-    }
     if (mode === 'audio') {
       setReader({
         title: entry.title,
