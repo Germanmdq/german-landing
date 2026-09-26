@@ -346,7 +346,7 @@ const formatCourseDaySlug = (day: number) => String(day).padStart(3, '0');
 const formatCourseDayLabel = (day: number) => String(day);
 type LawCourseDay = { title?: string; foundation?: string; psychology?: string; exercise?: string };
 function LawCoursePanel({ user, onBack, onNavigate }: { user: User; onBack: () => void; onNavigate: (target: NavTarget) => void }) {
-  const [openChapter, setOpenChapter] = useState<number | null>(1);
+  const [openChapter, setOpenChapter] = useState<number | null>(null);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | undefined>();
   const [dayContent, setDayContent] = useState<LawCourseDay>({});

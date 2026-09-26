@@ -58,7 +58,7 @@
 .law-course-lock { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 650; color: #86868b; }
 .law-course-support-card { margin-top: 18px; padding: 20px 18px; border: 1px solid #e5e5ea; border-radius: 22px; background: #fff; box-shadow: 0 6px 22px #1d1d1f0a; }
 .law-course-support-card small { display: block; margin-bottom: 12px; color: #a52e46; font-size: 11px; font-weight: 800; letter-spacing: .09em; }
-.law-course-support-card p { margin: 0 0 14px; font-size: 15px; line-height: 1.58; }
+.law-course-support-card p { margin: 0 0 14px; font-size: 16px; line-height: 1.62; }
 .law-course-support-card p { white-space: pre-line; }
 .law-course-support-card p:last-child { margin-bottom: 0; }
 .law-course-practice-card { background: #fafafa; }
