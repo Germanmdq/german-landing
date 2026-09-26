@@ -39,7 +39,7 @@ import { deliveryTypeLabels, extractDeliveryParagraphs, formatDeliveredAt, INTER
 type Tab = 'talleres' | 'propia' | 'meditaciones' | 'biblioteca' | 'audiolibros' | 'consultas' | 'espacio';
 type ReaderContent = { title: string; eyebrow: string; detail: string; paragraphs: string[]; audioUrl?: string; duration?: string; audios?: { label: string; url: string }[]; highlightQuery?: string };
 type ProgramPanelConfig = { slug: string; title: string; subtitle: string };
-type DeckItem = { icon: string; title: string; detail: string; tone: string; image?: string; imageSize?: 'compact'; disabled?: boolean; availability?: boolean; audioCue?: boolean; children?: DeckItem[]; reader?: ReaderContent; launchArea?: LaunchArea; notificationPanel?: boolean; accountPanel?: boolean; workshopPanel?: boolean; programPanel?: ProgramPanelConfig; action?: 'logout' };
+type DeckItem = { icon: string; title: string; detail: string; renewal?: string; tone: string; image?: string; imageSize?: 'compact'; disabled?: boolean; availability?: boolean; audioCue?: boolean; children?: DeckItem[]; reader?: ReaderContent; launchArea?: LaunchArea; notificationPanel?: boolean; accountPanel?: boolean; workshopPanel?: boolean; programPanel?: ProgramPanelConfig; action?: 'logout' };
 type LibraryEntry = { id: string; title: string; excerpt: string; body: string; type: string; tags: string[]; audioUrl?: string; duration?: string; year?: number };
 type AudiobookChapter = { title: string; anchor: string; order: number; page?: number };
 type AudiobookEntry = { id: string; slug: string; title: string; author: string; excerpt: string; body: string; chapters: AudiobookChapter[]; audioUrl?: string; pdfUrl?: string; durationSeconds?: number; sourcePath?: string };
@@ -105,6 +105,15 @@ const mainCategories: Array<[Tab, string, string, string, string]> = [
   ['meditaciones', '🧘‍♂️', 'Meditaciones para ahora', 'Elegí una práctica según tu momento.', palette[0]],
   ['consultas', '💭', 'Consultas', 'Preguntá lo que te está pasando.', palette[1]],
 ];
+
+const renewalCopyByTarget: Partial<Record<NavTarget, string>> = {
+  biblioteca: 'Nuevo material todos los meses.',
+  audiolibros: '5 libros nuevos de Germán todos los meses.',
+  talleres: 'Nuevos planes disponibles todos los meses.',
+  propia: 'Nuevas prácticas creadas por Germán todos los meses.',
+  meditaciones: 'Nuevas meditaciones y situaciones todos los meses.',
+  curso: 'Nuevos audios y material durante el recorrido.',
+};
 
 function CategoryIcon({ item }: { item: DeckItem }) {
   const title = item.title.toLowerCase();
@@ -2393,8 +2402,8 @@ export default function TelegramMiniApp() {
   const dock = <MainNavigationDock current={mainMenu ? "home" : configurationOpen ? "configuracion" : tab} onSelect={navigateTo} />;
 
   if (mainMenu) {
-    const courseCard = { target: 'curso' as const, title: 'Taller de 365 días', detail: 'Ley de Asunción · recorrido completo.', image: '/images/german-reunion.webp' };
-    const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, image: target === 'espacio' ? '/images/german-perfil.webp' : target === 'biblioteca' ? '/images/german-biblioteca.webp' : target === 'audiolibros' ? '/images/german-audiolibros.webp' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
+    const courseCard = { target: 'curso' as const, title: 'Taller de 365 días', detail: 'Ley de Asunción · recorrido completo.', renewal: renewalCopyByTarget.curso, image: '/images/german-reunion.webp' };
+    const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, renewal: renewalCopyByTarget[target], image: target === 'espacio' ? '/images/german-perfil.webp' : target === 'biblioteca' ? '/images/german-biblioteca.webp' : target === 'audiolibros' ? '/images/german-audiolibros.webp' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
     const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
     const items = [...welcomeItems.slice(0, meditIndex + 1), courseCard, ...welcomeItems.slice(meditIndex + 1)];
     return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; navigateTo(item.target); }} /></section>{dock}</main>;

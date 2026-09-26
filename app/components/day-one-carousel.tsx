@@ -6,7 +6,7 @@ import { AnimatedInterfaceIcon } from './animated-interface-icon';
 // Imagen genérica si una foto no se puede cargar ni reintentando.
 const FALLBACK_IMAGE = '/images/momento.webp';
 
-type Item = { title: string; detail: string; image?: string; imageSize?: 'compact'; placeholder?: boolean; disabled?: boolean; availability?: boolean; audioCue?: boolean };
+type Item = { title: string; detail: string; renewal?: string; image?: string; imageSize?: 'compact'; placeholder?: boolean; disabled?: boolean; availability?: boolean; audioCue?: boolean };
 export function DayOneCarousel<T extends Item>({
   items,
   onSelect,
@@ -206,6 +206,7 @@ export function DayOneCarousel<T extends Item>({
           <span className="day-one-caption">
             <strong className="day-one-title">{item.title}</strong>
             {item.detail && <span className={`day-one-subtitle${item.availability ? ' is-availability' : ''}`}>{item.detail}</span>}
+            {item.renewal && <span className="day-one-renewal">{item.renewal}</span>}
           </span>
           {item.audioCue && <span className="day-one-audio-cue" aria-hidden="true"><AnimatedInterfaceIcon name="ear" size={46} /></span>}
           {item.image && <span className="day-one-visual">

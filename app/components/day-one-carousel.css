@@ -178,6 +178,19 @@
   letter-spacing: -.015em;
   display: block;
 }
+.day-one-renewal {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 6px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #F2F2F7;
+  color: #5C5C63;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -.01em;
+}
 .day-one-subtitle.is-availability {
   color: #D92D35;
   font-weight: 600;
@@ -374,6 +387,13 @@
 .photo-cards-screen .day-one-title { color: #fff; }
 .welcome-carousel-screen .day-one-subtitle,
 .photo-cards-screen .day-one-subtitle { color: #fff; opacity: .8; }
+.welcome-carousel-screen .day-one-renewal,
+.photo-cards-screen .day-one-renewal {
+  background: rgba(255,255,255,.16);
+  color: #fff;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
 
 /* Meditaciones: mismas fotos edge-to-edge que el resto, pero centradas
    (no "arriba") — las imágenes acá no son retratos de una persona. */
