@@ -1065,13 +1065,11 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           : filter === 'Conferencias' || filter === 'Audios'
             ? ['conference']
             : ['conference', 'book'];
-        const { data, error } = await supabase
-          .from('content_items')
-          .select('id,body')
-          .eq('is_published', true)
-          .in('content_type', contentTypes)
-          .ilike('body', `%${q}%`)
-          .limit(1000);
+        const { data, error } = await supabase.rpc('search_library_content', {
+          p_search: q,
+          p_content_types: contentTypes,
+          p_limit: 1000,
+        });
         if (cancelled) return;
         if (error) {
           console.error('[library] búsqueda en contenido:', error);
@@ -1080,7 +1078,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           setBodySearchPending(false);
           return;
         }
-        setBodyMatches(new Map((data || []).map((row) => [String(row.id), typeof row.body === 'string' ? row.body : ''])));
+        setBodyMatches(new Map((data || []).map((row) => [String(row.id), typeof row.snippet === 'string' ? row.snippet : ''])));
         setBodySearchQuery(q);
         setBodySearchPending(false);
       })();
