@@ -1078,7 +1078,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           setBodySearchPending(false);
           return;
         }
-        setBodyMatches(new Map((data || []).map((row) => [String(row.id), typeof row.snippet === 'string' ? row.snippet : ''])));
+        setBodyMatches(new Map((data || []).map((row: { id: string; snippet?: string | null }) => [String(row.id), typeof row.snippet === 'string' ? row.snippet : ''])));
         setBodySearchQuery(q);
         setBodySearchPending(false);
       })();
