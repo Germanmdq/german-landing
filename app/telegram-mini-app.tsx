@@ -1009,6 +1009,20 @@ function highlightText(text: string, q: string): React.ReactNode {
   return <>{parts.map((part, index) => part.toLocaleLowerCase() === q.toLocaleLowerCase() ? <mark key={index} className="search-highlight">{part}</mark> : part)}</>;
 }
 
+function highlightSearchSnippet(text: string): React.ReactNode {
+  if (!text) return text;
+  const parts = text.split(/(\[\[H\]\]|\[\[\/H\]\])/g);
+  let highlighted = false;
+  return <>{parts.map((part, index) => {
+    if (part === '[[H]]') { highlighted = true; return null; }
+    if (part === '[[/H]]') { highlighted = false; return null; }
+    if (!part) return null;
+    return highlighted
+      ? <mark key={index} className="search-highlight">{part}</mark>
+      : <span key={index}>{part}</span>;
+  })}</>;
+}
+
 function snippetAround(text: string, q: string, radius = 26): string {
   if (!q || !text) return '';
   const lower = text.toLocaleLowerCase();
@@ -1209,8 +1223,8 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           if (contextText) {
             preview = highlightText(contextText, q);
           } else if (bodyMatches.has(entry.id)) {
-            const bodySnippet = snippetAround(bodyMatches.get(entry.id) || '', q, 44);
-            preview = bodySnippet ? highlightText(bodySnippet, q) : (/book|libro/i.test(entry.type) ? 'Coincidencia encontrada dentro del libro.' : cleanExcerpt || 'Abrí para leer o escuchar.');
+            const bodySnippet = bodyMatches.get(entry.id) || '';
+            preview = bodySnippet ? highlightSearchSnippet(bodySnippet) : (/book|libro/i.test(entry.type) ? 'Coincidencia encontrada dentro del libro.' : cleanExcerpt || 'Abrí para leer o escuchar.');
           } else if (!titleHasMatch) {
             preview = cleanExcerpt || 'Abrí para leer o escuchar.';
           }
