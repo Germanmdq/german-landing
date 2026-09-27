@@ -1041,6 +1041,8 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
   const [filter, setFilter] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [bodyMatches, setBodyMatches] = useState<Map<string, string>>(new Map());
+  const [bodySearchQuery, setBodySearchQuery] = useState('');
+  const [bodySearchPending, setBodySearchPending] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const blurSearch = () => {
     searchInputRef.current?.blur();
@@ -1050,44 +1052,37 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
     const q = query.trim();
     if (q.length < 2) {
       setBodyMatches(new Map());
+      setBodySearchQuery('');
+      setBodySearchPending(false);
       return;
     }
     let cancelled = false;
+    setBodySearchPending(true);
     const timer = window.setTimeout(() => {
-      const searchingBooks = filter === 'Libros en texto';
       void (async () => {
-        if (searchingBooks) {
-          const { data, error } = await supabase
-            .from('content_items')
-            .select('id')
-            .eq('is_published', true)
-            .eq('content_type', 'book')
-            .ilike('body', `%${q}%`)
-            .limit(1000);
-          if (cancelled) return;
-          if (error) {
-            console.error('[library] búsqueda en libros:', error);
-            setBodyMatches(new Map());
-            return;
-          }
-          setBodyMatches(new Map((data || []).map((row) => [String(row.id), ''])));
-          return;
-        }
-
+        const contentTypes = filter === 'Libros en texto'
+          ? ['book']
+          : filter === 'Conferencias' || filter === 'Audios'
+            ? ['conference']
+            : ['conference', 'book'];
         const { data, error } = await supabase
           .from('content_items')
           .select('id,body')
           .eq('is_published', true)
-          .eq('content_type', 'conference')
+          .in('content_type', contentTypes)
           .ilike('body', `%${q}%`)
           .limit(1000);
         if (cancelled) return;
         if (error) {
-          console.error('[library] búsqueda en conferencias:', error);
+          console.error('[library] búsqueda en contenido:', error);
           setBodyMatches(new Map());
+          setBodySearchQuery(q);
+          setBodySearchPending(false);
           return;
         }
         setBodyMatches(new Map((data || []).map((row) => [String(row.id), typeof row.body === 'string' ? row.body : ''])));
+        setBodySearchQuery(q);
+        setBodySearchPending(false);
       })();
     }, 280);
     return () => {
@@ -1095,12 +1090,17 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
       window.clearTimeout(timer);
     };
   }, [query, filter]);
+  const normalizeSearchText = (value: string) => value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase();
   const visible = entries.filter((entry) => {
-    const q = query.trim().toLocaleLowerCase();
+    const q = normalizeSearchText(query.trim());
+    const currentBodyMatches = bodySearchQuery === query.trim() ? bodyMatches : new Map<string, string>();
     const matchesQuery = !q || (
-      (entry.title && entry.title.toLocaleLowerCase().includes(q)) ||
-      (entry.excerpt && entry.excerpt.toLocaleLowerCase().includes(q)) ||
-      bodyMatches.has(entry.id)
+      (entry.title && normalizeSearchText(entry.title).includes(q)) ||
+      (entry.excerpt && normalizeSearchText(entry.excerpt).includes(q)) ||
+      currentBodyMatches.has(entry.id)
     );
     const isConference = /conference|conferencia/i.test(entry.type);
     const isBook = /book|libro/i.test(entry.type);
@@ -1232,7 +1232,8 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
       })}
         </section>;
       })}</div>
-      {!ordered.length && <p className="library-empty">No se encontraron resultados</p>}</>}
+      {!ordered.length && bodySearchPending && <p className="library-empty">Buscando…</p>}
+      {!ordered.length && !bodySearchPending && <p className="library-empty">No se encontraron resultados</p>}</>}
     </div>
   </section>;
 }
