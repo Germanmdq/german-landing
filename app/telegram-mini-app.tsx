@@ -249,7 +249,7 @@ function PreguntamePanel({ user, onBack, onNavigate }: { user: User; onBack: () 
   </section>;
 }
 
-type NavTarget = 'home' | 'favorites' | 'biblioteca' | 'audiolibros' | 'meditaciones' | 'talleres' | 'propia' | 'consultas' | 'curso' | 'espacio' | 'configuracion' | 'notificaciones';
+type NavTarget = 'home' | 'favorites' | 'biblioteca' | 'audiolibros' | 'meditaciones' | 'talleres' | 'propia' | 'consultas' | 'curso' | 'escenas' | 'espacio' | 'configuracion' | 'notificaciones';
 
 function MotionIcon({ children, name, size = 21 }: { children: ReactNode; name: 'home' | 'route' | 'sliders' | 'message' | 'settings'; size?: number }) {
   return <span className={`motion-icon motion-icon--${name}`} style={{ width: size, height: size }} aria-hidden="true">{children}</span>;
@@ -313,6 +313,26 @@ function LaunchPendingPanel({ eyebrow, title, subtitle, onBack, onNavigate }: { 
   return <section className="reader-section">
     <FixedHeader eyebrow={eyebrow} title={title} subtitle={subtitle} onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body"><LaunchDateCard /></div>
+  </section>;
+}
+
+function SceneCreatorPendingPanel({ onBack, onNavigate }: { onBack: () => void; onNavigate: (target: NavTarget) => void }) {
+  return <section className="reader-section">
+    <FixedHeader eyebrow="CREADOR DE ESCENAS" title="Escenas personalizadas para tu objetivo" subtitle="Estamos terminando de pulir esta experiencia." onBack={onBack} onNavigate={onNavigate} />
+    <div className="reader-body">
+      <section className="launch-card" aria-labelledby="scene-creator-launch-title">
+        <div className="launch-card-date" aria-hidden="true">
+          <svg className="launch-card-ring" viewBox="0 0 88 88"><circle cx="44" cy="44" r="41" /></svg>
+          <small>MAR</small>
+          <b>29</b>
+          <small>SEP</small>
+        </div>
+        <div className="launch-card-copy">
+          <h2 id="scene-creator-launch-title">Disponible el martes <span>29 de septiembre</span></h2>
+          <p>Vas a poder crear una escena final breve, precisa y personalizada para tu objetivo.</p>
+        </div>
+      </section>
+    </div>
   </section>;
 }
 
@@ -1974,6 +1994,7 @@ export default function TelegramMiniApp() {
   const [courseOpen, setCourseOpen] = useState(false);
   const [interactiveBookOpen, setInteractiveBookOpen] = useState(false);
   const [preguntameOpen, setPreguntameOpen] = useState(false);
+  const [sceneCreatorOpen, setSceneCreatorOpen] = useState(false);
   const [blockedSection, setBlockedSection] = useState<string | null>(null);
   const [launchLocked, setLaunchLocked] = useState<{ eyebrow: string; title: string; subtitle: string } | null>(null);
   const [libraryItems, setLibraryItems] = useState<LibraryEntry[]>([]);
@@ -1991,6 +2012,7 @@ export default function TelegramMiniApp() {
 
   const back = () => {
     if (launchLocked) return setLaunchLocked(null);
+    if (sceneCreatorOpen) { setSceneCreatorOpen(false); return setMainMenu(true); }
     if (preguntameOpen) return setPreguntameOpen(false);
     if (selectedAudiobook) return setSelectedAudiobook(null);
     if (reader) return setReader(null);
@@ -2006,14 +2028,14 @@ export default function TelegramMiniApp() {
   };
 
   const navigateTo = (target: NavTarget) => {
-    const homeSafeTargets: NavTarget[] = ['home', 'espacio', 'configuracion', 'notificaciones'];
+    const homeSafeTargets: NavTarget[] = ['home', 'espacio', 'configuracion', 'notificaciones', 'escenas'];
     if (trialExpired && !homeSafeTargets.includes(target)) {
       setBlockedSection(null);
       setTrialGateOpen(true);
       setMainMenu(true);
       return;
     }
-    if (accessTier === 'limited' && !['home', 'talleres', 'propia', 'espacio', 'configuracion', 'notificaciones'].includes(target)) {
+    if (accessTier === 'limited' && !['home', 'talleres', 'propia', 'espacio', 'configuracion', 'notificaciones', 'escenas'].includes(target)) {
       const limitedLabels: Partial<Record<NavTarget, string>> = {
         favorites: 'Favoritos',
         biblioteca: 'la Biblioteca',
@@ -2048,11 +2070,13 @@ export default function TelegramMiniApp() {
     setFavoritesOpen(false);
     setWorkshopOpen(false);
     setPreguntameOpen(false);
+    setSceneCreatorOpen(false);
     setCourseOpen(false);
     setInteractiveBookOpen(false);
     setShowProgress(false);
     setTrail([]);
     if (target === 'home') { setMainMenu(true); return; }
+    if (target === 'escenas') { setMainMenu(false); setSceneCreatorOpen(true); return; }
     setMainMenu(false);
     if (target === 'favorites') { setFavoritesOpen(true); return; }
     if (target === 'curso') { setCourseOpen(true); return; }
@@ -2449,13 +2473,15 @@ export default function TelegramMiniApp() {
   const dock = <MainNavigationDock current={mainMenu ? "home" : configurationOpen ? "configuracion" : tab} onSelect={navigateTo} />;
 
   if (mainMenu) {
+    const sceneCreatorCard = { target: 'escenas' as const, title: 'Creador de escenas', detail: 'Escenas personalizadas para tu objetivo.', renewal: 'Disponible el 29', image: '/images/german-propia.webp' };
     const courseCard = { target: 'curso' as const, title: 'Taller de 365 días', detail: 'Ley de Asunción · recorrido completo.', renewal: renewalCopyByTarget.curso, image: '/images/german-reunion.webp' };
     const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, renewal: renewalCopyByTarget[target], image: target === 'espacio' ? '/images/german-perfil.webp' : target === 'biblioteca' ? '/images/german-biblioteca.webp' : target === 'audiolibros' ? '/images/german-audiolibros.webp' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
     const meditIndex = welcomeItems.findIndex((item) => item.target === 'meditaciones');
-    const items = [...welcomeItems.slice(0, meditIndex + 1), courseCard, ...welcomeItems.slice(meditIndex + 1)];
+    const items = [sceneCreatorCard, ...welcomeItems.slice(0, meditIndex + 1), courseCard, ...welcomeItems.slice(meditIndex + 1)];
     return <main className="app-shell app-main section-app day-one-screen welcome-carousel-screen"><section className="day-one-section"><header className="assistant-welcome">{fullName ? <p>Hola, {fullName}</p> : null}<h1>¿Por dónde<strong>empezamos?</strong></h1></header><DayOneCarousel autoPlay={false} label="Secciones de Germán Asistente" items={items} initialIndex={mainCardIndexRef.current} onIndexChange={(index) => { mainCardIndexRef.current = index; }} onSelect={(item, index) => { mainCardIndexRef.current = index; trackUiClick(session.user.id, 'home_card_click', item.title, 'home', { target: item.target, index }); navigateTo(item.target); }} /></section>{dock}</main>;
   }
   if (interactiveBookOpen) return <main className="app-shell app-main section-app"><InteractiveBookIntro onBack={back} onNavigate={navigateTo} />{dock}</main>;
+  if (sceneCreatorOpen) return <main className="app-shell app-main section-app"><SceneCreatorPendingPanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (courseOpen) return <main className="app-shell app-main section-app"><LawCoursePanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} onBack={back} onNavigate={navigateTo} onNameSaved={setFullName} onLogout={logout} />{dock}</main>;
   if (launchLocked) return <main className="app-shell app-main section-app"><LaunchPendingPanel eyebrow={launchLocked.eyebrow} title={launchLocked.title} subtitle={launchLocked.subtitle} onBack={() => setLaunchLocked(null)} onNavigate={(target) => { setLaunchLocked(null); navigateTo(target); }} />{dock}</main>;
