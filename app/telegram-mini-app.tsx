@@ -2037,7 +2037,7 @@ export default function TelegramMiniApp() {
       setMainMenu(true);
       return;
     }
-    if (accessTier === 'limited' && !['home', 'talleres', 'propia', 'biblioteca', 'espacio', 'configuracion', 'notificaciones', 'escenas'].includes(target)) {
+    if (accessTier === 'limited' && !['home', 'favorites', 'talleres', 'propia', 'biblioteca', 'espacio', 'configuracion', 'notificaciones', 'escenas'].includes(target)) {
       const limitedLabels: Partial<Record<NavTarget, string>> = {
         favorites: 'Favoritos',
         audiolibros: 'los libros y audiolibros',
@@ -2123,7 +2123,6 @@ export default function TelegramMiniApp() {
     if (selected.workshopPanel) return setWorkshopOpen(true);
     if (selected.title === 'Favoritos') {
       if (trialExpired) { setTrialGateOpen(true); setMainMenu(true); return; }
-      if (accessTier === 'limited') { setBlockedSection('Favoritos'); setMainMenu(true); return; }
       return setFavoritesOpen(true);
     }
     if (selected.title === 'Configuración') return setConfigurationOpen(true);
