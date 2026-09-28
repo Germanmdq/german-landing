@@ -8,14 +8,16 @@ const WHATSAPP = '5492236151152';
 
 export function AccessPaywall({ section, onBack }: { section?: string; onBack?: () => void }) {
   const subject = section || 'el Asistente Germán';
-  const text = `Hola Germán, quiero consultar por mi acceso a ${subject}.`;
+  const text = section
+    ? 'Hola Germán, quiero acceso completo al Asistente Germán, con el visualizador de escenas, los libros, audiolibros y todas las funciones Premium.'
+    : `Hola Germán, quiero consultar por mi acceso a ${subject}.`;
   const whatsappUrl = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(text)}`;
 
   if (section) {
     const premium = [
       { icon: 'brain' as const, title: 'Meditaciones completas' },
       { icon: 'ear' as const, title: 'Audiolibros y 5 libros nuevos por mes' },
-      { icon: 'calendar' as const, title: 'Creador de escenas personalizado' },
+      { icon: 'calendar' as const, title: 'Visualizador de escenas' },
       { icon: 'profile' as const, title: 'Consultas al Asistente Germán' },
       { icon: 'notification' as const, title: 'Nuevas herramientas y contenido Premium' },
     ];
@@ -25,13 +27,14 @@ export function AccessPaywall({ section, onBack }: { section?: string; onBack?: 
         <div className="limited-access-heading">
           <span className="trial-ended-pill">Acceso limitado</span>
           <h1>Esta sección es <strong>Premium</strong></h1>
-          <p>Tu acceso sigue activo. Conservás tus prácticas, tu Biblioteca, tu perfil, favoritos y progreso.</p>
+          <p>Tu acceso sigue activo. Conservás tus prácticas, tu perfil, configuración, notificaciones y progreso.</p>
         </div>
         <div className="limited-included">
           <b>Tu acceso actual incluye</b>
           <span>✓ Prácticas guiadas</span>
           <span>✓ Prácticas propias</span>
-          <span>✓ Biblioteca completa</span>
+          <span>✓ Mi perfil y configuración</span>
+          <span>✓ Configurador de notificaciones</span>
         </div>
         <div className="trial-ended-feature-list">
           {premium.map((feature) => <div className="trial-ended-feature" key={feature.title}>
@@ -41,7 +44,7 @@ export function AccessPaywall({ section, onBack }: { section?: string; onBack?: 
           </div>)}
         </div>
         <a className="trial-ended-whatsapp" href={whatsappUrl} target="_blank" rel="noreferrer">
-          <span>Quiero acceso Premium</span><ArrowRight size={20} />
+          <span>Quiero acceso completo</span><ArrowRight size={20} />
         </a>
         <small className="trial-ended-footnote">Todo lo que ya hiciste sigue guardado.</small>
       </section>
