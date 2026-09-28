@@ -210,6 +210,19 @@
   color: #8f8f95;
   font-size: 12px;
 }
+.limited-access-heading { padding: 12px 4px 4px; }
+.limited-access-heading h1 { margin-top: 12px; }
+.limited-access-heading p { margin: 12px 0 0; color: #aaaab1; font-size: 14px; line-height: 1.45; }
+.limited-included {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 20px;
+  background: #151517;
+  border: 1px solid #252529;
+}
+.limited-included b { color: #fff; font-size: 14px; margin-bottom: 2px; }
+.limited-included span { color: #c7c7cc; font-size: 13px; }
 .trial-ended-whatsapp {
   width: 100%;
   min-height: 58px;

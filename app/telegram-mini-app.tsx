@@ -727,7 +727,7 @@ function Reader({ content: reader, onBack, onNavigate, favorite, onFavorite }: {
   return <section className={`reader-section${libraryMode ? ' library-reader-section' : ''}`}><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} onNavigate={onNavigate} /><article className="reader-body"><button className={`reader-favorite${favorite ? ' is-favorite' : ''}`} onClick={onFavorite}><Heart size={18} fill={favorite ? 'currentColor' : 'none'} /></button>{reader.audioUrl && <AudioPlayer title={reader.title} audioUrl={reader.audioUrl} />}{reader.audios?.map((audio) => <AudioPlayer key={audio.label} title={audio.label} audioUrl={audio.url} />)}{!audioOnly && reader.paragraphs.map((paragraph, index) => <p key={index}>{reader.highlightQuery ? highlightText(paragraph, reader.highlightQuery) : renderSimpleBold(paragraph)}</p>)}</article></section>;
 }
 
-function AccountPanel({ user, fullName, onBack, onNavigate, onNameSaved, onLogout }: { user: User; fullName: string | null; onBack: () => void; onNavigate: (target: NavTarget) => void; onNameSaved: (name: string) => void; onLogout: () => void }) {
+function AccountPanel({ user, fullName, accessTier, onBack, onNavigate, onNameSaved, onLogout }: { user: User; fullName: string | null; accessTier: string; onBack: () => void; onNavigate: (target: NavTarget) => void; onNameSaved: (name: string) => void; onLogout: () => void }) {
   const [name, setName] = useState(fullName || user.user_metadata?.full_name || '');
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
@@ -747,6 +747,7 @@ function AccountPanel({ user, fullName, onBack, onNavigate, onNameSaved, onLogou
     onNameSaved(cleanName);
     setMessage('Cambios guardados.');
   };
+  const accessLabel = accessTier === 'limited' ? 'Limitado' : accessTier === 'trial' ? 'Prueba' : 'Premium';
   return <section className="reader-section account-section">
     <FixedHeader eyebrow="MI PERFIL" title="Mi cuenta" subtitle="Tus datos y tu acceso a la aplicación." onBack={onBack} onNavigate={onNavigate} />
     <div className="reader-body account-settings">
@@ -754,7 +755,7 @@ function AccountPanel({ user, fullName, onBack, onNavigate, onNameSaved, onLogou
       <label>Nombre<input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" /></label>
       <ShimmerButton className="account-save" onClick={save} disabled={saving}>{saving ? 'Guardando…' : 'Guardar cambios'}</ShimmerButton>
       {message && <p className="account-message">{message}</p>}
-      <section className="subscription-card"><p>TU ACCESO</p><b>Habilitado</b><span>El acceso se administra directamente con Germán.</span></section>
+      <section className="subscription-card"><p>TU ACCESO</p><b>{accessLabel}</b><span>{accessTier === 'limited' ? 'Incluye prácticas guiadas, prácticas propias y Biblioteca.' : accessTier === 'trial' ? 'Tu período de prueba está activo.' : 'Acceso completo al Asistente Germán.'}</span></section>
       <button className="account-logout" onClick={onLogout}><LogOut size={17} /> Cerrar sesión</button>
     </div>
   </section>;
@@ -2036,10 +2037,9 @@ export default function TelegramMiniApp() {
       setMainMenu(true);
       return;
     }
-    if (accessTier === 'limited' && !['home', 'talleres', 'propia', 'espacio', 'configuracion', 'notificaciones', 'escenas'].includes(target)) {
+    if (accessTier === 'limited' && !['home', 'talleres', 'propia', 'biblioteca', 'espacio', 'configuracion', 'notificaciones', 'escenas'].includes(target)) {
       const limitedLabels: Partial<Record<NavTarget, string>> = {
         favorites: 'Favoritos',
-        biblioteca: 'la Biblioteca',
         audiolibros: 'los libros y audiolibros',
         meditaciones: 'Meditaciones para ahora',
         consultas: 'Consultas',
@@ -2485,7 +2485,7 @@ export default function TelegramMiniApp() {
   if (interactiveBookOpen) return <main className="app-shell app-main section-app"><InteractiveBookIntro onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (sceneCreatorOpen) return <main className="app-shell app-main section-app"><SceneCreatorPendingPanel onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (courseOpen) return <main className="app-shell app-main section-app"><LawCoursePanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
-  if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} onBack={back} onNavigate={navigateTo} onNameSaved={setFullName} onLogout={logout} />{dock}</main>;
+  if (accountOpen && session?.user) return <main className="app-shell app-main section-app"><AccountPanel user={session.user} fullName={fullName} accessTier={accessTier} onBack={back} onNavigate={navigateTo} onNameSaved={setFullName} onLogout={logout} />{dock}</main>;
   if (launchLocked) return <main className="app-shell app-main section-app"><LaunchPendingPanel eyebrow={launchLocked.eyebrow} title={launchLocked.title} subtitle={launchLocked.subtitle} onBack={() => setLaunchLocked(null)} onNavigate={(target) => { setLaunchLocked(null); navigateTo(target); }} />{dock}</main>;
   if (selectedAudiobook) return <main className="app-shell app-main section-app"><AudiobookReader book={selectedAudiobook} onBack={back} onNavigate={navigateTo} />{dock}</main>;
   if (reader) { const favorite = deckFavorite({ icon: '📖', title: reader.title, detail: reader.detail, tone: palette[0], reader }); return <main className="app-shell app-main section-app"><Reader content={reader} onBack={back} onNavigate={navigateTo} favorite={favorites.some((item) => item.title === reader.title)} onFavorite={() => { const exact = favorites.find((item) => item.title === reader.title); toggleFavorite(exact || favorite); }} />{dock}</main>; }
