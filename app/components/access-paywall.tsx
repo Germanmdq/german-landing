@@ -27,14 +27,13 @@ export function AccessPaywall({ section, onBack }: { section?: string; onBack?: 
         <div className="limited-access-heading">
           <span className="trial-ended-pill">Acceso limitado</span>
           <h1>Esta sección es <strong>Premium</strong></h1>
-          <p>Tu acceso sigue activo. Conservás tus prácticas, tu perfil, configuración, notificaciones y progreso.</p>
+          <p>Tu acceso sigue activo. Conservás tus prácticas y tu perfil.</p>
         </div>
         <div className="limited-included">
           <b>Tu acceso actual incluye</b>
           <span>✓ Prácticas guiadas</span>
           <span>✓ Prácticas propias</span>
-          <span>✓ Mi perfil y configuración</span>
-          <span>✓ Configurador de notificaciones</span>
+          <span>✓ Mi perfil</span>
         </div>
         <div className="trial-ended-feature-list">
           {premium.map((feature) => <div className="trial-ended-feature" key={feature.title}>

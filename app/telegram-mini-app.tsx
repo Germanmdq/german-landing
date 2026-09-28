@@ -2037,7 +2037,7 @@ export default function TelegramMiniApp() {
       setMainMenu(true);
       return;
     }
-    if (accessTier === 'limited' && !['home', 'talleres', 'propia', 'espacio', 'configuracion', 'notificaciones'].includes(target)) {
+    if (accessTier === 'limited' && !['home', 'talleres', 'propia', 'espacio'].includes(target)) {
       const limitedLabels: Partial<Record<NavTarget, string>> = {
         favorites: 'Favoritos',
         audiolibros: 'los libros y audiolibros',
@@ -2110,6 +2110,11 @@ export default function TelegramMiniApp() {
     if (session?.user) trackUiClick(session.user.id, 'internal_card_click', selected.title, tab, { trail: trail.map((item) => item.title) });
     if (selected.action === 'logout') {
       logout();
+      return;
+    }
+    if (accessTier === 'limited' && (selected.notificationPanel || selected.title === 'Configuración')) {
+      setBlockedSection(selected.notificationPanel ? 'el configurador de notificaciones' : 'Configuración');
+      setMainMenu(true);
       return;
     }
     if (selected.launchArea && isLaunchPending(selected.launchArea)) {
