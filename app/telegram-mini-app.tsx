@@ -722,7 +722,7 @@ function renderSimpleBold(text: string): ReactNode {
 }
 
 function Reader({ content: reader, onBack, onNavigate, favorite, onFavorite }: { content: ReaderContent; onBack: () => void; onNavigate: (target: NavTarget) => void; favorite: boolean; onFavorite: () => void }) {
-  const libraryMode = reader.eyebrow === 'AUDIO' || reader.eyebrow === 'TEXTO';
+  const libraryMode = reader.eyebrow === 'AUDIO' || reader.eyebrow === 'TEXTO' || reader.eyebrow === 'CONFERENCIA';
   const audioOnly = Boolean(reader.audioUrl || reader.audios?.length);
   return <section className={`reader-section${libraryMode ? ' library-reader-section' : ''}`}><FixedHeader eyebrow={reader.eyebrow} title={reader.title} subtitle={reader.detail} onBack={onBack} onNavigate={onNavigate} /><article className="reader-body"><button className={`reader-favorite${favorite ? ' is-favorite' : ''}`} onClick={onFavorite}><Heart size={18} fill={favorite ? 'currentColor' : 'none'} /></button>{reader.audioUrl && <AudioPlayer title={reader.title} audioUrl={reader.audioUrl} />}{reader.audios?.map((audio) => <AudioPlayer key={audio.label} title={audio.label} audioUrl={audio.url} />)}{!audioOnly && reader.paragraphs.map((paragraph, index) => <p key={index}>{reader.highlightQuery ? highlightText(paragraph, reader.highlightQuery) : renderSimpleBold(paragraph)}</p>)}</article></section>;
 }
@@ -1070,9 +1070,8 @@ function extractConferenceYear(item: Record<string, unknown>): number | undefine
   return undefined;
 }
 
-function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggleFavorite, booksAllowed, onBooksBlocked }: { entries: LibraryEntry[]; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (entry: LibraryEntry, query?: string, mode?: 'audio' | 'text') => void; favorites: FavoriteRecord[]; onToggleFavorite: (favorite: FavoriteRecord) => void; booksAllowed: boolean; onBooksBlocked: () => void }) {
+function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggleFavorite, booksAllowed, onBooksBlocked, filter, onFilterChange }: { entries: LibraryEntry[]; onBack: () => void; onNavigate: (target: NavTarget) => void; onRead: (entry: LibraryEntry, query?: string, mode?: 'audio' | 'text') => void; favorites: FavoriteRecord[]; onToggleFavorite: (favorite: FavoriteRecord) => void; booksAllowed: boolean; onBooksBlocked: () => void; filter: string | null; onFilterChange: (value: string | null) => void }) {
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [bodyMatches, setBodyMatches] = useState<Map<string, string>>(new Map());
   const [bodySearchQuery, setBodySearchQuery] = useState('');
@@ -1179,7 +1178,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
             )}
           </div>}
         </div>
-        {filter && <button type="button" className="library-folders-back" onClick={() => { blurSearch(); setFilter(null); setQuery(''); setSearchOpen(false); }}><ChevronLeft size={16} /> Biblioteca</button>}
+        {filter && <button type="button" className="library-folders-back" onClick={() => { blurSearch(); onFilterChange(null); setQuery(''); setSearchOpen(false); }}><ChevronLeft size={16} /> Biblioteca</button>}
       </section>
       {!filter && !query && <div className="library-folder-float-stage">
         <FolderFloat
@@ -1197,7 +1196,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
           drift={0.5}
           onSelect={(value) => {
             if (/Libros/.test(value) && !booksAllowed) { onBooksBlocked(); return; }
-            setFilter(value);
+            onFilterChange(value);
           }}
           folderColor="#3f3f46"
           frontColor="#52525b"
@@ -1226,7 +1225,7 @@ function LibraryPanel({ entries, onBack, onNavigate, onRead, favorites, onToggle
       </div>}
       {filter && !query && filter !== 'Libros en audio' && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p><div className="library-content-list">{conferenceGroups.map((group) => {
         return <section key={group.label || 'all'} className="library-year-group is-open">
-          {group.entries.map((entry) => { const audioLocked = filter === 'Audios' && !entry.audioUrl; return <div key={entry.id} className="library-card-row"><MagicCard delay={0} className={`library-content-card library-content-card--instant${audioLocked ? ' is-coming-soon' : ''}`} disabled={audioLocked} onClick={audioLocked ? undefined : filter === 'Audios' ? () => onRead(entry, undefined, 'audio') : () => onRead(entry, undefined, 'text')}><div><p>{filter === 'Audios' ? 'Audio' : 'Texto'}</p><b className="card-title">{entry.title}</b>{filter === 'Audios' ? <em className="card-subtitle">Próximamente leída por Germán</em> : <em className="card-subtitle">{libraryExcerpt(entry.excerpt) || 'Abrir conferencia'}</em>}</div><span className="library-card-actions"><i>{filter === 'Audios' ? <AnimatedInterfaceIcon name="ear" size={19} /> : <ChevronRight size={19}/>}</i></span></MagicCard></div>; })}
+          {group.entries.map((entry) => { const audioLocked = filter === 'Audios' && !entry.audioUrl; return <div key={entry.id} className="library-card-row"><MagicCard delay={0} className={`library-content-card library-content-card--instant${audioLocked ? ' is-coming-soon' : ''}`} disabled={audioLocked} onClick={audioLocked ? undefined : filter === 'Audios' ? () => onRead(entry, undefined, 'audio') : () => onRead(entry, undefined, 'text')}><div>{filter === 'Audios' && <p>Audio</p>}<b className="card-title">{entry.title}</b>{filter === 'Audios' ? <em className="card-subtitle">Próximamente leída por Germán</em> : <em className="card-subtitle">{libraryExcerpt(entry.excerpt) || 'Abrir conferencia'}</em>}</div><span className="library-card-actions"><i>{filter === 'Audios' ? <AnimatedInterfaceIcon name="ear" size={19} /> : <ChevronRight size={19}/>}</i></span></MagicCard></div>; })}
         </section>;
       })}</div></>}
       {query && <><p className="library-count">{ordered.length} {ordered.length === 1 ? 'resultado' : 'resultados'}</p>
@@ -1998,6 +1997,7 @@ export default function TelegramMiniApp() {
   const [blockedSection, setBlockedSection] = useState<string | null>(null);
   const [launchLocked, setLaunchLocked] = useState<{ eyebrow: string; title: string; subtitle: string } | null>(null);
   const [libraryItems, setLibraryItems] = useState<LibraryEntry[]>([]);
+  const [libraryFilter, setLibraryFilter] = useState<string | null>(null);
   const [audiobookItems, setAudiobookItems] = useState<AudiobookEntry[]>([]);
   const [audiobooksLoading, setAudiobooksLoading] = useState(true);
   const [audiobooksError, setAudiobooksError] = useState('');
@@ -2429,7 +2429,7 @@ export default function TelegramMiniApp() {
       console.error('[library] error cargando texto:', error);
       setReader({
         title: entry.title,
-        eyebrow: 'TEXTO',
+        eyebrow: 'CONFERENCIA',
         detail: entry.excerpt || 'Biblioteca',
         paragraphs: [entry.excerpt || 'No pudimos cargar este texto. Probá nuevamente.'],
         highlightQuery: searchQuery,
@@ -2441,7 +2441,7 @@ export default function TelegramMiniApp() {
     const excerpt = typeof data?.excerpt === 'string' ? data.excerpt : entry.excerpt;
     setReader({
       title: entry.title,
-      eyebrow: 'TEXTO',
+      eyebrow: 'CONFERENCIA',
       detail: excerpt || 'Biblioteca',
       paragraphs: cleanParagraphs(body || excerpt || ''),
       highlightQuery: searchQuery,
@@ -2497,7 +2497,7 @@ export default function TelegramMiniApp() {
   if (tab === 'audiolibros' && !trail.length) {
     return <main className="app-shell app-main section-app"><AudiobookLibraryPanel entries={audiobookItems} loading={audiobooksLoading} error={audiobooksError} onBack={back} onNavigate={navigateTo} onOpen={(entry) => { touchContentProgress(session.user.id, `audiobook:${entry.id}`, 'audiobook'); setSelectedAudiobook(entry); }} />{dock}</main>;
   }
-  if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} booksAllowed={accessPermissions.books !== false} onBooksBlocked={() => setBlockedSection('los libros y audiolibros')} onRead={(entry, searchQuery, mode) => { void openLibraryEntry(entry, searchQuery, mode); }} />{dock}</main>;
+  if (tab === 'biblioteca' && !trail.length) return <main className="app-shell app-main section-app"><LibraryPanel entries={libraryItems} onBack={back} onNavigate={navigateTo} favorites={favorites} onToggleFavorite={toggleFavorite} booksAllowed={accessPermissions.books !== false} onBooksBlocked={() => setBlockedSection('los libros y audiolibros')} filter={libraryFilter} onFilterChange={setLibraryFilter} onRead={(entry, searchQuery, mode) => { void openLibraryEntry(entry, searchQuery, mode); }} />{dock}</main>;
   if (showProgress) return <main className="app-shell app-main section-app"><ProgressScreen user={session.user} onBack={() => setShowProgress(false)} onNavigate={navigateTo} />{dock}</main>;
   if (tab === 'espacio' && !trail.length) return <main className="app-shell app-main section-app"><ProfileScreen user={session.user} items={screens.espacio.items} onSelect={select} onBack={back} onNavigate={navigateTo} onOpenProgress={() => setShowProgress(true)} />{dock}</main>;
   if (tab === 'consultas' && !trail.length) return <main className="app-shell app-main section-app preguntame-shell"><PreguntamePanel user={session.user} onBack={back} onNavigate={navigateTo} />{dock}</main>;
