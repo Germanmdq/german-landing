@@ -1,7 +1,8 @@
 'use client';
 
 import './launch-widgets.css';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { AnimatedInterfaceIcon } from './animated-interface-icon';
 
 // Contenido que todavía no se habilita en el lanzamiento inicial. La previa
 // (listados, índices, títulos, estructura) se ve siempre; el contenido real
@@ -65,13 +66,36 @@ export function WhatsAppIcon({ size = 22 }: { size?: number }) {
 // Fin de la prueba de 96 horas. El progreso no se toca: al habilitar el acceso
 // la persona sigue exactamente donde estaba.
 export function TrialEndedScreen({ onBack }: { onBack?: () => void }) {
+  const features = [
+    { icon: 'brain' as const, title: 'Prácticas guiadas y personalizadas', detail: 'Nuevos recorridos y contenido Premium todos los meses.' },
+    { icon: 'open-door' as const, title: 'Biblioteca completa', detail: 'Conferencias, lecturas y material siempre disponible.' },
+    { icon: 'ear' as const, title: '5 libros nuevos todos los meses', detail: 'Audiolibros y nuevos materiales de Germán.' },
+    { icon: 'profile' as const, title: 'Consultas al Asistente Germán', detail: 'Cada vez más entrenado con tu biblioteca, tus prácticas y tus contenidos.' },
+    { icon: 'calendar' as const, title: 'Creador de escenas personalizado', detail: 'Creá tu escena con ayuda, adaptada exactamente a tu objetivo.' },
+    { icon: 'notification' as const, title: 'Próximas herramientas del Asistente', detail: 'Accedé a las nuevas funciones que vayamos incorporando.' },
+    { icon: 'bookmark' as const, title: 'Todo lo que ya hiciste sigue guardado', detail: 'Tu perfil, tus favoritos, tu configuración y tu progreso quedan intactos.' },
+  ];
+
   return <main className="app-shell trial-ended-screen">
-    <section className="trial-ended-card" aria-labelledby="trial-ended-title">
-      {onBack && <button type="button" className="header-back" onClick={onBack}><ArrowLeft size={18} />Volver</button>}
-      <div className="trial-ended-mark" aria-hidden="true"><span>G</span></div>
-      <h1 id="trial-ended-title">¿Querés seguir experimentando esta aplicación?</h1>
-      <p>Durante estas horas ya pudiste escuchar, leer y probar cómo funciona el Asistente Germán.</p>
-      <p>Si querés seguir usándolo, escribime por WhatsApp.</p>
+    <section className="trial-ended-card trial-ended-card--premium" aria-labelledby="trial-ended-title">
+      {onBack && <button type="button" className="trial-ended-back" onClick={onBack}><ArrowLeft size={18} />Volver</button>}
+      <div className="trial-ended-hero">
+        <div className="trial-ended-hero-copy">
+          <span className="trial-ended-pill">Tu prueba terminó</span>
+          <h1 id="trial-ended-title">Seguí con el <strong>Asistente</strong></h1>
+          <p>Tu perfil sigue intacto. Tus favoritos, tu configuración y tu progreso siguen guardados.</p>
+        </div>
+        <img src="/images/german-perfil.webp" alt="Germán" />
+      </div>
+
+      <div className="trial-ended-feature-list">
+        {features.map((feature) => <div className="trial-ended-feature" key={feature.title}>
+          <span className="trial-ended-feature-icon"><AnimatedInterfaceIcon name={feature.icon} size={30} /></span>
+          <span className="trial-ended-feature-copy"><b>{feature.title}</b><small>{feature.detail}</small></span>
+          <ArrowRight className="trial-ended-feature-arrow" size={18} />
+        </div>)}
+      </div>
+
       <a
         className="trial-ended-whatsapp"
         href={trialEndedWhatsAppUrl}
@@ -79,9 +103,10 @@ export function TrialEndedScreen({ onBack }: { onBack?: () => void }) {
         rel="noreferrer"
         onClick={(event) => { event.preventDefault(); openExternal(trialEndedWhatsAppUrl); }}
       >
-        <WhatsAppIcon />
-        <span>Seguir con el Asistente</span>
+        <span>Quiero seguir con el Asistente</span>
+        <ArrowRight size={20} />
       </a>
+      <small className="trial-ended-footnote">Sin perder tu progreso.</small>
     </section>
   </main>;
 }
