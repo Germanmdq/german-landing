@@ -1750,8 +1750,44 @@ function PropiaPracticaPanel({ user, onBack, onNavigate, onRead }: { user: User;
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [confirmed, setConfirmed] = useState(false);
+  const [activeProgram, setActiveProgram] = useState<ActiveProgramEnrollment | null>(null);
+  const [checkingActiveProgram, setCheckingActiveProgram] = useState(true);
+  const [confirmingAbandon, setConfirmingAbandon] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      setCheckingActiveProgram(true);
+      const { data, error } = await supabase
+        .from('program_enrollments')
+        .select('id,collection_id,current_day,morning,noon,afternoon,night,timezone,message_interval_minutes,pending_schedule,collections(title)')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+      if (cancelled) return;
+      if (error) {
+        console.error('[propia] error buscando programa activo:', error);
+        setMessage(error.message);
+      } else {
+        setActiveProgram(data as unknown as ActiveProgramEnrollment | null);
+      }
+      setCheckingActiveProgram(false);
+    })();
+    return () => { cancelled = true; };
+  }, [user.id]);
 
   const needsSchedule = Boolean(duracion);
+
+  const abandonCurrentProgram = async () => {
+    if (!activeProgram) return;
+    setSubmitting(true);
+    setMessage('');
+    const { error } = await supabase.rpc('abandon_program', { p_enrollment_id: activeProgram.id });
+    setSubmitting(false);
+    if (error) { setMessage(error.message); return; }
+    setConfirmingAbandon(false);
+    setActiveProgram(null);
+  };
 
   const submit = async () => {
     const nextErrors: { tema?: string; duracion?: string } = {};
@@ -1784,6 +1820,34 @@ function PropiaPracticaPanel({ user, onBack, onNavigate, onRead }: { user: User;
         <p>Elegiste <strong>{tema}</strong> durante <strong>{duracion}</strong>. Vas a recibir tus prácticas por notificación en los horarios que configuraste.</p>
         <button type="button" className="btn-primary" onClick={onBack}>Volver al inicio</button>
       </div>
+    </section>;
+  }
+
+  if (checkingActiveProgram) {
+    return <section className="reader-section">
+      <FixedHeader eyebrow="TU PROPIA PRÁCTICA" title="Creá tu recorrido" subtitle="Elegí qué practicar, cuánto tiempo y cuándo." onBack={onBack} onNavigate={onNavigate} />
+      <div className="reader-body"><p className="library-empty">Comprobando tu programa activo…</p></div>
+    </section>;
+  }
+
+  if (activeProgram) {
+    const activeTitle = activeProgram.collections?.title || 'tu programa actual';
+    return <section className="reader-section workshop-section">
+      <FixedHeader eyebrow="TU PROPIA PRÁCTICA" title="Ya tenés un programa activo" subtitle={`Estás realizando ${activeTitle}.`} onBack={onBack} onNavigate={onNavigate} />
+      <div className="reader-body">
+        <p>Para crear una nueva práctica propia, primero tenés que abandonar tu programa actual.</p>
+        {message && <p className="account-message" role="alert">{message}</p>}
+        <ShimmerButton type="button" className="account-save" onClick={onBack}>Continuar mi programa</ShimmerButton>
+        <button type="button" className="workshop-abandon" onClick={() => setConfirmingAbandon(true)}>Abandonar y crear una nueva</button>
+      </div>
+      {confirmingAbandon && <ConfirmDialog
+        title={`¿Querés abandonar ${activeTitle}?`}
+        description="Vas a dejar de recibir sus prácticas y notificaciones. Después vas a poder configurar tu nueva práctica desde cero."
+        confirmLabel={submitting ? 'Un momento…' : 'Abandonar y continuar'}
+        cancelLabel="Seguir con mi programa"
+        onCancel={() => { if (!submitting) setConfirmingAbandon(false); }}
+        onConfirm={() => { if (!submitting) void abandonCurrentProgram(); }}
+      />}
     </section>;
   }
 
