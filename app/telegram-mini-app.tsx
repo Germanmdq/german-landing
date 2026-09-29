@@ -1011,8 +1011,11 @@ function AudiobookReader({ book, onBack, onNavigate }: { book: AudiobookEntry; o
                 <ChevronDown size={18} aria-hidden="true" />
               </summary>
               <div className="audiobook-section-content">
-                {book.title.startsWith('Revisión') && section.order >= 1 && section.order <= 3
-                  ? <AudioPlayer title={`Capítulo ${section.order} · ${section.title}`} audioUrl={`https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/audiolibros-german/revision/capitulo-${section.order}.mp3`} />
+                {book.title.startsWith('Revisión') && section.order >= 0 && section.order <= 4
+                  ? <AudioPlayer
+                      title={section.order === 0 ? 'Prólogo' : `Capítulo ${section.order} · ${section.title}`}
+                      audioUrl={`https://wpqtvixnmexlmhawwfdq.supabase.co/storage/v1/object/public/audios/audiolibros-german/revision/${section.order === 0 ? 'prologo' : `capitulo-${section.order}`}.mp3`}
+                    />
                   : <AudiobookNarrationCue />}
                 {section.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
               </div>
