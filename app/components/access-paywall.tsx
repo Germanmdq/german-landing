@@ -27,14 +27,14 @@ export function AccessPaywall({ section, onBack }: { section?: string; onBack?: 
         <div className="limited-access-heading">
           <span className="trial-ended-pill">Acceso limitado</span>
           <h1>Esta sección es <strong>Premium</strong></h1>
-          <p>Tu acceso sigue activo. Conservás tus prácticas, tu perfil y tus favoritos.</p>
+          <p>Tu acceso sigue activo. Conservás tus prácticas, tu Biblioteca, tu perfil y tu progreso.</p>
         </div>
         <div className="limited-included">
           <b>Tu acceso actual incluye</b>
           <span>✓ Prácticas guiadas</span>
           <span>✓ Prácticas propias</span>
+          <span>✓ Biblioteca completa</span>
           <span>✓ Mi perfil</span>
-          <span>✓ Favoritos</span>
         </div>
         <div className="trial-ended-feature-list">
           {premium.map((feature) => <div className="trial-ended-feature" key={feature.title}>
@@ -46,7 +46,7 @@ export function AccessPaywall({ section, onBack }: { section?: string; onBack?: 
         <a className="trial-ended-whatsapp" href={whatsappUrl} target="_blank" rel="noreferrer">
           <span>Quiero acceso completo</span><ArrowRight size={20} />
         </a>
-        <small className="trial-ended-footnote">Todo lo que ya hiciste sigue guardado.</small>
+        <small className="trial-ended-footnote">Tus favoritos siguen guardados, pero se desbloquean con Premium.</small>
       </section>
     </main>;
   }
