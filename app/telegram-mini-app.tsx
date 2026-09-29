@@ -323,12 +323,11 @@ function SceneCreatorPendingPanel({ onBack, onNavigate }: { onBack: () => void; 
       <section className="launch-card" aria-labelledby="scene-creator-launch-title">
         <div className="launch-card-date" aria-hidden="true">
           <svg className="launch-card-ring" viewBox="0 0 88 88"><circle cx="44" cy="44" r="41" /></svg>
-          <small>MAR</small>
-          <b>29</b>
-          <small>SEP</small>
+          <small>EN</small>
+          <b>BREVE</b>
         </div>
         <div className="launch-card-copy">
-          <h2 id="scene-creator-launch-title">Disponible el martes <span>29 de septiembre</span></h2>
+          <h2 id="scene-creator-launch-title">Disponible en breve</h2>
           <p>Vas a poder crear una escena final breve, precisa y personalizada para tu objetivo.</p>
         </div>
       </section>
@@ -882,7 +881,7 @@ function parseGermanAudiobookMarkdown(markdown: string, chapters: AudiobookChapt
 function AudiobookNarrationCue() {
   return <div className="audiobook-narration-cue" aria-label="Audio narrado por Germán, disponible próximamente">
     <span className="audiobook-narration-ear" aria-hidden="true"><AnimatedInterfaceIcon name="ear" size={29} /></span>
-    <span className="audiobook-narration-copy"><strong>Leído por Germán</strong><small>Audio disponible a partir del sábado 26</small></span>
+    <span className="audiobook-narration-copy"><strong>Leído por Germán</strong><small>Audio disponible en breve</small></span>
   </div>;
 }
 
@@ -2370,7 +2369,7 @@ export default function TelegramMiniApp() {
             return {
               icon: '▶️',
               title,
-              detail: isLaunchPending('meditaciones') ? 'Disponible el domingo 27' : 'Meditación para ahora',
+              detail: isLaunchPending('meditaciones') ? 'Disponible en breve' : 'Meditación para ahora',
               availability: isLaunchPending('meditaciones'),
               audioCue: true,
               tone: palette[meditationIndex % palette.length],
@@ -2388,7 +2387,7 @@ export default function TelegramMiniApp() {
           return {
             icon: momentIcons[index] || '✨',
             title: row.title || 'Meditación',
-            detail: isLaunchPending('meditaciones') ? 'Disponible el domingo 27' : 'Elegí una meditación',
+            detail: isLaunchPending('meditaciones') ? 'Disponible en breve' : 'Elegí una meditación',
             availability: isLaunchPending('meditaciones'),
             tone: palette[index % palette.length],
             // Versionada para no depender de una copia vieja en la caché del WebView de Telegram.
@@ -2561,7 +2560,7 @@ export default function TelegramMiniApp() {
   const dock = <MainNavigationDock current={mainMenu ? "home" : configurationOpen ? "configuracion" : tab} onSelect={navigateTo} />;
 
   if (mainMenu) {
-    const sceneCreatorCard = { target: 'escenas' as const, title: 'Creador de escenas', detail: 'Escenas personalizadas para tu objetivo.', renewal: 'Disponible el 29', image: '/images/german-creador-escenas.png' };
+    const sceneCreatorCard = { target: 'escenas' as const, title: 'Creador de escenas', detail: 'Escenas personalizadas para tu objetivo.', renewal: 'Disponible en breve', image: '/images/german-creador-escenas.png' };
     const courseCard = { target: 'curso' as const, title: 'Taller de 365 días', detail: 'Ley de Asunción · recorrido completo.', renewal: renewalCopyByTarget.curso, image: '/images/german-reunion.webp' };
     const welcomeItems = mainCategories.map(([target, , title, detail]) => ({ target, title, detail, renewal: renewalCopyByTarget[target], image: target === 'espacio' ? '/images/german-perfil.webp' : target === 'biblioteca' ? '/images/german-biblioteca.webp' : target === 'audiolibros' ? '/images/german-audiolibros.webp' : target === 'talleres' ? '/images/german-practicas.webp' : target === 'propia' ? '/images/german-propia.webp' : target === 'meditaciones' ? '/images/german-meditaciones.webp' : target === 'consultas' ? '/images/german-consultas.webp' : undefined }));
     const welcomeWithSceneCreator = [...welcomeItems.slice(0, 3), sceneCreatorCard, ...welcomeItems.slice(3)];

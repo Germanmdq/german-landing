@@ -46,12 +46,11 @@ export function LaunchDateCard() {
   return <section className="launch-card" aria-labelledby="launch-card-title">
     <div className="launch-card-date" aria-hidden="true">
       <svg className="launch-card-ring" viewBox="0 0 88 88"><circle cx="44" cy="44" r="41" /></svg>
-      <small>DOM</small>
-      <b>27</b>
-      <small>SEP</small>
+      <small>EN</small>
+      <b>BREVE</b>
     </div>
     <div className="launch-card-copy">
-      <h2 id="launch-card-title">Disponible el domingo <span>27 de septiembre</span></h2>
+      <h2 id="launch-card-title">Disponible en breve</h2>
       <p>Estamos terminando de preparar esta experiencia para vos.</p>
     </div>
   </section>;
