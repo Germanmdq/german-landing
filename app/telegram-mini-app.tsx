@@ -2080,7 +2080,7 @@ export default function TelegramMiniApp() {
 
   const back = () => {
     if (launchLocked) return setLaunchLocked(null);
-    if (sceneCreatorOpen) { setSceneCreatorOpen(false); mainCardIndexRef.current = 0; return setMainMenu(true); }
+    if (sceneCreatorOpen) { setSceneCreatorOpen(false); return setMainMenu(true); }
     if (preguntameOpen) return setPreguntameOpen(false);
     if (selectedAudiobook) return setSelectedAudiobook(null);
     if (reader) {
@@ -2102,7 +2102,6 @@ export default function TelegramMiniApp() {
     if (interactiveBookOpen) { setInteractiveBookOpen(false); return setMainMenu(true); }
     if (courseOpen) { setCourseOpen(false); return setMainMenu(true); }
     if (trail.length) return setTrail((value) => value.slice(0, -1));
-    mainCardIndexRef.current = 0;
     setMainMenu(true);
   };
 
