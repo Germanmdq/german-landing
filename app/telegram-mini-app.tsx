@@ -1568,12 +1568,12 @@ function WorkshopPanel({ user, program, onBack, onNavigate, onRead }: { user: Us
         <p>Para comenzar {program.title}, primero tenés que abandonar tu programa actual.</p>
         {saveError && <p className="account-message" role="alert">{saveError}</p>}
         <ShimmerButton type="button" className="account-save" onClick={onBack}>Continuar mi programa</ShimmerButton>
-        <button type="button" className="workshop-abandon" onClick={() => setConfirmingAbandon(true)}>Abandonar y empezar el nuevo</button>
+        <button type="button" className="workshop-abandon" onClick={() => setConfirmingAbandon(true)}>Abandonar mi taller actual y empezar este</button>
       </div>
       {confirmingAbandon && <ConfirmDialog
         title={`¿Querés abandonar ${activeTitle}?`}
         description={`Vas a dejar de recibir sus prácticas y notificaciones. ${program.title} comenzará desde el Día 1.`}
-        confirmLabel={saving ? 'Un momento…' : 'Abandonar y empezar'}
+        confirmLabel={saving ? 'Un momento…' : 'Abandonar mi taller actual y empezar este'}
         cancelLabel="Seguir con mi programa"
         onCancel={() => { if (!saving) setConfirmingAbandon(false); }}
         onConfirm={() => { if (!saving) void abandonAndStartWorkshop(); }}
@@ -1838,12 +1838,12 @@ function PropiaPracticaPanel({ user, onBack, onNavigate, onRead }: { user: User;
         <p>Para crear una nueva práctica propia, primero tenés que abandonar tu programa actual.</p>
         {message && <p className="account-message" role="alert">{message}</p>}
         <ShimmerButton type="button" className="account-save" onClick={onBack}>Continuar mi programa</ShimmerButton>
-        <button type="button" className="workshop-abandon" onClick={() => setConfirmingAbandon(true)}>Abandonar y crear una nueva</button>
+        <button type="button" className="workshop-abandon" onClick={() => setConfirmingAbandon(true)}>Abandonar mi taller actual y empezar esta práctica</button>
       </div>
       {confirmingAbandon && <ConfirmDialog
         title={`¿Querés abandonar ${activeTitle}?`}
         description="Vas a dejar de recibir sus prácticas y notificaciones. Después vas a poder configurar tu nueva práctica desde cero."
-        confirmLabel={submitting ? 'Un momento…' : 'Abandonar y continuar'}
+        confirmLabel={submitting ? 'Un momento…' : 'Abandonar mi taller actual y empezar esta práctica'}
         cancelLabel="Seguir con mi programa"
         onCancel={() => { if (!submitting) setConfirmingAbandon(false); }}
         onConfirm={() => { if (!submitting) void abandonCurrentProgram(); }}
