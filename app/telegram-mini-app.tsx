@@ -2073,6 +2073,7 @@ export default function TelegramMiniApp() {
   const screens = useMemo(() => buildScreens(momentNodes), [momentNodes]);
   const mainCardIndexRef = useRef(0);
   const carouselIndicesRef = useRef<Record<string, number>>({});
+  const readerReturnRef = useRef<{ tab: Tab; trail: DeckItem[]; mainMenu: boolean } | null>(null);
   const current = trail.at(-1);
   // Sin useMemo: depende de `screens`, que cambia cuando llegan momentNodes.
   const screen: Screen = resolveScreen(screens, tab, trail);
@@ -2082,7 +2083,17 @@ export default function TelegramMiniApp() {
     if (sceneCreatorOpen) { setSceneCreatorOpen(false); mainCardIndexRef.current = 0; return setMainMenu(true); }
     if (preguntameOpen) return setPreguntameOpen(false);
     if (selectedAudiobook) return setSelectedAudiobook(null);
-    if (reader) return setReader(null);
+    if (reader) {
+      const returnState = readerReturnRef.current;
+      setReader(null);
+      readerReturnRef.current = null;
+      if (returnState) {
+        setTab(returnState.tab);
+        setTrail(returnState.trail);
+        setMainMenu(returnState.mainMenu);
+      }
+      return;
+    }
     if (notificationsOpen) return setNotificationsOpen(false);
     if (configurationOpen) return setConfigurationOpen(false);
     if (accountOpen) return setAccountOpen(false);
@@ -2187,7 +2198,10 @@ export default function TelegramMiniApp() {
       setLaunchLocked({ eyebrow: selected.reader?.eyebrow || 'PRÓXIMAMENTE', title: selected.title, subtitle: selected.detail });
       return;
     }
-    if (selected.reader) return setReader(selected.reader);
+    if (selected.reader) {
+      readerReturnRef.current = { tab, trail: [...trail], mainMenu };
+      return setReader(selected.reader);
+    }
     if (selected.notificationPanel) return setNotificationsOpen(true);
     if (selected.accountPanel) return setAccountOpen(true);
     if (selected.programPanel) { setProgramConfig(selected.programPanel); setWorkshopOpen(true); return; }
