@@ -922,3 +922,11 @@ main svg{stroke-width:1.25!important}
   .motionStage{gap:16px!important}.miniSite,.miniSiteB,.miniSiteD{height:260px!important}
   .modernServices,.modernStack,.modernEnterprise,.modernTechStrip,.catalogIntro,.agencyFaqSection{padding-top:100px!important;padding-bottom:100px!important}
 }
+/* Live template viewer */
+.livePreviewFrame{position:relative;overflow:hidden;background:#f2f2f2;min-height:72vh}
+.livePreviewFrame iframe{display:block;width:100%;height:72vh;border:0;background:#fff}
+.openLiveSite{position:absolute;right:18px;bottom:18px;z-index:4;padding:11px 16px;border-radius:999px;background:#111;color:#fff;text-decoration:none;font-size:13px;box-shadow:0 8px 30px #0003}
+.modalActions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:24px}
+.modalActions .heroCta{margin:0}
+.liveCta{display:inline-flex;align-items:center;min-height:46px;padding:0 18px;border:1px solid #111;border-radius:999px;color:#111;text-decoration:none;font-weight:650}
+@media(max-width:760px){.livePreviewFrame,.livePreviewFrame iframe{min-height:64vh;height:64vh}.modalActions>a{width:100%;justify-content:center}}
