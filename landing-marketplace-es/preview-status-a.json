@@ -1,0 +1,674 @@
+[
+  {
+    "id": 1,
+    "slug": "bridal-shop",
+    "ok": true,
+    "texts": 79,
+    "file": "001-bridal-shop.png"
+  },
+  {
+    "id": 2,
+    "slug": "care-home",
+    "ok": true,
+    "texts": 94,
+    "file": "002-care-home.png"
+  },
+  {
+    "id": 3,
+    "slug": "trucking-company",
+    "ok": true,
+    "texts": 89,
+    "file": "003-trucking-company.png"
+  },
+  {
+    "id": 4,
+    "slug": "gutter-cleaning",
+    "ok": true,
+    "texts": 75,
+    "file": "004-gutter-cleaning.png"
+  },
+  {
+    "id": 5,
+    "slug": "wedding-cake",
+    "ok": true,
+    "texts": 80,
+    "file": "005-wedding-cake.png"
+  },
+  {
+    "id": 6,
+    "slug": "voice-over",
+    "ok": true,
+    "texts": 92,
+    "file": "006-voice-over.png"
+  },
+  {
+    "id": 7,
+    "slug": "airport-transfer",
+    "ok": true,
+    "texts": 77,
+    "file": "007-airport-transfer.png"
+  },
+  {
+    "id": 8,
+    "slug": "game-studio",
+    "ok": true,
+    "texts": 73,
+    "file": "008-game-studio.png"
+  },
+  {
+    "id": 9,
+    "slug": "real-estate-photography",
+    "ok": true,
+    "texts": 63,
+    "file": "009-real-estate-photography.png"
+  },
+  {
+    "id": 10,
+    "slug": "art-studio",
+    "ok": true,
+    "texts": 59,
+    "file": "010-art-studio.png"
+  },
+  {
+    "id": 11,
+    "slug": "life-insurance",
+    "ok": true,
+    "texts": 60,
+    "file": "011-life-insurance.png"
+  },
+  {
+    "id": 12,
+    "slug": "dog-walking",
+    "ok": true,
+    "texts": 81,
+    "file": "012-dog-walking.png"
+  },
+  {
+    "id": 13,
+    "slug": "virtual-assistant",
+    "ok": true,
+    "texts": 82,
+    "file": "013-virtual-assistant.png"
+  },
+  {
+    "id": 14,
+    "slug": "farmers-market",
+    "ok": true,
+    "texts": 128,
+    "file": "014-farmers-market.png"
+  },
+  {
+    "id": 15,
+    "slug": "smart-home",
+    "ok": true,
+    "texts": 84,
+    "file": "015-smart-home.png"
+  },
+  {
+    "id": 16,
+    "slug": "auto-glass",
+    "ok": true,
+    "texts": 93,
+    "file": "016-auto-glass.png"
+  },
+  {
+    "id": 17,
+    "slug": "video-production",
+    "ok": true,
+    "texts": 88,
+    "file": "017-video-production.png"
+  },
+  {
+    "id": 18,
+    "slug": "newsletter-landing-page",
+    "ok": true,
+    "texts": 62,
+    "file": "018-newsletter-landing-page.png"
+  },
+  {
+    "id": 19,
+    "slug": "photo-booth",
+    "ok": true,
+    "texts": 65,
+    "file": "019-photo-booth.png"
+  },
+  {
+    "id": 20,
+    "slug": "esthetician",
+    "ok": true,
+    "texts": 75,
+    "file": "020-esthetician.png"
+  },
+  {
+    "id": 21,
+    "slug": "waitlist-landing-page",
+    "ok": true,
+    "texts": 50,
+    "file": "021-waitlist-landing-page.png"
+  },
+  {
+    "id": 22,
+    "slug": "farm",
+    "ok": true,
+    "texts": 109,
+    "file": "022-farm.png"
+  },
+  {
+    "id": 23,
+    "slug": "recording-studio",
+    "ok": true,
+    "texts": 77,
+    "file": "023-recording-studio.png"
+  },
+  {
+    "id": 24,
+    "slug": "junk-removal",
+    "ok": true,
+    "texts": 81,
+    "file": "024-junk-removal.png"
+  },
+  {
+    "id": 25,
+    "slug": "travel-blog",
+    "ok": true,
+    "texts": 86,
+    "file": "025-travel-blog.png"
+  },
+  {
+    "id": 26,
+    "slug": "towing",
+    "ok": true,
+    "texts": 86,
+    "file": "026-towing.png"
+  },
+  {
+    "id": 27,
+    "slug": "appliance-repair",
+    "ok": true,
+    "texts": 115,
+    "file": "027-appliance-repair.png"
+  },
+  {
+    "id": 28,
+    "slug": "painter",
+    "ok": true,
+    "texts": 103,
+    "file": "028-painter.png"
+  },
+  {
+    "id": 29,
+    "slug": "ebook-landing-page",
+    "ok": true,
+    "texts": 72,
+    "file": "029-ebook-landing-page.png"
+  },
+  {
+    "id": 30,
+    "slug": "personal-brand",
+    "ok": true,
+    "texts": 74,
+    "file": "030-personal-brand.png"
+  },
+  {
+    "id": 31,
+    "slug": "pool-service",
+    "ok": true,
+    "texts": 105,
+    "file": "031-pool-service.png"
+  },
+  {
+    "id": 32,
+    "slug": "app-landing-page",
+    "ok": true,
+    "texts": 84,
+    "file": "032-app-landing-page.png"
+  },
+  {
+    "id": 33,
+    "slug": "saas-landing-page",
+    "ok": true,
+    "texts": 118,
+    "file": "033-saas-landing-page.png"
+  },
+  {
+    "id": 34,
+    "slug": "candle-shop",
+    "ok": true,
+    "texts": 77,
+    "file": "034-candle-shop.png"
+  },
+  {
+    "id": 35,
+    "slug": "theater",
+    "ok": true,
+    "texts": 100,
+    "file": "035-theater.png"
+  },
+  {
+    "id": 36,
+    "slug": "pet-store",
+    "ok": true,
+    "texts": 83,
+    "file": "036-pet-store.png"
+  },
+  {
+    "id": 37,
+    "slug": "notary",
+    "ok": true,
+    "texts": 95,
+    "file": "037-notary.png"
+  },
+  {
+    "id": 38,
+    "slug": "locksmith",
+    "ok": true,
+    "texts": 89,
+    "file": "038-locksmith.png"
+  },
+  {
+    "id": 39,
+    "slug": "print-shop",
+    "ok": true,
+    "texts": 76,
+    "file": "039-print-shop.png"
+  },
+  {
+    "id": 40,
+    "slug": "perfume-brand",
+    "ok": true,
+    "texts": 83,
+    "file": "040-perfume-brand.png"
+  },
+  {
+    "id": 41,
+    "slug": "skincare-brand",
+    "ok": true,
+    "texts": 98,
+    "file": "041-skincare-brand.png"
+  },
+  {
+    "id": 42,
+    "slug": "museum",
+    "ok": true,
+    "texts": 98,
+    "file": "042-museum.png"
+  },
+  {
+    "id": 43,
+    "slug": "funeral-home",
+    "ok": true,
+    "texts": 93,
+    "file": "043-funeral-home.png"
+  },
+  {
+    "id": 44,
+    "slug": "manufacturing",
+    "ok": true,
+    "texts": 193,
+    "file": "044-manufacturing.png"
+  },
+  {
+    "id": 45,
+    "slug": "flooring",
+    "ok": true,
+    "texts": 184,
+    "file": "045-flooring.png"
+  },
+  {
+    "id": 46,
+    "slug": "handyman",
+    "ok": true,
+    "texts": 117,
+    "file": "046-handyman.png"
+  },
+  {
+    "id": 47,
+    "slug": "paintball",
+    "ok": true,
+    "texts": 222,
+    "file": "047-paintball.png"
+  },
+  {
+    "id": 48,
+    "slug": "nightclub",
+    "ok": true,
+    "texts": 114,
+    "file": "048-nightclub.png"
+  },
+  {
+    "id": 49,
+    "slug": "car-rental",
+    "ok": true,
+    "texts": 174,
+    "file": "049-car-rental.png"
+  },
+  {
+    "id": 50,
+    "slug": "window-cleaning",
+    "ok": true,
+    "texts": 118,
+    "file": "050-window-cleaning.png"
+  },
+  {
+    "id": 51,
+    "slug": "music-store",
+    "ok": true,
+    "texts": 194,
+    "file": "051-music-store.png"
+  },
+  {
+    "id": 52,
+    "slug": "tree-service",
+    "ok": true,
+    "texts": 108,
+    "file": "052-tree-service.png"
+  },
+  {
+    "id": 53,
+    "slug": "bed-and-breakfast",
+    "ok": true,
+    "texts": 151,
+    "file": "053-bed-and-breakfast.png"
+  },
+  {
+    "id": 54,
+    "slug": "tennis-club",
+    "ok": true,
+    "texts": 204,
+    "file": "054-tennis-club.png"
+  },
+  {
+    "id": 55,
+    "slug": "pet-boarding",
+    "ok": true,
+    "texts": 120,
+    "file": "055-pet-boarding.png"
+  },
+  {
+    "id": 56,
+    "slug": "tailor",
+    "ok": true,
+    "texts": 98,
+    "file": "056-tailor.png"
+  },
+  {
+    "id": 57,
+    "slug": "laundromat",
+    "ok": true,
+    "texts": 100,
+    "file": "057-laundromat.png"
+  },
+  {
+    "id": 58,
+    "slug": "bike-shop",
+    "ok": true,
+    "texts": 108,
+    "file": "058-bike-shop.png"
+  },
+  {
+    "id": 59,
+    "slug": "medical-clinic",
+    "ok": true,
+    "texts": 129,
+    "file": "059-medical-clinic.png"
+  },
+  {
+    "id": 60,
+    "slug": "insurance-agency",
+    "ok": true,
+    "texts": 141,
+    "file": "060-insurance-agency.png"
+  },
+  {
+    "id": 61,
+    "slug": "seo-agency",
+    "ok": true,
+    "texts": 149,
+    "file": "061-seo-agency.png"
+  },
+  {
+    "id": 62,
+    "slug": "campground",
+    "ok": true,
+    "texts": 185,
+    "file": "062-campground.png"
+  },
+  {
+    "id": 63,
+    "slug": "dry-cleaner",
+    "ok": true,
+    "texts": 137,
+    "file": "063-dry-cleaner.png"
+  },
+  {
+    "id": 64,
+    "slug": "self-storage",
+    "ok": true,
+    "texts": 106,
+    "file": "064-self-storage.png"
+  },
+  {
+    "id": 65,
+    "slug": "it-support",
+    "ok": true,
+    "texts": 118,
+    "file": "065-it-support.png"
+  },
+  {
+    "id": 66,
+    "slug": "butcher-shop",
+    "ok": true,
+    "texts": 132,
+    "file": "066-butcher-shop.png"
+  },
+  {
+    "id": 67,
+    "slug": "art-gallery",
+    "ok": true,
+    "texts": 82,
+    "file": "067-art-gallery.png"
+  },
+  {
+    "id": 68,
+    "slug": "bowling-alley",
+    "ok": true,
+    "texts": 129,
+    "file": "068-bowling-alley.png"
+  },
+  {
+    "id": 69,
+    "slug": "pharmacy",
+    "ok": true,
+    "texts": 114,
+    "file": "069-pharmacy.png"
+  },
+  {
+    "id": 70,
+    "slug": "pizzeria",
+    "ok": true,
+    "texts": 113,
+    "file": "070-pizzeria.png"
+  },
+  {
+    "id": 71,
+    "slug": "security-company",
+    "ok": true,
+    "texts": 98,
+    "file": "071-security-company.png"
+  },
+  {
+    "id": 72,
+    "slug": "bookstore",
+    "ok": true,
+    "texts": 98,
+    "file": "072-bookstore.png"
+  },
+  {
+    "id": 73,
+    "slug": "golf-club",
+    "ok": true,
+    "texts": 111,
+    "file": "073-golf-club.png"
+  },
+  {
+    "id": 74,
+    "slug": "church",
+    "ok": true,
+    "texts": 138,
+    "file": "074-church.png"
+  },
+  {
+    "id": 75,
+    "slug": "furniture-store",
+    "ok": true,
+    "texts": 156,
+    "file": "075-furniture-store.png"
+  },
+  {
+    "id": 76,
+    "slug": "car-dealership",
+    "ok": true,
+    "texts": 143,
+    "file": "076-car-dealership.png"
+  },
+  {
+    "id": 77,
+    "slug": "winery",
+    "ok": true,
+    "texts": 101,
+    "file": "077-winery.png"
+  },
+  {
+    "id": 78,
+    "slug": "consulting-firm",
+    "ok": true,
+    "texts": 126,
+    "file": "078-consulting-firm.png"
+  },
+  {
+    "id": 79,
+    "slug": "nonprofit-organization",
+    "ok": true,
+    "texts": 92,
+    "file": "079-nonprofit-organization.png"
+  },
+  {
+    "id": 80,
+    "slug": "property-management",
+    "ok": true,
+    "texts": 166,
+    "file": "080-property-management.png"
+  },
+  {
+    "id": 81,
+    "slug": "dermatology-clinic",
+    "ok": true,
+    "texts": 144,
+    "file": "081-dermatology-clinic.png"
+  },
+  {
+    "id": 82,
+    "slug": "construction-company",
+    "ok": true,
+    "texts": 130,
+    "file": "082-construction-company.png"
+  },
+  {
+    "id": 83,
+    "slug": "martial-arts-academy",
+    "ok": true,
+    "texts": 152,
+    "file": "083-martial-arts-academy.png"
+  },
+  {
+    "id": 84,
+    "slug": "music-venue",
+    "ok": true,
+    "texts": 150,
+    "file": "084-music-venue.png"
+  },
+  {
+    "id": 85,
+    "slug": "psychologist",
+    "ok": true,
+    "texts": 116,
+    "file": "085-psychologist.png"
+  },
+  {
+    "id": 86,
+    "slug": "home-inspector",
+    "ok": true,
+    "texts": 160,
+    "file": "086-home-inspector.png"
+  },
+  {
+    "id": 87,
+    "slug": "tutoring",
+    "ok": true,
+    "texts": 138,
+    "file": "087-tutoring.png"
+  },
+  {
+    "id": 88,
+    "slug": "social-media-agency",
+    "ok": true,
+    "texts": 168,
+    "file": "088-social-media-agency.png"
+  },
+  {
+    "id": 89,
+    "slug": "clothing-boutique",
+    "ok": true,
+    "texts": 89,
+    "file": "089-clothing-boutique.png"
+  },
+  {
+    "id": 90,
+    "slug": "wedding-planner",
+    "ok": true,
+    "texts": 138,
+    "file": "090-wedding-planner.png"
+  },
+  {
+    "id": 91,
+    "slug": "med-spa",
+    "ok": true,
+    "texts": 123,
+    "file": "091-med-spa.png"
+  },
+  {
+    "id": 92,
+    "slug": "solar-company",
+    "ok": true,
+    "texts": 129,
+    "file": "092-solar-company.png"
+  },
+  {
+    "id": 93,
+    "slug": "orthodontist",
+    "ok": true,
+    "texts": 99,
+    "file": "093-orthodontist.png"
+  },
+  {
+    "id": 94,
+    "slug": "ice-cream-shop",
+    "ok": true,
+    "texts": 126,
+    "file": "094-ice-cream-shop.png"
+  },
+  {
+    "id": 95,
+    "slug": "acupuncture-clinic",
+    "ok": true,
+    "texts": 156,
+    "file": "095-acupuncture-clinic.png"
+  },
+  {
+    "id": 96,
+    "slug": "personal-stylist",
+    "ok": true,
+    "texts": 117,
+    "file": "096-personal-stylist.png"
+  }
+]

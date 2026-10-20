@@ -1,0 +1,681 @@
+[
+  {
+    "id": 97,
+    "slug": "language-school",
+    "ok": true,
+    "texts": 175,
+    "file": "097-language-school.png"
+  },
+  {
+    "id": 98,
+    "slug": "vacation-rental",
+    "ok": true,
+    "texts": 141,
+    "file": "098-vacation-rental.png"
+  },
+  {
+    "id": 99,
+    "slug": "driving-school",
+    "ok": true,
+    "texts": 123,
+    "file": "099-driving-school.png"
+  },
+  {
+    "id": 100,
+    "slug": "craft-brewery",
+    "ok": true,
+    "texts": 131,
+    "file": "100-craft-brewery.png"
+  },
+  {
+    "id": 101,
+    "slug": "dog-trainer",
+    "ok": true,
+    "texts": 123,
+    "file": "101-dog-trainer.png"
+  },
+  {
+    "id": 102,
+    "slug": "boxing-gym",
+    "ok": true,
+    "texts": 118,
+    "file": "102-boxing-gym.png"
+  },
+  {
+    "id": 103,
+    "slug": "massage-therapist",
+    "ok": true,
+    "texts": 109,
+    "file": "103-massage-therapist.png"
+  },
+  {
+    "id": 104,
+    "slug": "tattoo-parlor",
+    "ok": true,
+    "texts": 81,
+    "file": "104-tattoo-parlor.png"
+  },
+  {
+    "id": 105,
+    "slug": "flower-shop",
+    "ok": true,
+    "texts": 122,
+    "file": "105-flower-shop.png"
+  },
+  {
+    "id": 106,
+    "slug": "yoga-studio",
+    "ok": true,
+    "texts": 145,
+    "file": "106-yoga-studio.png"
+  },
+  {
+    "id": 107,
+    "slug": "hair-salon-editorial",
+    "ok": true,
+    "texts": 109,
+    "file": "107-hair-salon-editorial.png"
+  },
+  {
+    "id": 108,
+    "slug": "photography-studio",
+    "ok": true,
+    "texts": 63,
+    "file": "108-photography-studio.png"
+  },
+  {
+    "id": 109,
+    "slug": "law-firm",
+    "ok": true,
+    "texts": 108,
+    "file": "109-law-firm.png"
+  },
+  {
+    "id": 110,
+    "slug": "fitness-coach",
+    "ok": true,
+    "texts": 85,
+    "file": "110-fitness-coach.png"
+  },
+  {
+    "id": 111,
+    "slug": "interior-design-studio",
+    "ok": true,
+    "texts": 98,
+    "file": "111-interior-design-studio.png"
+  },
+  {
+    "id": 112,
+    "slug": "real-estate-agent",
+    "ok": true,
+    "texts": 113,
+    "file": "112-real-estate-agent.png"
+  },
+  {
+    "id": 113,
+    "slug": "fine-dining-restaurant",
+    "ok": true,
+    "texts": 93,
+    "file": "113-fine-dining-restaurant.png"
+  },
+  {
+    "id": 114,
+    "slug": "dog-groomer-boutique",
+    "ok": true,
+    "texts": 102,
+    "file": "114-dog-groomer-boutique.png"
+  },
+  {
+    "id": 115,
+    "slug": "wedding-venue-romantic",
+    "ok": true,
+    "texts": 79,
+    "file": "115-wedding-venue-romantic.png"
+  },
+  {
+    "id": 116,
+    "slug": "coffee-shop-dark",
+    "ok": true,
+    "texts": 82,
+    "file": "116-coffee-shop-dark.png"
+  },
+  {
+    "id": 117,
+    "slug": "finance-advisor",
+    "ok": true,
+    "texts": 95,
+    "file": "117-finance-advisor.png"
+  },
+  {
+    "id": 118,
+    "slug": "therapist",
+    "ok": true,
+    "texts": 82,
+    "file": "118-therapist.png"
+  },
+  {
+    "id": 119,
+    "slug": "mechanic",
+    "ok": true,
+    "texts": 110,
+    "file": "119-mechanic.png"
+  },
+  {
+    "id": 120,
+    "slug": "car-wash",
+    "ok": true,
+    "texts": 119,
+    "file": "120-car-wash.png"
+  },
+  {
+    "id": 121,
+    "slug": "escape-room",
+    "ok": true,
+    "texts": 97,
+    "file": "121-escape-room.png"
+  },
+  {
+    "id": 122,
+    "slug": "ceramics-studio",
+    "ok": true,
+    "texts": 74,
+    "file": "122-ceramics-studio.png"
+  },
+  {
+    "id": 123,
+    "slug": "food-truck",
+    "ok": true,
+    "texts": 91,
+    "file": "123-food-truck.png"
+  },
+  {
+    "id": 124,
+    "slug": "podcast",
+    "ok": true,
+    "texts": 78,
+    "file": "124-podcast.png"
+  },
+  {
+    "id": 125,
+    "slug": "roofing-company",
+    "ok": true,
+    "texts": 86,
+    "file": "125-roofing-company.png"
+  },
+  {
+    "id": 126,
+    "slug": "crossfit-gym",
+    "ok": true,
+    "texts": 88,
+    "file": "126-crossfit-gym.png"
+  },
+  {
+    "id": 127,
+    "slug": "optician",
+    "ok": true,
+    "texts": 86,
+    "file": "127-optician.png"
+  },
+  {
+    "id": 128,
+    "slug": "music-school",
+    "ok": true,
+    "texts": 84,
+    "file": "128-music-school.png"
+  },
+  {
+    "id": 129,
+    "slug": "dance-studio",
+    "ok": true,
+    "texts": 76,
+    "file": "129-dance-studio.png"
+  },
+  {
+    "id": 130,
+    "slug": "surf-school",
+    "ok": true,
+    "texts": 80,
+    "file": "130-surf-school.png"
+  },
+  {
+    "id": 131,
+    "slug": "branding-agency",
+    "ok": true,
+    "texts": 88,
+    "file": "131-branding-agency.png"
+  },
+  {
+    "id": 132,
+    "slug": "chiropractor",
+    "ok": true,
+    "texts": 90,
+    "file": "132-chiropractor.png"
+  },
+  {
+    "id": 133,
+    "slug": "wine-bar",
+    "ok": true,
+    "texts": 67,
+    "file": "133-wine-bar.png"
+  },
+  {
+    "id": 134,
+    "slug": "jeweler",
+    "ok": true,
+    "texts": 71,
+    "file": "134-jeweler.png"
+  },
+  {
+    "id": 135,
+    "slug": "cocktail-bar",
+    "ok": true,
+    "texts": 65,
+    "file": "135-cocktail-bar.png"
+  },
+  {
+    "id": 136,
+    "slug": "boutique-hotel",
+    "ok": true,
+    "texts": 65,
+    "file": "136-boutique-hotel.png"
+  },
+  {
+    "id": 137,
+    "slug": "online-course",
+    "ok": true,
+    "texts": 97,
+    "file": "137-online-course.png"
+  },
+  {
+    "id": 138,
+    "slug": "childcare-nursery",
+    "ok": true,
+    "texts": 84,
+    "file": "138-childcare-nursery.png"
+  },
+  {
+    "id": 139,
+    "slug": "digital-agency",
+    "ok": true,
+    "texts": 78,
+    "file": "139-digital-agency.png"
+  },
+  {
+    "id": 140,
+    "slug": "moving-company",
+    "ok": true,
+    "texts": 81,
+    "file": "140-moving-company.png"
+  },
+  {
+    "id": 141,
+    "slug": "recruitment-agency",
+    "ok": true,
+    "texts": 73,
+    "file": "141-recruitment-agency.png"
+  },
+  {
+    "id": 142,
+    "slug": "event-planner",
+    "ok": true,
+    "texts": 72,
+    "file": "142-event-planner.png"
+  },
+  {
+    "id": 143,
+    "slug": "vet-clinic",
+    "ok": true,
+    "texts": 81,
+    "file": "143-vet-clinic.png"
+  },
+  {
+    "id": 144,
+    "slug": "makeup-artist",
+    "ok": true,
+    "texts": 62,
+    "file": "144-makeup-artist.png"
+  },
+  {
+    "id": 145,
+    "slug": "travel-agency",
+    "ok": true,
+    "texts": 73,
+    "file": "145-travel-agency.png"
+  },
+  {
+    "id": 146,
+    "slug": "physiotherapist",
+    "ok": true,
+    "texts": 89,
+    "file": "146-physiotherapist.png"
+  },
+  {
+    "id": 147,
+    "slug": "florist",
+    "ok": true,
+    "texts": 70,
+    "file": "147-florist.png"
+  },
+  {
+    "id": 148,
+    "slug": "hair-salon",
+    "ok": true,
+    "texts": 81,
+    "file": "148-hair-salon.png"
+  },
+  {
+    "id": 149,
+    "slug": "life-coach",
+    "ok": true,
+    "texts": 78,
+    "file": "149-life-coach.png"
+  },
+  {
+    "id": 150,
+    "slug": "mortgage-broker",
+    "ok": true,
+    "texts": 110,
+    "file": "150-mortgage-broker.png"
+  },
+  {
+    "id": 151,
+    "slug": "dog-groomer",
+    "ok": true,
+    "texts": 88,
+    "file": "151-dog-groomer.png"
+  },
+  {
+    "id": 152,
+    "slug": "gym",
+    "ok": true,
+    "texts": 88,
+    "file": "152-gym.png"
+  },
+  {
+    "id": 153,
+    "slug": "pilates-studio",
+    "ok": true,
+    "texts": 110,
+    "file": "153-pilates-studio.png"
+  },
+  {
+    "id": 154,
+    "slug": "wedding-venue",
+    "ok": true,
+    "texts": 98,
+    "file": "154-wedding-venue.png"
+  },
+  {
+    "id": 155,
+    "slug": "coffee-shop",
+    "ok": true,
+    "texts": 78,
+    "file": "155-coffee-shop.png"
+  },
+  {
+    "id": 156,
+    "slug": "accountant-website-prompt",
+    "ok": true,
+    "texts": 105,
+    "file": "156-accountant-website-prompt.png"
+  },
+  {
+    "id": 157,
+    "slug": "personal-chef-website-prompt",
+    "ok": true,
+    "texts": 81,
+    "file": "157-personal-chef-website-prompt.png"
+  },
+  {
+    "id": 158,
+    "slug": "architect-website-prompt",
+    "ok": true,
+    "texts": 68,
+    "file": "158-architect-website-prompt.png"
+  },
+  {
+    "id": 159,
+    "slug": "real-estate-website-prompt",
+    "ok": true,
+    "texts": 76,
+    "file": "159-real-estate-website-prompt.png"
+  },
+  {
+    "id": 160,
+    "slug": "yoga-studio-website-prompt",
+    "ok": true,
+    "texts": 86,
+    "file": "160-yoga-studio-website-prompt.png"
+  },
+  {
+    "id": 161,
+    "slug": "restaurant-website-prompt",
+    "ok": true,
+    "texts": 76,
+    "file": "161-restaurant-website-prompt.png"
+  },
+  {
+    "id": 162,
+    "slug": "wedding-photographer-website-prompt",
+    "ok": true,
+    "texts": 82,
+    "file": "162-wedding-photographer-website-prompt.png"
+  },
+  {
+    "id": 163,
+    "slug": "sports-coach-website-prompt",
+    "ok": true,
+    "texts": 88,
+    "file": "163-sports-coach-website-prompt.png"
+  },
+  {
+    "id": 164,
+    "slug": "music-producer-website-prompt",
+    "ok": true,
+    "texts": 77,
+    "file": "164-music-producer-website-prompt.png"
+  },
+  {
+    "id": 165,
+    "slug": "pest-control-website-prompt",
+    "ok": true,
+    "texts": 82,
+    "file": "165-pest-control-website-prompt.png"
+  },
+  {
+    "id": 166,
+    "slug": "developer-portfolio-website-prompt",
+    "ok": true,
+    "texts": 97,
+    "file": "166-developer-portfolio-website-prompt.png"
+  },
+  {
+    "id": 167,
+    "slug": "designer-portfolio-website-prompt",
+    "ok": true,
+    "texts": 83,
+    "file": "167-designer-portfolio-website-prompt.png"
+  },
+  {
+    "id": 168,
+    "slug": "lawyer-website-prompt",
+    "ok": true,
+    "texts": 94,
+    "file": "168-lawyer-website-prompt.png"
+  },
+  {
+    "id": 169,
+    "slug": "copywriter-website-prompt",
+    "ok": true,
+    "texts": 88,
+    "file": "169-copywriter-website-prompt.png"
+  },
+  {
+    "id": 170,
+    "slug": "nutritionist",
+    "ok": true,
+    "texts": 156,
+    "file": "170-nutritionist.png"
+  },
+  {
+    "id": 171,
+    "slug": "artist-portfolio",
+    "ok": true,
+    "texts": 130,
+    "file": "171-artist-portfolio.png"
+  },
+  {
+    "id": 172,
+    "slug": "interior-design",
+    "ok": true,
+    "texts": 132,
+    "file": "172-interior-design.png"
+  },
+  {
+    "id": 173,
+    "slug": "barber",
+    "ok": true,
+    "texts": 115,
+    "file": "173-barber.png"
+  },
+  {
+    "id": 174,
+    "slug": "retail-saas",
+    "ok": true,
+    "texts": 165,
+    "file": "174-retail-saas.png"
+  },
+  {
+    "id": 175,
+    "slug": "health-saas",
+    "ok": true,
+    "texts": 201,
+    "file": "175-health-saas.png"
+  },
+  {
+    "id": 176,
+    "slug": "dj",
+    "ok": true,
+    "texts": 131,
+    "file": "176-dj.png"
+  },
+  {
+    "id": 177,
+    "slug": "nail-salon",
+    "ok": true,
+    "texts": 167,
+    "file": "177-nail-salon.png"
+  },
+  {
+    "id": 178,
+    "slug": "run-club",
+    "ok": true,
+    "texts": 153,
+    "file": "178-run-club.png"
+  },
+  {
+    "id": 179,
+    "slug": "catering",
+    "ok": true,
+    "texts": 241,
+    "file": "179-catering.png"
+  },
+  {
+    "id": 180,
+    "slug": "electrician",
+    "ok": true,
+    "texts": 134,
+    "file": "180-electrician.png"
+  },
+  {
+    "id": 181,
+    "slug": "swim-coach",
+    "ok": true,
+    "texts": 117,
+    "file": "181-swim-coach.png"
+  },
+  {
+    "id": 182,
+    "slug": "band",
+    "ok": true,
+    "texts": 93,
+    "file": "182-band.png"
+  },
+  {
+    "id": 183,
+    "slug": "dentist",
+    "ok": true,
+    "texts": 126,
+    "file": "183-dentist.png"
+  },
+  {
+    "id": 184,
+    "slug": "photographer",
+    "ok": true,
+    "texts": 95,
+    "file": "184-photographer.png"
+  },
+  {
+    "id": 185,
+    "slug": "hvac",
+    "ok": true,
+    "texts": 155,
+    "file": "185-hvac.png"
+  },
+  {
+    "id": 186,
+    "slug": "bakery",
+    "ok": true,
+    "texts": 93,
+    "file": "186-bakery.png"
+  },
+  {
+    "id": 187,
+    "slug": "cleaning-service",
+    "ok": true,
+    "texts": 152,
+    "file": "187-cleaning-service.png"
+  },
+  {
+    "id": 188,
+    "slug": "tattoo-studio",
+    "ok": true,
+    "texts": 88,
+    "file": "188-tattoo-studio.png"
+  },
+  {
+    "id": 189,
+    "slug": "car-detailing",
+    "ok": true,
+    "texts": 43,
+    "file": "189-car-detailing.png"
+  },
+  {
+    "id": 190,
+    "slug": "spa-wellness",
+    "ok": true,
+    "texts": 80,
+    "file": "190-spa-wellness.png"
+  },
+  {
+    "id": 191,
+    "slug": "plumber",
+    "ok": true,
+    "texts": 70,
+    "file": "191-plumber.png"
+  },
+  {
+    "id": 192,
+    "slug": "landscaping-business",
+    "ok": true,
+    "texts": 57,
+    "file": "192-landscaping-business.png"
+  },
+  {
+    "id": 193,
+    "slug": "personal-trainer",
+    "ok": true,
+    "texts": 111,
+    "file": "193-personal-trainer.png"
+  }
+]

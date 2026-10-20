@@ -1,0 +1,1 @@
+El sitio web del Run Club ofrece una vista previa completa: fondo casi negro, título blanco en negrita de Barlow Condensed 900 "RUN THE CITY". con acento de lima eléctrica, fila de estadísticas de héroe y tarjetas de cronograma de próximas carreras con información de distancia, ritmo y líder a continuación

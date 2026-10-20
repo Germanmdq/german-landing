@@ -1,0 +1,2840 @@
+[
+  {
+    "id": 1,
+    "titulo": "Boutique de Novias",
+    "slug": "bridal-shop",
+    "categoria": "Belleza & Moda",
+    "descripcion": "Landing editorial y premium para boutique de novias. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial",
+      "Animada"
+    ],
+    "ideal": "Boutique de Novias",
+    "imagen": "/previews/001-bridal-shop.webp",
+    "referencia": "https://websiteprompts.ai/prompts/bridal-shop",
+    "live": "https://ivory-and-thread-bridal.lovable.app"
+  },
+  {
+    "id": 2,
+    "titulo": "Residencia para Mayores",
+    "slug": "care-home",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing editorial y premium para residencia para mayores. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Residencia para Mayores",
+    "imagen": "/previews/002-care-home.webp",
+    "referencia": "https://websiteprompts.ai/prompts/care-home",
+    "live": "https://wrenbury-house.lovable.app"
+  },
+  {
+    "id": 3,
+    "titulo": "Empresa de Transporte",
+    "slug": "trucking-company",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para empresa de transporte. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Empresa de Transporte",
+    "imagen": "/previews/003-trucking-company.webp",
+    "referencia": "https://websiteprompts.ai/prompts/trucking-company",
+    "live": "https://halloran-haulage.lovable.app"
+  },
+  {
+    "id": 4,
+    "titulo": "Limpieza de Canaletas",
+    "slug": "gutter-cleaning",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para limpieza de canaletas. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Limpieza de Canaletas",
+    "imagen": "/previews/004-gutter-cleaning.webp",
+    "referencia": "https://websiteprompts.ai/prompts/gutter-cleaning",
+    "live": "https://gutter-gleam-clean.lovable.app"
+  },
+  {
+    "id": 5,
+    "titulo": "Tortas de Casamiento",
+    "slug": "wedding-cake",
+    "categoria": "Belleza & Moda",
+    "descripcion": "Landing editorial y premium para tortas de casamiento. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Tortas de Casamiento",
+    "imagen": "/previews/005-wedding-cake.webp",
+    "referencia": "https://websiteprompts.ai/prompts/wedding-cake",
+    "live": "https://sugar-and-salt-cakes.lovable.app"
+  },
+  {
+    "id": 6,
+    "titulo": "Locución Profesional",
+    "slug": "voice-over",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para locución profesional. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial",
+      "Animada"
+    ],
+    "ideal": "Locución Profesional",
+    "imagen": "/previews/006-voice-over.webp",
+    "referencia": "https://websiteprompts.ai/prompts/voice-over",
+    "live": "https://fenn-draws-waveform.lovable.app"
+  },
+  {
+    "id": 7,
+    "titulo": "Traslados al Aeropuerto",
+    "slug": "airport-transfer",
+    "categoria": "Viajes & Turismo",
+    "descripcion": "Landing moderna y profesional para traslados al aeropuerto. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Traslados al Aeropuerto",
+    "imagen": "/previews/007-airport-transfer.webp",
+    "referencia": "https://websiteprompts.ai/prompts/airport-transfer",
+    "live": "https://arrival-flip-love.lovable.app"
+  },
+  {
+    "id": 8,
+    "titulo": "Estudio de Videojuegos",
+    "slug": "game-studio",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing moderna y profesional para estudio de videojuegos. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Estudio de Videojuegos",
+    "imagen": "/previews/008-game-studio.webp",
+    "referencia": "https://websiteprompts.ai/prompts/game-studio",
+    "live": "https://ninefold-game-studio.lovable.app"
+  },
+  {
+    "id": 9,
+    "titulo": "Fotografía Inmobiliaria",
+    "slug": "real-estate-photography",
+    "categoria": "Inmuebles & Hogar",
+    "descripcion": "Landing moderna y profesional para fotografía inmobiliaria. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Fotografía Inmobiliaria",
+    "imagen": "/previews/009-real-estate-photography.webp",
+    "referencia": "https://websiteprompts.ai/prompts/real-estate-photography",
+    "live": "https://northlight-property-photos.lovable.app"
+  },
+  {
+    "id": 10,
+    "titulo": "Estudio de Arte",
+    "slug": "art-studio",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para estudio de arte. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial",
+      "Animada"
+    ],
+    "ideal": "Estudio de Arte",
+    "imagen": "/previews/010-art-studio.webp",
+    "referencia": "https://websiteprompts.ai/prompts/art-studio",
+    "live": "https://ninth-street-studio.lovable.app"
+  },
+  {
+    "id": 11,
+    "titulo": "Seguros de Vida",
+    "slug": "life-insurance",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para seguros de vida. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial",
+      "Animada"
+    ],
+    "ideal": "Seguros de Vida",
+    "imagen": "/previews/011-life-insurance.webp",
+    "referencia": "https://websiteprompts.ai/prompts/life-insurance",
+    "live": "https://thornbury-reed.lovable.app"
+  },
+  {
+    "id": 12,
+    "titulo": "Paseo de Perros",
+    "slug": "dog-walking",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing editorial y premium para paseo de perros. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial",
+      "Animada"
+    ],
+    "ideal": "Paseo de Perros",
+    "imagen": "/previews/012-dog-walking.webp",
+    "referencia": "https://websiteprompts.ai/prompts/dog-walking",
+    "live": "https://long-lead-dog-walks.lovable.app"
+  },
+  {
+    "id": 13,
+    "titulo": "Asistente Virtual",
+    "slug": "virtual-assistant",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing editorial y premium para asistente virtual. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Asistente Virtual",
+    "imagen": "/previews/013-virtual-assistant.webp",
+    "referencia": "https://websiteprompts.ai/prompts/virtual-assistant",
+    "live": "https://margin-calm-workflow.lovable.app"
+  },
+  {
+    "id": 14,
+    "titulo": "Mercado de Productores",
+    "slug": "farmers-market",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para mercado de productores. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Mercado de Productores",
+    "imagen": "/previews/014-farmers-market.webp",
+    "referencia": "https://websiteprompts.ai/prompts/farmers-market",
+    "live": "https://abbey-square-market.lovable.app"
+  },
+  {
+    "id": 15,
+    "titulo": "Hogar Inteligente",
+    "slug": "smart-home",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para hogar inteligente. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Hogar Inteligente",
+    "imagen": "/previews/015-smart-home.webp",
+    "referencia": "https://websiteprompts.ai/prompts/smart-home",
+    "live": "https://threshold-lighting.lovable.app"
+  },
+  {
+    "id": 16,
+    "titulo": "Cristales para Autos",
+    "slug": "auto-glass",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para cristales para autos. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Cristales para Autos",
+    "imagen": "/previews/016-auto-glass.webp",
+    "referencia": "https://websiteprompts.ai/prompts/auto-glass",
+    "live": "https://clearpane-drive-calm.lovable.app"
+  },
+  {
+    "id": 17,
+    "titulo": "Productora Audiovisual",
+    "slug": "video-production",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing moderna y profesional para productora audiovisual. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Productora Audiovisual",
+    "imagen": "/previews/017-video-production.webp",
+    "referencia": "https://websiteprompts.ai/prompts/video-production",
+    "live": "https://northline-films.lovable.app"
+  },
+  {
+    "id": 18,
+    "titulo": "Newsletter",
+    "slug": "newsletter-landing-page",
+    "categoria": "Tecnología & SaaS",
+    "descripcion": "Landing oscura y de alto impacto para newsletter. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Newsletter",
+    "imagen": "/previews/018-newsletter-landing-page.webp",
+    "referencia": "https://websiteprompts.ai/prompts/newsletter-landing-page",
+    "live": "https://the-undercurrent-letter.lovable.app"
+  },
+  {
+    "id": 19,
+    "titulo": "Cabina de Fotos",
+    "slug": "photo-booth",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing editorial y premium para cabina de fotos. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Cabina de Fotos",
+    "imagen": "/previews/019-photo-booth.webp",
+    "referencia": "https://websiteprompts.ai/prompts/photo-booth",
+    "live": "https://four-frames-booths.lovable.app"
+  },
+  {
+    "id": 20,
+    "titulo": "Estética Profesional",
+    "slug": "esthetician",
+    "categoria": "Belleza & Moda",
+    "descripcion": "Landing editorial y premium para estética profesional. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial",
+      "Animada"
+    ],
+    "ideal": "Estética Profesional",
+    "imagen": "/previews/020-esthetician.webp",
+    "referencia": "https://websiteprompts.ai/prompts/esthetician",
+    "live": "https://quiet-skin-studio.lovable.app"
+  },
+  {
+    "id": 21,
+    "titulo": "Lista de Espera",
+    "slug": "waitlist-landing-page",
+    "categoria": "Tecnología & SaaS",
+    "descripcion": "Landing moderna y profesional para lista de espera. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Lista de Espera",
+    "imagen": "/previews/021-waitlist-landing-page.webp",
+    "referencia": "https://websiteprompts.ai/prompts/waitlist-landing-page",
+    "live": "https://ledger-waitlist.lovable.app"
+  },
+  {
+    "id": 22,
+    "titulo": "Granja",
+    "slug": "farm",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing editorial y premium para granja. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Granja",
+    "imagen": "/previews/022-farm.webp",
+    "referencia": "https://websiteprompts.ai/prompts/farm",
+    "live": "https://marlow-hill-farm.lovable.app"
+  },
+  {
+    "id": 23,
+    "titulo": "Estudio de Grabación",
+    "slug": "recording-studio",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing editorial y premium para estudio de grabación. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial",
+      "Animada"
+    ],
+    "ideal": "Estudio de Grabación",
+    "imagen": "/previews/023-recording-studio.webp",
+    "referencia": "https://websiteprompts.ai/prompts/recording-studio",
+    "live": "https://tape-room-studio.lovable.app"
+  },
+  {
+    "id": 24,
+    "titulo": "Retiro de Escombros",
+    "slug": "junk-removal",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para retiro de escombros. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Retiro de Escombros",
+    "imagen": "/previews/024-junk-removal.webp",
+    "referencia": "https://websiteprompts.ai/prompts/junk-removal",
+    "live": "https://haul-and-gone.lovable.app"
+  },
+  {
+    "id": 25,
+    "titulo": "Blog de Viajes",
+    "slug": "travel-blog",
+    "categoria": "Viajes & Turismo",
+    "descripcion": "Landing moderna y profesional para blog de viajes. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Blog de Viajes",
+    "imagen": "/previews/025-travel-blog.webp",
+    "referencia": "https://websiteprompts.ai/prompts/travel-blog",
+    "live": "https://slow-travel-notes.lovable.app"
+  },
+  {
+    "id": 26,
+    "titulo": "Auxilio Mecánico",
+    "slug": "towing",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para auxilio mecánico. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Auxilio Mecánico",
+    "imagen": "/previews/026-towing.webp",
+    "referencia": "https://websiteprompts.ai/prompts/towing",
+    "live": "https://beacon-glow-recovery.lovable.app"
+  },
+  {
+    "id": 27,
+    "titulo": "Reparación de Electrodomésticos",
+    "slug": "appliance-repair",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para reparación de electrodomésticos. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Reparación de Electrodomésticos",
+    "imagen": "/previews/027-appliance-repair.webp",
+    "referencia": "https://websiteprompts.ai/prompts/appliance-repair",
+    "live": "https://fixwell-bright-blue.lovable.app"
+  },
+  {
+    "id": 28,
+    "titulo": "Pintura Profesional",
+    "slug": "painter",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para pintura profesional. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Pintura Profesional",
+    "imagen": "/previews/028-painter.webp",
+    "referencia": "https://websiteprompts.ai/prompts/painter",
+    "live": "https://swatch-brush-effects.lovable.app"
+  },
+  {
+    "id": 29,
+    "titulo": "Ebook",
+    "slug": "ebook-landing-page",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para ebook. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "3D / Profundidad"
+    ],
+    "ideal": "Ebook",
+    "imagen": "/previews/029-ebook-landing-page.webp",
+    "referencia": "https://websiteprompts.ai/prompts/ebook-landing-page",
+    "live": "https://quiet-folio-builder.lovable.app"
+  },
+  {
+    "id": 30,
+    "titulo": "Marca Personal",
+    "slug": "personal-brand",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para marca personal. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Marca Personal",
+    "imagen": "/previews/030-personal-brand.webp",
+    "referencia": "https://websiteprompts.ai/prompts/personal-brand",
+    "live": "https://coral-cutout-canvas.lovable.app"
+  },
+  {
+    "id": 31,
+    "titulo": "Servicio de Piscinas",
+    "slug": "pool-service",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para servicio de piscinas. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Servicio de Piscinas",
+    "imagen": "/previews/031-pool-service.webp",
+    "referencia": "https://websiteprompts.ai/prompts/pool-service",
+    "live": "https://clearwater-splish.lovable.app"
+  },
+  {
+    "id": 32,
+    "titulo": "Aplicación Móvil",
+    "slug": "app-landing-page",
+    "categoria": "Tecnología & SaaS",
+    "descripcion": "Landing oscura y de alto impacto para aplicación móvil. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "3D / Profundidad"
+    ],
+    "ideal": "Aplicación Móvil",
+    "imagen": "/previews/032-app-landing-page.webp",
+    "referencia": "https://websiteprompts.ai/prompts/app-landing-page",
+    "live": "https://hush-calm-landing.lovable.app"
+  },
+  {
+    "id": 33,
+    "titulo": "SaaS",
+    "slug": "saas-landing-page",
+    "categoria": "Tecnología & SaaS",
+    "descripcion": "Landing moderna y profesional para saas. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "3D / Profundidad"
+    ],
+    "ideal": "SaaS",
+    "imagen": "/previews/033-saas-landing-page.webp",
+    "referencia": "https://websiteprompts.ai/prompts/saas-landing-page",
+    "live": "https://pace-metrics-dashboard.lovable.app"
+  },
+  {
+    "id": 34,
+    "titulo": "Tienda de Velas",
+    "slug": "candle-shop",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para tienda de velas. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial"
+    ],
+    "ideal": "Tienda de Velas",
+    "imagen": "/previews/034-candle-shop.webp",
+    "referencia": "https://websiteprompts.ai/prompts/candle-shop",
+    "live": "https://ember-and-wick-glow.lovable.app"
+  },
+  {
+    "id": 35,
+    "titulo": "Teatro",
+    "slug": "theater",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing moderna y profesional para teatro. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Teatro",
+    "imagen": "/previews/035-theater.webp",
+    "referencia": "https://websiteprompts.ai/prompts/theater",
+    "live": "https://historic-curtain-rise.lovable.app"
+  },
+  {
+    "id": 36,
+    "titulo": "Tienda de Mascotas",
+    "slug": "pet-store",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para tienda de mascotas. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Tienda de Mascotas",
+    "imagen": "/previews/036-pet-store.webp",
+    "referencia": "https://websiteprompts.ai/prompts/pet-store",
+    "live": "https://good-boy-paw-shop.lovable.app"
+  },
+  {
+    "id": 37,
+    "titulo": "Escribanía",
+    "slug": "notary",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para escribanía. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Escribanía",
+    "imagen": "/previews/037-notary.webp",
+    "referencia": "https://websiteprompts.ai/prompts/notary",
+    "live": "https://meridian-inkwell-web.lovable.app"
+  },
+  {
+    "id": 38,
+    "titulo": "Cerrajería",
+    "slug": "locksmith",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para cerrajería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Cerrajería",
+    "imagen": "/previews/038-locksmith.webp",
+    "referencia": "https://websiteprompts.ai/prompts/locksmith",
+    "live": "https://keyline-ready-now.lovable.app"
+  },
+  {
+    "id": 39,
+    "titulo": "Imprenta",
+    "slug": "print-shop",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para imprenta. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Imprenta",
+    "imagen": "/previews/039-print-shop.webp",
+    "referencia": "https://websiteprompts.ai/prompts/print-shop",
+    "live": "https://offset-ink-studio.lovable.app"
+  },
+  {
+    "id": 40,
+    "titulo": "Marca de Perfumes",
+    "slug": "perfume-brand",
+    "categoria": "Belleza & Moda",
+    "descripcion": "Landing oscura y de alto impacto para marca de perfumes. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Marca de Perfumes",
+    "imagen": "/previews/040-perfume-brand.webp",
+    "referencia": "https://websiteprompts.ai/prompts/perfume-brand",
+    "live": "https://maison-solenne-elegance.lovable.app"
+  },
+  {
+    "id": 41,
+    "titulo": "Skincare",
+    "slug": "skincare-brand",
+    "categoria": "Belleza & Moda",
+    "descripcion": "Landing editorial y premium para skincare. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial",
+      "Animada"
+    ],
+    "ideal": "Skincare",
+    "imagen": "/previews/041-skincare-brand.webp",
+    "referencia": "https://websiteprompts.ai/prompts/skincare-brand",
+    "live": "https://oda-skin-slow-scroll.lovable.app"
+  },
+  {
+    "id": 42,
+    "titulo": "Museo",
+    "slug": "museum",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing editorial y premium para museo. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Museo",
+    "imagen": "/previews/042-museum.webp",
+    "referencia": "https://websiteprompts.ai/prompts/museum",
+    "live": "https://riverside-editorial-muse.lovable.app"
+  },
+  {
+    "id": 43,
+    "titulo": "Casa Velatoria",
+    "slug": "funeral-home",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing editorial y premium para casa velatoria. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial",
+      "Animada"
+    ],
+    "ideal": "Casa Velatoria",
+    "imagen": "/previews/043-funeral-home.webp",
+    "referencia": "https://websiteprompts.ai/prompts/funeral-home",
+    "live": "https://alder-grey-legacy.lovable.app"
+  },
+  {
+    "id": 44,
+    "titulo": "Industria / Manufactura",
+    "slug": "manufacturing",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para industria / manufactura. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Industria / Manufactura",
+    "imagen": "/previews/044-manufacturing.webp",
+    "referencia": "https://websiteprompts.ai/prompts/manufacturing",
+    "live": "https://kestrel-bloom-studio.lovable.app"
+  },
+  {
+    "id": 45,
+    "titulo": "Pisos y Revestimientos",
+    "slug": "flooring",
+    "categoria": "Inmuebles & Hogar",
+    "descripcion": "Landing moderna y profesional para pisos y revestimientos. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Pisos y Revestimientos",
+    "imagen": "/previews/045-flooring.webp",
+    "referencia": "https://websiteprompts.ai/prompts/flooring",
+    "live": "https://grainhouse-visualiser.lovable.app"
+  },
+  {
+    "id": 46,
+    "titulo": "Servicios para el Hogar",
+    "slug": "handyman",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para servicios para el hogar. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Servicios para el Hogar",
+    "imagen": "/previews/046-handyman.webp",
+    "referencia": "https://websiteprompts.ai/prompts/handyman",
+    "live": "https://oddjobs-book-it.lovable.app"
+  },
+  {
+    "id": 47,
+    "titulo": "Paintball",
+    "slug": "paintball",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para paintball. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Paintball",
+    "imagen": "/previews/047-paintball.webp",
+    "referencia": "https://websiteprompts.ai/prompts/paintball",
+    "live": "https://blackthorn-blast-site.lovable.app"
+  },
+  {
+    "id": 48,
+    "titulo": "Discoteca",
+    "slug": "nightclub",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para discoteca. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Discoteca",
+    "imagen": "/previews/048-nightclub.webp",
+    "referencia": "https://websiteprompts.ai/prompts/nightclub",
+    "live": "https://substrata-glow-project.lovable.app"
+  },
+  {
+    "id": 49,
+    "titulo": "Alquiler de Autos",
+    "slug": "car-rental",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para alquiler de autos. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Alquiler de Autos",
+    "imagen": "/previews/049-car-rental.webp",
+    "referencia": "https://websiteprompts.ai/prompts/car-rental",
+    "live": "https://roadline-rentals-express.lovable.app"
+  },
+  {
+    "id": 50,
+    "titulo": "Limpieza de Vidrios",
+    "slug": "window-cleaning",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para limpieza de vidrios. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Limpieza de Vidrios",
+    "imagen": "/previews/050-window-cleaning.webp",
+    "referencia": "https://websiteprompts.ai/prompts/window-cleaning",
+    "live": "https://quick-clear-quotes.lovable.app"
+  },
+  {
+    "id": 51,
+    "titulo": "Tienda de Música",
+    "slug": "music-store",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing oscura y de alto impacto para tienda de música. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Tienda de Música",
+    "imagen": "/previews/051-music-store.webp",
+    "referencia": "https://websiteprompts.ai/prompts/music-store",
+    "live": "https://wolfram-string-dreams.lovable.app"
+  },
+  {
+    "id": 52,
+    "titulo": "Poda y Árboles",
+    "slug": "tree-service",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para poda y árboles. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Poda y Árboles",
+    "imagen": "/previews/052-tree-service.webp",
+    "referencia": "https://websiteprompts.ai/prompts/tree-service",
+    "live": "https://ridgeway-tree-care.lovable.app"
+  },
+  {
+    "id": 53,
+    "titulo": "Alojamiento Boutique",
+    "slug": "bed-and-breakfast",
+    "categoria": "Viajes & Turismo",
+    "descripcion": "Landing moderna y profesional para alojamiento boutique. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Alojamiento Boutique",
+    "imagen": "/previews/053-bed-and-breakfast.webp",
+    "referencia": "https://websiteprompts.ai/prompts/bed-and-breakfast",
+    "live": "https://wrenhouse-haven-site.lovable.app"
+  },
+  {
+    "id": 54,
+    "titulo": "Club de Tenis",
+    "slug": "tennis-club",
+    "categoria": "Fitness & Deportes",
+    "descripcion": "Landing moderna y profesional para club de tenis. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Club de Tenis",
+    "imagen": "/previews/054-tennis-club.webp",
+    "referencia": "https://websiteprompts.ai/prompts/tennis-club",
+    "live": "https://ashgrove-court-hub.lovable.app"
+  },
+  {
+    "id": 55,
+    "titulo": "Guardería de Mascotas",
+    "slug": "pet-boarding",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para guardería de mascotas. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Guardería de Mascotas",
+    "imagen": "/previews/055-pet-boarding.webp",
+    "referencia": "https://websiteprompts.ai/prompts/pet-boarding",
+    "live": "https://happy-paws-updates.lovable.app"
+  },
+  {
+    "id": 56,
+    "titulo": "Sastrería",
+    "slug": "tailor",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para sastrería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Sastrería",
+    "imagen": "/previews/056-tailor.webp",
+    "referencia": "https://websiteprompts.ai/prompts/tailor",
+    "live": "https://chalk-and-thread-craft.lovable.app"
+  },
+  {
+    "id": 57,
+    "titulo": "Lavandería",
+    "slug": "laundromat",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para lavandería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Lavandería",
+    "imagen": "/previews/057-laundromat.webp",
+    "referencia": "https://websiteprompts.ai/prompts/laundromat",
+    "live": "https://spin-city-live.lovable.app"
+  },
+  {
+    "id": 58,
+    "titulo": "Bicicletería",
+    "slug": "bike-shop",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para bicicletería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Bicicletería",
+    "imagen": "/previews/058-bike-shop.webp",
+    "referencia": "https://websiteprompts.ai/prompts/bike-shop",
+    "live": "https://cogchain-wheelhouse.lovable.app"
+  },
+  {
+    "id": 59,
+    "titulo": "Clínica Médica",
+    "slug": "medical-clinic",
+    "categoria": "Salud & Bienestar",
+    "descripcion": "Landing moderna y profesional para clínica médica. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Clínica Médica",
+    "imagen": "/previews/059-medical-clinic.webp",
+    "referencia": "https://websiteprompts.ai/prompts/medical-clinic",
+    "live": "https://fielding-unhurried-health.lovable.app"
+  },
+  {
+    "id": 60,
+    "titulo": "Agencia de Seguros",
+    "slug": "insurance-agency",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para agencia de seguros. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Agencia de Seguros",
+    "imagen": "/previews/060-insurance-agency.webp",
+    "referencia": "https://websiteprompts.ai/prompts/insurance-agency",
+    "live": "https://the-gap-guide.lovable.app"
+  },
+  {
+    "id": 61,
+    "titulo": "Agencia SEO",
+    "slug": "seo-agency",
+    "categoria": "Tecnología & SaaS",
+    "descripcion": "Landing oscura y de alto impacto para agencia seo. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Agencia SEO",
+    "imagen": "/previews/061-seo-agency.webp",
+    "referencia": "https://websiteprompts.ai/prompts/seo-agency",
+    "live": "https://search-compounding-lab.lovable.app"
+  },
+  {
+    "id": 62,
+    "titulo": "Camping",
+    "slug": "campground",
+    "categoria": "Viajes & Turismo",
+    "descripcion": "Landing oscura y de alto impacto para camping. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Camping",
+    "imagen": "/previews/062-campground.webp",
+    "referencia": "https://websiteprompts.ai/prompts/campground",
+    "live": "https://hollow-pines-haven.lovable.app"
+  },
+  {
+    "id": 63,
+    "titulo": "Tintorería",
+    "slug": "dry-cleaner",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para tintorería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Tintorería",
+    "imagen": "/previews/063-dry-cleaner.webp",
+    "referencia": "https://websiteprompts.ai/prompts/dry-cleaner",
+    "live": "https://pressed-and-go.lovable.app"
+  },
+  {
+    "id": 64,
+    "titulo": "Guardamuebles",
+    "slug": "self-storage",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para guardamuebles. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Guardamuebles",
+    "imagen": "/previews/064-self-storage.webp",
+    "referencia": "https://websiteprompts.ai/prompts/self-storage",
+    "live": "https://blocklane-unit-finder.lovable.app"
+  },
+  {
+    "id": 65,
+    "titulo": "Soporte IT",
+    "slug": "it-support",
+    "categoria": "Tecnología & SaaS",
+    "descripcion": "Landing moderna y profesional para soporte it. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Soporte IT",
+    "imagen": "/previews/065-it-support.webp",
+    "referencia": "https://websiteprompts.ai/prompts/it-support",
+    "live": "https://lime-slate-pledge.lovable.app"
+  },
+  {
+    "id": 66,
+    "titulo": "Carnicería",
+    "slug": "butcher-shop",
+    "categoria": "Gastronomía",
+    "descripcion": "Landing oscura y de alto impacto para carnicería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Carnicería",
+    "imagen": "/previews/066-butcher-shop.webp",
+    "referencia": "https://websiteprompts.ai/prompts/butcher-shop",
+    "live": "https://butcher-craft-aged.lovable.app"
+  },
+  {
+    "id": 67,
+    "titulo": "Galería de Arte",
+    "slug": "art-gallery",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing moderna y profesional para galería de arte. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Minimalista"
+    ],
+    "ideal": "Galería de Arte",
+    "imagen": "/previews/067-art-gallery.webp",
+    "referencia": "https://websiteprompts.ai/prompts/art-gallery",
+    "live": "https://vessel-canvas-whispers.lovable.app"
+  },
+  {
+    "id": 68,
+    "titulo": "Bowling",
+    "slug": "bowling-alley",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para bowling. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Bowling",
+    "imagen": "/previews/068-bowling-alley.webp",
+    "referencia": "https://websiteprompts.ai/prompts/bowling-alley",
+    "live": "https://star-lanes-booking-bonanza.lovable.app"
+  },
+  {
+    "id": 69,
+    "titulo": "Farmacia",
+    "slug": "pharmacy",
+    "categoria": "Salud & Bienestar",
+    "descripcion": "Landing moderna y profesional para farmacia. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Farmacia",
+    "imagen": "/previews/069-pharmacy.webp",
+    "referencia": "https://websiteprompts.ai/prompts/pharmacy",
+    "live": "https://harbourside-calm-care.lovable.app"
+  },
+  {
+    "id": 70,
+    "titulo": "Pizzería",
+    "slug": "pizzeria",
+    "categoria": "Gastronomía",
+    "descripcion": "Landing moderna y profesional para pizzería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Pizzería",
+    "imagen": "/previews/070-pizzeria.webp",
+    "referencia": "https://websiteprompts.ai/prompts/pizzeria",
+    "live": "https://forno-fire-glow.lovable.app"
+  },
+  {
+    "id": 71,
+    "titulo": "Empresa de Seguridad",
+    "slug": "security-company",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para empresa de seguridad. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Empresa de Seguridad",
+    "imagen": "/previews/071-security-company.webp",
+    "referencia": "https://websiteprompts.ai/prompts/security-company",
+    "live": "https://cyber-sentinel-control.lovable.app"
+  },
+  {
+    "id": 72,
+    "titulo": "Librería",
+    "slug": "bookstore",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para librería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Librería",
+    "imagen": "/previews/072-bookstore.webp",
+    "referencia": "https://websiteprompts.ai/prompts/bookstore",
+    "live": "https://marginalia-shelf-talk.lovable.app"
+  },
+  {
+    "id": 73,
+    "titulo": "Club de Golf",
+    "slug": "golf-club",
+    "categoria": "Fitness & Deportes",
+    "descripcion": "Landing moderna y profesional para club de golf. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Club de Golf",
+    "imagen": "/previews/073-golf-club.webp",
+    "referencia": "https://websiteprompts.ai/prompts/golf-club",
+    "live": "https://exford-links-legacy.lovable.app"
+  },
+  {
+    "id": 74,
+    "titulo": "Iglesia",
+    "slug": "church",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para iglesia. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Iglesia",
+    "imagen": "/previews/074-church.webp",
+    "referencia": "https://websiteprompts.ai/prompts/church",
+    "live": "https://grace-commons-connect.lovable.app"
+  },
+  {
+    "id": 75,
+    "titulo": "Mueblería",
+    "slug": "furniture-store",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing editorial y premium para mueblería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial",
+      "Animada"
+    ],
+    "ideal": "Mueblería",
+    "imagen": "/previews/075-furniture-store.webp",
+    "referencia": "https://websiteprompts.ai/prompts/furniture-store",
+    "live": "https://oakline-interiors.lovable.app"
+  },
+  {
+    "id": 76,
+    "titulo": "Concesionaria",
+    "slug": "car-dealership",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para concesionaria. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Concesionaria",
+    "imagen": "/previews/076-car-dealership.webp",
+    "referencia": "https://websiteprompts.ai/prompts/car-dealership",
+    "live": "https://apex-drive-finder.lovable.app"
+  },
+  {
+    "id": 77,
+    "titulo": "Bodega",
+    "slug": "winery",
+    "categoria": "Viajes & Turismo",
+    "descripcion": "Landing moderna y profesional para bodega. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Bodega",
+    "imagen": "/previews/077-winery.webp",
+    "referencia": "https://websiteprompts.ai/prompts/winery",
+    "live": "https://cellar-stone-whispers.lovable.app"
+  },
+  {
+    "id": 78,
+    "titulo": "Consultora",
+    "slug": "consulting-firm",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para consultora. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Consultora",
+    "imagen": "/previews/078-consulting-firm.webp",
+    "referencia": "https://websiteprompts.ai/prompts/consulting-firm",
+    "live": "https://precise-clarity.lovable.app"
+  },
+  {
+    "id": 79,
+    "titulo": "ONG",
+    "slug": "nonprofit-organization",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para ong. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "ONG",
+    "imagen": "/previews/079-nonprofit-organization.webp",
+    "referencia": "https://websiteprompts.ai/prompts/nonprofit-organization",
+    "live": "https://riverbend-guardians.lovable.app"
+  },
+  {
+    "id": 80,
+    "titulo": "Administración de Propiedades",
+    "slug": "property-management",
+    "categoria": "Inmuebles & Hogar",
+    "descripcion": "Landing moderna y profesional para administración de propiedades. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Administración de Propiedades",
+    "imagen": "/previews/080-property-management.webp",
+    "referencia": "https://websiteprompts.ai/prompts/property-management",
+    "live": "https://green-stone-paths.lovable.app"
+  },
+  {
+    "id": 81,
+    "titulo": "Clínica Dermatológica",
+    "slug": "dermatology-clinic",
+    "categoria": "Salud & Bienestar",
+    "descripcion": "Landing moderna y profesional para clínica dermatológica. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Clínica Dermatológica",
+    "imagen": "/previews/081-dermatology-clinic.webp",
+    "referencia": "https://websiteprompts.ai/prompts/dermatology-clinic",
+    "live": "https://clearview-skin-clarity.lovable.app"
+  },
+  {
+    "id": 82,
+    "titulo": "Constructora",
+    "slug": "construction-company",
+    "categoria": "Inmuebles & Hogar",
+    "descripcion": "Landing oscura y de alto impacto para constructora. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Constructora",
+    "imagen": "/previews/082-construction-company.webp",
+    "referencia": "https://websiteprompts.ai/prompts/construction-company",
+    "live": "https://amber-foundations.lovable.app"
+  },
+  {
+    "id": 83,
+    "titulo": "Academia de Artes Marciales",
+    "slug": "martial-arts-academy",
+    "categoria": "Fitness & Deportes",
+    "descripcion": "Landing oscura y de alto impacto para academia de artes marciales. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Academia de Artes Marciales",
+    "imagen": "/previews/083-martial-arts-academy.webp",
+    "referencia": "https://websiteprompts.ai/prompts/martial-arts-academy",
+    "live": "https://ironwood-pathways.lovable.app"
+  },
+  {
+    "id": 84,
+    "titulo": "Sala de Conciertos",
+    "slug": "music-venue",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing oscura y de alto impacto para sala de conciertos. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Sala de Conciertos",
+    "imagen": "/previews/084-music-venue.webp",
+    "referencia": "https://websiteprompts.ai/prompts/music-venue",
+    "live": "https://electric-amber-shows.lovable.app"
+  },
+  {
+    "id": 85,
+    "titulo": "Psicología",
+    "slug": "psychologist",
+    "categoria": "Salud & Bienestar",
+    "descripcion": "Landing moderna y profesional para psicología. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Psicología",
+    "imagen": "/previews/085-psychologist.webp",
+    "referencia": "https://websiteprompts.ai/prompts/psychologist",
+    "live": "https://safe-space-sage.lovable.app"
+  },
+  {
+    "id": 86,
+    "titulo": "Inspección de Propiedades",
+    "slug": "home-inspector",
+    "categoria": "Inmuebles & Hogar",
+    "descripcion": "Landing moderna y profesional para inspección de propiedades. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Inspección de Propiedades",
+    "imagen": "/previews/086-home-inspector.webp",
+    "referencia": "https://websiteprompts.ai/prompts/home-inspector",
+    "live": "https://trueview-home-inspections-web.lovable.app"
+  },
+  {
+    "id": 87,
+    "titulo": "Clases Particulares",
+    "slug": "tutoring",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para clases particulares. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Clases Particulares",
+    "imagen": "/previews/087-tutoring.webp",
+    "referencia": "https://websiteprompts.ai/prompts/tutoring",
+    "live": "https://boston-pathfinder-tutors.lovable.app"
+  },
+  {
+    "id": 88,
+    "titulo": "Agencia de Redes Sociales",
+    "slug": "social-media-agency",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para agencia de redes sociales. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Agencia de Redes Sociales",
+    "imagen": "/previews/088-social-media-agency.webp",
+    "referencia": "https://websiteprompts.ai/prompts/social-media-agency",
+    "live": "https://aggressive-audience-architects.lovable.app"
+  },
+  {
+    "id": 89,
+    "titulo": "Boutique de Ropa",
+    "slug": "clothing-boutique",
+    "categoria": "Belleza & Moda",
+    "descripcion": "Landing editorial y premium para boutique de ropa. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Boutique de Ropa",
+    "imagen": "/previews/089-clothing-boutique.webp",
+    "referencia": "https://websiteprompts.ai/prompts/clothing-boutique",
+    "live": "https://maison-cleo-boutique.lovable.app"
+  },
+  {
+    "id": 90,
+    "titulo": "Wedding Planner",
+    "slug": "wedding-planner",
+    "categoria": "Belleza & Moda",
+    "descripcion": "Landing editorial y premium para wedding planner. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Wedding Planner",
+    "imagen": "/previews/090-wedding-planner.webp",
+    "referencia": "https://websiteprompts.ai/prompts/wedding-planner",
+    "live": "https://ivory-oak-events.lovable.app"
+  },
+  {
+    "id": 91,
+    "titulo": "Med Spa",
+    "slug": "med-spa",
+    "categoria": "Salud & Bienestar",
+    "descripcion": "Landing editorial y premium para med spa. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Med Spa",
+    "imagen": "/previews/091-med-spa.webp",
+    "referencia": "https://websiteprompts.ai/prompts/med-spa",
+    "live": "https://radiant-miami-aesthetics.lovable.app"
+  },
+  {
+    "id": 92,
+    "titulo": "Energía Solar",
+    "slug": "solar-company",
+    "categoria": "Inmuebles & Hogar",
+    "descripcion": "Landing oscura y de alto impacto para energía solar. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Energía Solar",
+    "imagen": "/previews/092-solar-company.webp",
+    "referencia": "https://websiteprompts.ai/prompts/solar-company",
+    "live": "https://summit-solar-glow.lovable.app"
+  },
+  {
+    "id": 93,
+    "titulo": "Ortodoncia",
+    "slug": "orthodontist",
+    "categoria": "Salud & Bienestar",
+    "descripcion": "Landing moderna y profesional para ortodoncia. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Ortodoncia",
+    "imagen": "/previews/093-orthodontist.webp",
+    "referencia": "https://websiteprompts.ai/prompts/orthodontist",
+    "live": "https://radiant-ortho-web.lovable.app"
+  },
+  {
+    "id": 94,
+    "titulo": "Heladería",
+    "slug": "ice-cream-shop",
+    "categoria": "Gastronomía",
+    "descripcion": "Landing moderna y profesional para heladería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "3D / Profundidad"
+    ],
+    "ideal": "Heladería",
+    "imagen": "/previews/094-ice-cream-shop.webp",
+    "referencia": "https://websiteprompts.ai/prompts/ice-cream-shop",
+    "live": "https://cone-charm.lovable.app"
+  },
+  {
+    "id": 95,
+    "titulo": "Acupuntura",
+    "slug": "acupuncture-clinic",
+    "categoria": "Salud & Bienestar",
+    "descripcion": "Landing moderna y profesional para acupuntura. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Acupuntura",
+    "imagen": "/previews/095-acupuncture-clinic.webp",
+    "referencia": "https://websiteprompts.ai/prompts/acupuncture-clinic",
+    "live": "https://zen-flow-gui.lovable.app"
+  },
+  {
+    "id": 96,
+    "titulo": "Asesoría de Imagen",
+    "slug": "personal-stylist",
+    "categoria": "Belleza & Moda",
+    "descripcion": "Landing moderna y profesional para asesoría de imagen. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Asesoría de Imagen",
+    "imagen": "/previews/096-personal-stylist.webp",
+    "referencia": "https://websiteprompts.ai/prompts/personal-stylist",
+    "live": "https://edit-style-suite.lovable.app"
+  },
+  {
+    "id": 97,
+    "titulo": "Instituto de Idiomas",
+    "slug": "language-school",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para instituto de idiomas. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Instituto de Idiomas",
+    "imagen": "/previews/097-language-school.webp",
+    "referencia": "https://websiteprompts.ai/prompts/language-school",
+    "live": "https://lingua-fluent-leap.lovable.app"
+  },
+  {
+    "id": 98,
+    "titulo": "Alquiler Vacacional",
+    "slug": "vacation-rental",
+    "categoria": "Viajes & Turismo",
+    "descripcion": "Landing moderna y profesional para alquiler vacacional. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Alquiler Vacacional",
+    "imagen": "/previews/098-vacation-rental.webp",
+    "referencia": "https://websiteprompts.ai/prompts/vacation-rental",
+    "live": "https://drift-house-dreams.lovable.app"
+  },
+  {
+    "id": 99,
+    "titulo": "Autoescuela",
+    "slug": "driving-school",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para autoescuela. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Autoescuela",
+    "imagen": "/previews/099-driving-school.webp",
+    "referencia": "https://websiteprompts.ai/prompts/driving-school",
+    "live": "https://drive-spark-guide.lovable.app"
+  },
+  {
+    "id": 100,
+    "titulo": "Cervecería Artesanal",
+    "slug": "craft-brewery",
+    "categoria": "Gastronomía",
+    "descripcion": "Landing oscura y de alto impacto para cervecería artesanal. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "3D / Profundidad"
+    ],
+    "ideal": "Cervecería Artesanal",
+    "imagen": "/previews/100-craft-brewery.webp",
+    "referencia": "https://websiteprompts.ai/prompts/craft-brewery",
+    "live": "https://brew-heart-forge.lovable.app"
+  },
+  {
+    "id": 101,
+    "titulo": "Adiestramiento Canino",
+    "slug": "dog-trainer",
+    "categoria": "Fitness & Deportes",
+    "descripcion": "Landing moderna y profesional para adiestramiento canino. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Adiestramiento Canino",
+    "imagen": "/previews/101-dog-trainer.webp",
+    "referencia": "https://websiteprompts.ai/prompts/dog-trainer",
+    "live": "https://comfy-build-hub.lovable.app"
+  },
+  {
+    "id": 102,
+    "titulo": "Gimnasio de Boxeo",
+    "slug": "boxing-gym",
+    "categoria": "Fitness & Deportes",
+    "descripcion": "Landing moderna y profesional para gimnasio de boxeo. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Gimnasio de Boxeo",
+    "imagen": "/previews/102-boxing-gym.webp",
+    "referencia": "https://websiteprompts.ai/prompts/boxing-gym",
+    "live": "https://district-strength-hub.lovable.app"
+  },
+  {
+    "id": 103,
+    "titulo": "Masajes",
+    "slug": "massage-therapist",
+    "categoria": "Salud & Bienestar",
+    "descripcion": "Landing moderna y profesional para masajes. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Masajes",
+    "imagen": "/previews/103-massage-therapist.webp",
+    "referencia": "https://websiteprompts.ai/prompts/massage-therapist",
+    "live": "https://solace-studio-flow.lovable.app"
+  },
+  {
+    "id": 104,
+    "titulo": "Estudio de Tatuajes",
+    "slug": "tattoo-parlor",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing oscura y de alto impacto para estudio de tatuajes. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial",
+      "Animada"
+    ],
+    "ideal": "Estudio de Tatuajes",
+    "imagen": "/previews/104-tattoo-parlor.webp",
+    "referencia": "https://websiteprompts.ai/prompts/tattoo-parlor",
+    "live": "https://deep-red-canvas.lovable.app"
+  },
+  {
+    "id": 105,
+    "titulo": "Florería",
+    "slug": "flower-shop",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para florería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Florería",
+    "imagen": "/previews/105-flower-shop.webp",
+    "referencia": "https://websiteprompts.ai/prompts/flower-shop",
+    "live": "https://velvet-petal.lovable.app"
+  },
+  {
+    "id": 106,
+    "titulo": "Estudio de Yoga",
+    "slug": "yoga-studio",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para estudio de yoga. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Estudio de Yoga",
+    "imagen": "/previews/106-yoga-studio.webp",
+    "referencia": "https://websiteprompts.ai/prompts/yoga-studio",
+    "live": "https://root-and-rise-studio.lovable.app"
+  },
+  {
+    "id": 107,
+    "titulo": "Peluquería",
+    "slug": "hair-salon-editorial",
+    "categoria": "Belleza & Moda",
+    "descripcion": "Landing moderna y profesional para peluquería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Peluquería",
+    "imagen": "/previews/107-hair-salon-editorial.webp",
+    "referencia": "https://websiteprompts.ai/prompts/hair-salon-editorial",
+    "live": "https://refined-mane.lovable.app"
+  },
+  {
+    "id": 108,
+    "titulo": "Estudio Fotográfico",
+    "slug": "photography-studio",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing editorial y premium para estudio fotográfico. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Estudio Fotográfico",
+    "imagen": "/previews/108-photography-studio.webp",
+    "referencia": "https://websiteprompts.ai/prompts/photography-studio",
+    "live": "https://still-frame-whisper.lovable.app"
+  },
+  {
+    "id": 109,
+    "titulo": "Estudio Jurídico",
+    "slug": "law-firm",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para estudio jurídico. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Estudio Jurídico",
+    "imagen": "/previews/109-law-firm.webp",
+    "referencia": "https://websiteprompts.ai/prompts/law-firm",
+    "live": "https://parchment-gold-legal.lovable.app"
+  },
+  {
+    "id": 110,
+    "titulo": "Entrenador Personal",
+    "slug": "fitness-coach",
+    "categoria": "Fitness & Deportes",
+    "descripcion": "Landing oscura y de alto impacto para entrenador personal. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Entrenador Personal",
+    "imagen": "/previews/110-fitness-coach.webp",
+    "referencia": "https://websiteprompts.ai/prompts/fitness-coach",
+    "live": "https://fit-pro-website.lovable.app"
+  },
+  {
+    "id": 111,
+    "titulo": "Diseño de Interiores",
+    "slug": "interior-design-studio",
+    "categoria": "Inmuebles & Hogar",
+    "descripcion": "Landing editorial y premium para diseño de interiores. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial",
+      "Animada"
+    ],
+    "ideal": "Diseño de Interiores",
+    "imagen": "/previews/111-interior-design-studio.webp",
+    "referencia": "https://websiteprompts.ai/prompts/interior-design-studio",
+    "live": "https://studio-noma-showcase.lovable.app"
+  },
+  {
+    "id": 112,
+    "titulo": "Agente Inmobiliario",
+    "slug": "real-estate-agent",
+    "categoria": "Inmuebles & Hogar",
+    "descripcion": "Landing oscura y de alto impacto para agente inmobiliario. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Agente Inmobiliario",
+    "imagen": "/previews/112-real-estate-agent.webp",
+    "referencia": "https://websiteprompts.ai/prompts/real-estate-agent",
+    "live": "https://harlow-whisper.lovable.app"
+  },
+  {
+    "id": 113,
+    "titulo": "Restaurante",
+    "slug": "fine-dining-restaurant",
+    "categoria": "Gastronomía",
+    "descripcion": "Landing oscura y de alto impacto para restaurante. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial",
+      "Animada"
+    ],
+    "ideal": "Restaurante",
+    "imagen": "/previews/113-fine-dining-restaurant.webp",
+    "referencia": "https://websiteprompts.ai/prompts/fine-dining-restaurant",
+    "live": "https://ember-glow-dining.lovable.app"
+  },
+  {
+    "id": 114,
+    "titulo": "Peluquería Canina Boutique",
+    "slug": "dog-groomer-boutique",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para peluquería canina boutique. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Peluquería Canina Boutique",
+    "imagen": "/previews/114-dog-groomer-boutique.webp",
+    "referencia": "https://websiteprompts.ai/prompts/dog-groomer-boutique",
+    "live": "https://purrfect-groom-site.lovable.app"
+  },
+  {
+    "id": 115,
+    "titulo": "Salón para Bodas",
+    "slug": "wedding-venue-romantic",
+    "categoria": "Belleza & Moda",
+    "descripcion": "Landing moderna y profesional para salón para bodas. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Salón para Bodas",
+    "imagen": "/previews/115-wedding-venue-romantic.webp",
+    "referencia": "https://websiteprompts.ai/prompts/wedding-venue-romantic",
+    "live": "https://manor-charm-builder.lovable.app"
+  },
+  {
+    "id": 116,
+    "titulo": "Cafetería",
+    "slug": "coffee-shop-dark",
+    "categoria": "Gastronomía",
+    "descripcion": "Landing editorial y premium para cafetería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial",
+      "Animada"
+    ],
+    "ideal": "Cafetería",
+    "imagen": "/previews/116-coffee-shop-dark.webp",
+    "referencia": "https://websiteprompts.ai/prompts/coffee-shop-dark",
+    "live": "https://ember-ground-coffee.lovable.app"
+  },
+  {
+    "id": 117,
+    "titulo": "Asesor Financiero",
+    "slug": "finance-advisor",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para asesor financiero. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial"
+    ],
+    "ideal": "Asesor Financiero",
+    "imagen": "/previews/117-finance-advisor.webp",
+    "referencia": "https://websiteprompts.ai/prompts/finance-advisor",
+    "live": "https://gold-oak-finances.lovable.app"
+  },
+  {
+    "id": 118,
+    "titulo": "Terapia",
+    "slug": "therapist",
+    "categoria": "Salud & Bienestar",
+    "descripcion": "Landing editorial y premium para terapia. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Terapia",
+    "imagen": "/previews/118-therapist.webp",
+    "referencia": "https://websiteprompts.ai/prompts/therapist",
+    "live": "https://clarity-therapy-site.lovable.app"
+  },
+  {
+    "id": 119,
+    "titulo": "Taller Mecánico",
+    "slug": "mechanic",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para taller mecánico. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Taller Mecánico",
+    "imagen": "/previews/119-mechanic.webp",
+    "referencia": "https://websiteprompts.ai/prompts/mechanic",
+    "live": "https://axle-core-engine.lovable.app"
+  },
+  {
+    "id": 120,
+    "titulo": "Lavadero de Autos",
+    "slug": "car-wash",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para lavadero de autos. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Lavadero de Autos",
+    "imagen": "/previews/120-car-wash.webp",
+    "referencia": "https://websiteprompts.ai/prompts/car-wash",
+    "live": "https://gleam-shine-hub-08.lovable.app"
+  },
+  {
+    "id": 121,
+    "titulo": "Escape Room",
+    "slug": "escape-room",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para escape room. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Escape Room",
+    "imagen": "/previews/121-escape-room.webp",
+    "referencia": "https://websiteprompts.ai/prompts/escape-room",
+    "live": "https://teal-shadows.lovable.app"
+  },
+  {
+    "id": 122,
+    "titulo": "Estudio de Cerámica",
+    "slug": "ceramics-studio",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing oscura y de alto impacto para estudio de cerámica. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Estudio de Cerámica",
+    "imagen": "/previews/122-ceramics-studio.webp",
+    "referencia": "https://websiteprompts.ai/prompts/ceramics-studio",
+    "live": "https://form-and-fire-web.lovable.app"
+  },
+  {
+    "id": 123,
+    "titulo": "Food Truck",
+    "slug": "food-truck",
+    "categoria": "Gastronomía",
+    "descripcion": "Landing oscura y de alto impacto para food truck. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "3D / Profundidad"
+    ],
+    "ideal": "Food Truck",
+    "imagen": "/previews/123-food-truck.webp",
+    "referencia": "https://websiteprompts.ai/prompts/food-truck",
+    "live": "https://street-sizzle.lovable.app"
+  },
+  {
+    "id": 124,
+    "titulo": "Podcast",
+    "slug": "podcast",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing oscura y de alto impacto para podcast. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Podcast",
+    "imagen": "/previews/124-podcast.webp",
+    "referencia": "https://websiteprompts.ai/prompts/podcast",
+    "live": "https://signal-wave-audio.lovable.app"
+  },
+  {
+    "id": 125,
+    "titulo": "Techos y Cubiertas",
+    "slug": "roofing-company",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para techos y cubiertas. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Techos y Cubiertas",
+    "imagen": "/previews/125-roofing-company.webp",
+    "referencia": "https://websiteprompts.ai/prompts/roofing-company",
+    "live": "https://summit-shelter.lovable.app"
+  },
+  {
+    "id": 126,
+    "titulo": "CrossFit",
+    "slug": "crossfit-gym",
+    "categoria": "Fitness & Deportes",
+    "descripcion": "Landing oscura y de alto impacto para crossfit. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "CrossFit",
+    "imagen": "/previews/126-crossfit-gym.webp",
+    "referencia": "https://websiteprompts.ai/prompts/crossfit-gym",
+    "live": "https://ironclad-spark.lovable.app"
+  },
+  {
+    "id": 127,
+    "titulo": "Óptica",
+    "slug": "optician",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing editorial y premium para óptica. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial",
+      "3D / Profundidad"
+    ],
+    "ideal": "Óptica",
+    "imagen": "/previews/127-optician.webp",
+    "referencia": "https://websiteprompts.ai/prompts/optician",
+    "live": "https://eye-haven-pro.lovable.app"
+  },
+  {
+    "id": 128,
+    "titulo": "Escuela de Música",
+    "slug": "music-school",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing editorial y premium para escuela de música. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial",
+      "3D / Profundidad"
+    ],
+    "ideal": "Escuela de Música",
+    "imagen": "/previews/128-music-school.webp",
+    "referencia": "https://websiteprompts.ai/prompts/music-school",
+    "live": "https://amber-note-web.lovable.app"
+  },
+  {
+    "id": 129,
+    "titulo": "Estudio de Danza",
+    "slug": "dance-studio",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para estudio de danza. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Estudio de Danza",
+    "imagen": "/previews/129-dance-studio.webp",
+    "referencia": "https://websiteprompts.ai/prompts/dance-studio",
+    "live": "https://ellipse-stage-dance.lovable.app"
+  },
+  {
+    "id": 130,
+    "titulo": "Escuela de Surf",
+    "slug": "surf-school",
+    "categoria": "Viajes & Turismo",
+    "descripcion": "Landing oscura y de alto impacto para escuela de surf. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Escuela de Surf",
+    "imagen": "/previews/130-surf-school.webp",
+    "referencia": "https://websiteprompts.ai/prompts/surf-school",
+    "live": "https://ocean-canvas-code.lovable.app"
+  },
+  {
+    "id": 131,
+    "titulo": "Agencia de Branding",
+    "slug": "branding-agency",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para agencia de branding. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Agencia de Branding",
+    "imagen": "/previews/131-branding-agency.webp",
+    "referencia": "https://websiteprompts.ai/prompts/branding-agency",
+    "live": "https://brandbold-studio.lovable.app"
+  },
+  {
+    "id": 132,
+    "titulo": "Quiropraxia",
+    "slug": "chiropractor",
+    "categoria": "Salud & Bienestar",
+    "descripcion": "Landing oscura y de alto impacto para quiropraxia. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial",
+      "3D / Profundidad"
+    ],
+    "ideal": "Quiropraxia",
+    "imagen": "/previews/132-chiropractor.webp",
+    "referencia": "https://websiteprompts.ai/prompts/chiropractor",
+    "live": "https://align-motion.lovable.app"
+  },
+  {
+    "id": 133,
+    "titulo": "Wine Bar",
+    "slug": "wine-bar",
+    "categoria": "Gastronomía",
+    "descripcion": "Landing oscura y de alto impacto para wine bar. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial",
+      "Animada"
+    ],
+    "ideal": "Wine Bar",
+    "imagen": "/previews/133-wine-bar.webp",
+    "referencia": "https://websiteprompts.ai/prompts/wine-bar",
+    "live": "https://vigne-wine-whisper.lovable.app"
+  },
+  {
+    "id": 134,
+    "titulo": "Joyería",
+    "slug": "jeweler",
+    "categoria": "Belleza & Moda",
+    "descripcion": "Landing oscura y de alto impacto para joyería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Joyería",
+    "imagen": "/previews/134-jeweler.webp",
+    "referencia": "https://websiteprompts.ai/prompts/jeweler",
+    "live": "https://jewel-noir-studio.lovable.app"
+  },
+  {
+    "id": 135,
+    "titulo": "Coctelería",
+    "slug": "cocktail-bar",
+    "categoria": "Gastronomía",
+    "descripcion": "Landing oscura y de alto impacto para coctelería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial"
+    ],
+    "ideal": "Coctelería",
+    "imagen": "/previews/135-cocktail-bar.webp",
+    "referencia": "https://websiteprompts.ai/prompts/cocktail-bar",
+    "live": "https://dusk-whispers-web.lovable.app"
+  },
+  {
+    "id": 136,
+    "titulo": "Hotel Boutique",
+    "slug": "boutique-hotel",
+    "categoria": "Viajes & Turismo",
+    "descripcion": "Landing editorial y premium para hotel boutique. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial",
+      "Animada"
+    ],
+    "ideal": "Hotel Boutique",
+    "imagen": "/previews/136-boutique-hotel.webp",
+    "referencia": "https://websiteprompts.ai/prompts/boutique-hotel",
+    "live": "https://aldwick-editorial-dream.lovable.app"
+  },
+  {
+    "id": 137,
+    "titulo": "Curso Online",
+    "slug": "online-course",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para curso online. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "3D / Profundidad"
+    ],
+    "ideal": "Curso Online",
+    "imagen": "/previews/137-online-course.webp",
+    "referencia": "https://websiteprompts.ai/prompts/online-course",
+    "live": "https://skillbrew-hub.lovable.app"
+  },
+  {
+    "id": 138,
+    "titulo": "Jardín Maternal",
+    "slug": "childcare-nursery",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para jardín maternal. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Jardín Maternal",
+    "imagen": "/previews/138-childcare-nursery.webp",
+    "referencia": "https://websiteprompts.ai/prompts/childcare-nursery",
+    "live": "https://sunbeam-nursery-starter.lovable.app"
+  },
+  {
+    "id": 139,
+    "titulo": "Agencia Digital",
+    "slug": "digital-agency",
+    "categoria": "Tecnología & SaaS",
+    "descripcion": "Landing oscura y de alto impacto para agencia digital. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "3D / Profundidad"
+    ],
+    "ideal": "Agencia Digital",
+    "imagen": "/previews/139-digital-agency.webp",
+    "referencia": "https://websiteprompts.ai/prompts/digital-agency",
+    "live": "https://vortex-studio-kit.lovable.app"
+  },
+  {
+    "id": 140,
+    "titulo": "Mudanzas",
+    "slug": "moving-company",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para mudanzas. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Mudanzas",
+    "imagen": "/previews/140-moving-company.webp",
+    "referencia": "https://websiteprompts.ai/prompts/moving-company",
+    "live": "https://bold-move-toolkit.lovable.app"
+  },
+  {
+    "id": 141,
+    "titulo": "Recruitment",
+    "slug": "recruitment-agency",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para recruitment. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Recruitment",
+    "imagen": "/previews/141-recruitment-agency.webp",
+    "referencia": "https://websiteprompts.ai/prompts/recruitment-agency",
+    "live": "https://apex-talent-pro.lovable.app"
+  },
+  {
+    "id": 142,
+    "titulo": "Organización de Eventos",
+    "slug": "event-planner",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para organización de eventos. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial"
+    ],
+    "ideal": "Organización de Eventos",
+    "imagen": "/previews/142-event-planner.webp",
+    "referencia": "https://websiteprompts.ai/prompts/event-planner",
+    "live": "https://luxury-storyteller-ai.lovable.app"
+  },
+  {
+    "id": 143,
+    "titulo": "Veterinaria",
+    "slug": "vet-clinic",
+    "categoria": "Salud & Bienestar",
+    "descripcion": "Landing moderna y profesional para veterinaria. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Veterinaria",
+    "imagen": "/previews/143-vet-clinic.webp",
+    "referencia": "https://websiteprompts.ai/prompts/vet-clinic",
+    "live": "https://petal-and-paw-clinic.lovable.app"
+  },
+  {
+    "id": 144,
+    "titulo": "Maquillaje Profesional",
+    "slug": "makeup-artist",
+    "categoria": "Belleza & Moda",
+    "descripcion": "Landing oscura y de alto impacto para maquillaje profesional. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial",
+      "3D / Profundidad"
+    ],
+    "ideal": "Maquillaje Profesional",
+    "imagen": "/previews/144-makeup-artist.webp",
+    "referencia": "https://websiteprompts.ai/prompts/makeup-artist",
+    "live": "https://ariel-beauty-hub.lovable.app"
+  },
+  {
+    "id": 145,
+    "titulo": "Agencia de Viajes",
+    "slug": "travel-agency",
+    "categoria": "Viajes & Turismo",
+    "descripcion": "Landing editorial y premium para agencia de viajes. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Agencia de Viajes",
+    "imagen": "/previews/145-travel-agency.webp",
+    "referencia": "https://websiteprompts.ai/prompts/travel-agency",
+    "live": "https://meridian-voyage-studio.lovable.app"
+  },
+  {
+    "id": 146,
+    "titulo": "Fisioterapia",
+    "slug": "physiotherapist",
+    "categoria": "Salud & Bienestar",
+    "descripcion": "Landing oscura y de alto impacto para fisioterapia. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "3D / Profundidad"
+    ],
+    "ideal": "Fisioterapia",
+    "imagen": "/previews/146-physiotherapist.webp",
+    "referencia": "https://websiteprompts.ai/prompts/physiotherapist",
+    "live": "https://motion-magic-clinic.lovable.app"
+  },
+  {
+    "id": 147,
+    "titulo": "Florería",
+    "slug": "florist",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing editorial y premium para florería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial",
+      "3D / Profundidad"
+    ],
+    "ideal": "Florería",
+    "imagen": "/previews/147-florist.webp",
+    "referencia": "https://websiteprompts.ai/prompts/florist",
+    "live": "https://luxe-bloom-builder.lovable.app"
+  },
+  {
+    "id": 148,
+    "titulo": "Peluquería",
+    "slug": "hair-salon",
+    "categoria": "Belleza & Moda",
+    "descripcion": "Landing oscura y de alto impacto para peluquería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial"
+    ],
+    "ideal": "Peluquería",
+    "imagen": "/previews/148-hair-salon.webp",
+    "referencia": "https://websiteprompts.ai/prompts/hair-salon",
+    "live": "https://studio-nora-beauty.lovable.app"
+  },
+  {
+    "id": 149,
+    "titulo": "Life Coach",
+    "slug": "life-coach",
+    "categoria": "Fitness & Deportes",
+    "descripcion": "Landing moderna y profesional para life coach. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Life Coach",
+    "imagen": "/previews/149-life-coach.webp",
+    "referencia": "https://websiteprompts.ai/prompts/life-coach",
+    "live": "https://clarity-spark-26.lovable.app"
+  },
+  {
+    "id": 150,
+    "titulo": "Créditos Hipotecarios",
+    "slug": "mortgage-broker",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para créditos hipotecarios. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Créditos Hipotecarios",
+    "imagen": "/previews/150-mortgage-broker.webp",
+    "referencia": "https://websiteprompts.ai/prompts/mortgage-broker",
+    "live": "https://trust-build-prompt.lovable.app"
+  },
+  {
+    "id": 151,
+    "titulo": "Peluquería Canina",
+    "slug": "dog-groomer",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para peluquería canina. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Peluquería Canina",
+    "imagen": "/previews/151-dog-groomer.webp",
+    "referencia": "https://websiteprompts.ai/prompts/dog-groomer",
+    "live": "https://warm-paw-prompt.lovable.app"
+  },
+  {
+    "id": 152,
+    "titulo": "Gimnasio",
+    "slug": "gym",
+    "categoria": "Fitness & Deportes",
+    "descripcion": "Landing oscura y de alto impacto para gimnasio. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Gimnasio",
+    "imagen": "/previews/152-gym.webp",
+    "referencia": "https://websiteprompts.ai/prompts/gym",
+    "live": "https://apex-rise-studio.lovable.app"
+  },
+  {
+    "id": 153,
+    "titulo": "Pilates",
+    "slug": "pilates-studio",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing editorial y premium para pilates. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Pilates",
+    "imagen": "/previews/153-pilates-studio.webp",
+    "referencia": "https://websiteprompts.ai/prompts/pilates-studio",
+    "live": "https://elevate-pose-site.lovable.app"
+  },
+  {
+    "id": 154,
+    "titulo": "Salón de Eventos",
+    "slug": "wedding-venue",
+    "categoria": "Belleza & Moda",
+    "descripcion": "Landing editorial y premium para salón de eventos. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Salón de Eventos",
+    "imagen": "/previews/154-wedding-venue.webp",
+    "referencia": "https://websiteprompts.ai/prompts/wedding-venue",
+    "live": "https://manor-whispers.lovable.app"
+  },
+  {
+    "id": 155,
+    "titulo": "Cafetería",
+    "slug": "coffee-shop",
+    "categoria": "Gastronomía",
+    "descripcion": "Landing moderna y profesional para cafetería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Cafetería",
+    "imagen": "/previews/155-coffee-shop.webp",
+    "referencia": "https://websiteprompts.ai/prompts/coffee-shop",
+    "live": "https://groundwork-brew-studio.lovable.app"
+  },
+  {
+    "id": 156,
+    "titulo": "Contador",
+    "slug": "accountant-website-prompt",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para contador. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Minimalista"
+    ],
+    "ideal": "Contador",
+    "imagen": "/previews/156-accountant-website-prompt.webp",
+    "referencia": "https://websiteprompts.ai/prompts/accountant-website-prompt",
+    "live": "https://harlow-wise-finance.lovable.app"
+  },
+  {
+    "id": 157,
+    "titulo": "Chef Personal",
+    "slug": "personal-chef-website-prompt",
+    "categoria": "Gastronomía",
+    "descripcion": "Landing moderna y profesional para chef personal. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Chef Personal",
+    "imagen": "/previews/157-personal-chef-website-prompt.webp",
+    "referencia": "https://websiteprompts.ai/prompts/personal-chef-website-prompt",
+    "live": "https://chef-elise-kitchen.lovable.app"
+  },
+  {
+    "id": 158,
+    "titulo": "Arquitectura",
+    "slug": "architect-website-prompt",
+    "categoria": "Inmuebles & Hogar",
+    "descripcion": "Landing oscura y de alto impacto para arquitectura. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial"
+    ],
+    "ideal": "Arquitectura",
+    "imagen": "/previews/158-architect-website-prompt.webp",
+    "referencia": "https://websiteprompts.ai/prompts/architect-website-prompt",
+    "live": "https://forma-foundation-kit.lovable.app"
+  },
+  {
+    "id": 159,
+    "titulo": "Agente Inmobiliario",
+    "slug": "real-estate-website-prompt",
+    "categoria": "Inmuebles & Hogar",
+    "descripcion": "Landing oscura y de alto impacto para agente inmobiliario. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Agente Inmobiliario",
+    "imagen": "/previews/159-real-estate-website-prompt.webp",
+    "referencia": "https://websiteprompts.ai/prompts/real-estate-website-prompt",
+    "live": "https://luxe-listing-whisper.lovable.app"
+  },
+  {
+    "id": 160,
+    "titulo": "Estudio de Yoga",
+    "slug": "yoga-studio-website-prompt",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing editorial y premium para estudio de yoga. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Estudio de Yoga",
+    "imagen": "/previews/160-yoga-studio-website-prompt.webp",
+    "referencia": "https://websiteprompts.ai/prompts/yoga-studio-website-prompt",
+    "live": "https://solis-studio-zen.lovable.app"
+  },
+  {
+    "id": 161,
+    "titulo": "Restaurante",
+    "slug": "restaurant-website-prompt",
+    "categoria": "Gastronomía",
+    "descripcion": "Landing oscura y de alto impacto para restaurante. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Restaurante",
+    "imagen": "/previews/161-restaurant-website-prompt.webp",
+    "referencia": "https://websiteprompts.ai/prompts/restaurant-website-prompt",
+    "live": "https://noir-dining-spark.lovable.app"
+  },
+  {
+    "id": 162,
+    "titulo": "Wedding Photographer",
+    "slug": "wedding-photographer-website-prompt",
+    "categoria": "Belleza & Moda",
+    "descripcion": "Landing moderna y profesional para wedding photographer. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Wedding Photographer",
+    "imagen": "/previews/162-wedding-photographer-website-prompt.webp",
+    "referencia": "https://websiteprompts.ai/prompts/wedding-photographer-website-prompt",
+    "live": "https://clara-bloom-craft.lovable.app"
+  },
+  {
+    "id": 163,
+    "titulo": "Coach Deportivo",
+    "slug": "sports-coach-website-prompt",
+    "categoria": "Fitness & Deportes",
+    "descripcion": "Landing oscura y de alto impacto para coach deportivo. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Coach Deportivo",
+    "imagen": "/previews/163-sports-coach-website-prompt.webp",
+    "referencia": "https://websiteprompts.ai/prompts/sports-coach-website-prompt",
+    "live": "https://climb-conquer-code.lovable.app"
+  },
+  {
+    "id": 164,
+    "titulo": "Productor Musical",
+    "slug": "music-producer-website-prompt",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing oscura y de alto impacto para productor musical. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Productor Musical",
+    "imagen": "/previews/164-music-producer-website-prompt.webp",
+    "referencia": "https://websiteprompts.ai/prompts/music-producer-website-prompt",
+    "live": "https://veil-visions.lovable.app"
+  },
+  {
+    "id": 165,
+    "titulo": "Control de Plagas",
+    "slug": "pest-control-website-prompt",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para control de plagas. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Control de Plagas",
+    "imagen": "/previews/165-pest-control-website-prompt.webp",
+    "referencia": "https://websiteprompts.ai/prompts/pest-control-website-prompt",
+    "live": "https://pest-free-dream.lovable.app"
+  },
+  {
+    "id": 166,
+    "titulo": "Portfolio de Desarrollador",
+    "slug": "developer-portfolio-website-prompt",
+    "categoria": "Tecnología & SaaS",
+    "descripcion": "Landing oscura y de alto impacto para portfolio de desarrollador. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "3D / Profundidad"
+    ],
+    "ideal": "Portfolio de Desarrollador",
+    "imagen": "/previews/166-developer-portfolio-website-prompt.webp",
+    "referencia": "https://websiteprompts.ai/prompts/developer-portfolio-website-prompt",
+    "live": "https://code-green-canvas.lovable.app"
+  },
+  {
+    "id": 167,
+    "titulo": "Portfolio de Diseñador",
+    "slug": "designer-portfolio-website-prompt",
+    "categoria": "Tecnología & SaaS",
+    "descripcion": "Landing oscura y de alto impacto para portfolio de diseñador. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada",
+      "3D / Profundidad"
+    ],
+    "ideal": "Portfolio de Diseñador",
+    "imagen": "/previews/167-designer-portfolio-website-prompt.webp",
+    "referencia": "https://websiteprompts.ai/prompts/designer-portfolio-website-prompt",
+    "live": "https://astral-artist-studio.lovable.app"
+  },
+  {
+    "id": 168,
+    "titulo": "Abogado",
+    "slug": "lawyer-website-prompt",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para abogado. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Minimalista",
+      "3D / Profundidad"
+    ],
+    "ideal": "Abogado",
+    "imagen": "/previews/168-lawyer-website-prompt.webp",
+    "referencia": "https://websiteprompts.ai/prompts/lawyer-website-prompt",
+    "live": "https://olivia-clark-template.lovable.app"
+  },
+  {
+    "id": 169,
+    "titulo": "Copywriter",
+    "slug": "copywriter-website-prompt",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para copywriter. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Copywriter",
+    "imagen": "/previews/169-copywriter-website-prompt.webp",
+    "referencia": "https://websiteprompts.ai/prompts/copywriter-website-prompt",
+    "live": "https://voice-and-flow.lovable.app"
+  },
+  {
+    "id": 170,
+    "titulo": "Nutrición",
+    "slug": "nutritionist",
+    "categoria": "Salud & Bienestar",
+    "descripcion": "Landing oscura y de alto impacto para nutrición. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "3D / Profundidad"
+    ],
+    "ideal": "Nutrición",
+    "imagen": "/previews/170-nutritionist.webp",
+    "referencia": "https://websiteprompts.ai/prompts/nutritionist",
+    "live": "https://clara-bloom-site.lovable.app"
+  },
+  {
+    "id": 171,
+    "titulo": "Portfolio de Artista",
+    "slug": "artist-portfolio",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing moderna y profesional para portfolio de artista. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Portfolio de Artista",
+    "imagen": "/previews/171-artist-portfolio.webp",
+    "referencia": "https://websiteprompts.ai/prompts/artist-portfolio",
+    "live": "https://canvas-canvas-frame.lovable.app"
+  },
+  {
+    "id": 172,
+    "titulo": "Diseño de Interiores",
+    "slug": "interior-design",
+    "categoria": "Inmuebles & Hogar",
+    "descripcion": "Landing oscura y de alto impacto para diseño de interiores. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada",
+      "3D / Profundidad"
+    ],
+    "ideal": "Diseño de Interiores",
+    "imagen": "/previews/172-interior-design.webp",
+    "referencia": "https://websiteprompts.ai/prompts/interior-design",
+    "live": "https://lumina-studio-builder.lovable.app"
+  },
+  {
+    "id": 173,
+    "titulo": "Barbería",
+    "slug": "barber",
+    "categoria": "Belleza & Moda",
+    "descripcion": "Landing oscura y de alto impacto para barbería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial",
+      "Animada"
+    ],
+    "ideal": "Barbería",
+    "imagen": "/previews/173-barber.webp",
+    "referencia": "https://websiteprompts.ai/prompts/barber",
+    "live": "https://pole-and-play.lovable.app"
+  },
+  {
+    "id": 174,
+    "titulo": "SaaS para Retail",
+    "slug": "retail-saas",
+    "categoria": "Tecnología & SaaS",
+    "descripcion": "Landing moderna y profesional para saas para retail. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "SaaS para Retail",
+    "imagen": "/previews/174-retail-saas.webp",
+    "referencia": "https://websiteprompts.ai/prompts/retail-saas",
+    "live": "https://floren-store-hub.lovable.app"
+  },
+  {
+    "id": 175,
+    "titulo": "SaaS de Salud",
+    "slug": "health-saas",
+    "categoria": "Salud & Bienestar",
+    "descripcion": "Landing moderna y profesional para saas de salud. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "SaaS de Salud",
+    "imagen": "/previews/175-health-saas.webp",
+    "referencia": "https://websiteprompts.ai/prompts/health-saas",
+    "live": "https://data-zenith-health.lovable.app"
+  },
+  {
+    "id": 176,
+    "titulo": "DJ",
+    "slug": "dj",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing oscura y de alto impacto para dj. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "DJ",
+    "imagen": "/previews/176-dj.webp",
+    "referencia": "https://websiteprompts.ai/prompts/dj",
+    "live": "https://void-signal-canvas.lovable.app"
+  },
+  {
+    "id": 177,
+    "titulo": "Salón de Uñas",
+    "slug": "nail-salon",
+    "categoria": "Belleza & Moda",
+    "descripcion": "Landing editorial y premium para salón de uñas. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Salón de Uñas",
+    "imagen": "/previews/177-nail-salon.webp",
+    "referencia": "https://websiteprompts.ai/prompts/nail-salon",
+    "live": "https://salon-suite.lovable.app"
+  },
+  {
+    "id": 178,
+    "titulo": "Running Club",
+    "slug": "run-club",
+    "categoria": "Fitness & Deportes",
+    "descripcion": "Landing moderna y profesional para running club. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Running Club",
+    "imagen": "/previews/178-run-club.webp",
+    "referencia": "https://websiteprompts.ai/prompts/run-club",
+    "live": "https://concrete-lime-beats.lovable.app"
+  },
+  {
+    "id": 179,
+    "titulo": "Catering",
+    "slug": "catering",
+    "categoria": "Gastronomía",
+    "descripcion": "Landing editorial y premium para catering. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Catering",
+    "imagen": "/previews/179-catering.webp",
+    "referencia": "https://websiteprompts.ai/prompts/catering",
+    "live": "https://velvet-vogue-works.lovable.app"
+  },
+  {
+    "id": 180,
+    "titulo": "Electricista",
+    "slug": "electrician",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para electricista. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Electricista",
+    "imagen": "/previews/180-electrician.webp",
+    "referencia": "https://websiteprompts.ai/prompts/electrician",
+    "live": "https://lightning-design-box.lovable.app"
+  },
+  {
+    "id": 181,
+    "titulo": "Coach de Natación",
+    "slug": "swim-coach",
+    "categoria": "Fitness & Deportes",
+    "descripcion": "Landing moderna y profesional para coach de natación. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Minimalista",
+      "Animada"
+    ],
+    "ideal": "Coach de Natación",
+    "imagen": "/previews/181-swim-coach.webp",
+    "referencia": "https://websiteprompts.ai/prompts/swim-coach",
+    "live": "https://swim-zen-studio.lovable.app"
+  },
+  {
+    "id": 182,
+    "titulo": "Banda Musical",
+    "slug": "band",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing oscura y de alto impacto para banda musical. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Banda Musical",
+    "imagen": "/previews/182-band.webp",
+    "referencia": "https://websiteprompts.ai/prompts/band",
+    "live": "https://iron-coast-canvas.lovable.app"
+  },
+  {
+    "id": 183,
+    "titulo": "Odontología",
+    "slug": "dentist",
+    "categoria": "Salud & Bienestar",
+    "descripcion": "Landing oscura y de alto impacto para odontología. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Animada"
+    ],
+    "ideal": "Odontología",
+    "imagen": "/previews/183-dentist.webp",
+    "referencia": "https://websiteprompts.ai/prompts/dentist",
+    "live": "https://smile-forge-17.lovable.app"
+  },
+  {
+    "id": 184,
+    "titulo": "Fotografía",
+    "slug": "photographer",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing oscura y de alto impacto para fotografía. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial"
+    ],
+    "ideal": "Fotografía",
+    "imagen": "/previews/184-photographer.webp",
+    "referencia": "https://websiteprompts.ai/prompts/photographer",
+    "live": "https://editorial-craft-93.lovable.app"
+  },
+  {
+    "id": 185,
+    "titulo": "Climatización",
+    "slug": "hvac",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para climatización. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Animada"
+    ],
+    "ideal": "Climatización",
+    "imagen": "/previews/185-hvac.webp",
+    "referencia": "https://websiteprompts.ai/prompts/hvac",
+    "live": "https://breezy-build-bundle.lovable.app"
+  },
+  {
+    "id": 186,
+    "titulo": "Panadería",
+    "slug": "bakery",
+    "categoria": "Gastronomía",
+    "descripcion": "Landing editorial y premium para panadería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Panadería",
+    "imagen": "/previews/186-bakery.webp",
+    "referencia": "https://websiteprompts.ai/prompts/bakery",
+    "live": "https://loaf-ly.lovable.app"
+  },
+  {
+    "id": 187,
+    "titulo": "Servicio de Limpieza",
+    "slug": "cleaning-service",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing moderna y profesional para servicio de limpieza. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara"
+    ],
+    "ideal": "Servicio de Limpieza",
+    "imagen": "/previews/187-cleaning-service.webp",
+    "referencia": "https://websiteprompts.ai/prompts/cleaning-service",
+    "live": "https://pristine-generator.lovable.app"
+  },
+  {
+    "id": 188,
+    "titulo": "Estudio de Tatuajes",
+    "slug": "tattoo-studio",
+    "categoria": "Creativos & Entretenimiento",
+    "descripcion": "Landing oscura y de alto impacto para estudio de tatuajes. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial"
+    ],
+    "ideal": "Estudio de Tatuajes",
+    "imagen": "/previews/188-tattoo-studio.webp",
+    "referencia": "https://websiteprompts.ai/prompts/tattoo-studio",
+    "live": "https://omen-ink-canvas.lovable.app"
+  },
+  {
+    "id": 189,
+    "titulo": "Detailing Automotor",
+    "slug": "car-detailing",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para detailing automotor. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura",
+      "Editorial"
+    ],
+    "ideal": "Detailing Automotor",
+    "imagen": "/previews/189-car-detailing.webp",
+    "referencia": "https://websiteprompts.ai/prompts/car-detailing",
+    "live": "https://luxury-car-detailing-web-prompts.lovable.app"
+  },
+  {
+    "id": 190,
+    "titulo": "Spa & Bienestar",
+    "slug": "spa-wellness",
+    "categoria": "Salud & Bienestar",
+    "descripcion": "Landing editorial y premium para spa & bienestar. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Spa & Bienestar",
+    "imagen": "/previews/190-spa-wellness.webp",
+    "referencia": "https://websiteprompts.ai/prompts/spa-wellness",
+    "live": "https://seren-zen-haven.lovable.app"
+  },
+  {
+    "id": 191,
+    "titulo": "Plomería",
+    "slug": "plumber",
+    "categoria": "Servicios & Negocios",
+    "descripcion": "Landing oscura y de alto impacto para plomería. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Plomería",
+    "imagen": "/previews/191-plumber.webp",
+    "referencia": "https://websiteprompts.ai/prompts/plumber",
+    "live": "https://rapid-aqua-interface.lovable.app"
+  },
+  {
+    "id": 192,
+    "titulo": "Paisajismo",
+    "slug": "landscaping-business",
+    "categoria": "Inmuebles & Hogar",
+    "descripcion": "Landing editorial y premium para paisajismo. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Clara",
+      "Editorial"
+    ],
+    "ideal": "Paisajismo",
+    "imagen": "/previews/192-landscaping-business.webp",
+    "referencia": "https://websiteprompts.ai/prompts/landscaping-business",
+    "live": "https://verdant-garden-studio.lovable.app"
+  },
+  {
+    "id": 193,
+    "titulo": "Entrenador Personal",
+    "slug": "personal-trainer",
+    "categoria": "Fitness & Deportes",
+    "descripcion": "Landing oscura y de alto impacto para entrenador personal. Se adapta a tu marca, tus textos, tus imágenes y tu propuesta comercial.",
+    "tags": [
+      "Oscura"
+    ],
+    "ideal": "Entrenador Personal",
+    "imagen": "/previews/193-personal-trainer.webp",
+    "referencia": "https://websiteprompts.ai/prompts/personal-trainer",
+    "live": "https://forge-lift-off.lovable.app"
+  }
+]
