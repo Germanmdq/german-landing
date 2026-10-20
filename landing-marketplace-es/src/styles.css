@@ -930,3 +930,9 @@ main svg{stroke-width:1.25!important}
 .modalActions .heroCta{margin:0}
 .liveCta{display:inline-flex;align-items:center;min-height:46px;padding:0 18px;border:1px solid #111;border-radius:999px;color:#111;text-decoration:none;font-weight:650}
 @media(max-width:760px){.livePreviewFrame,.livePreviewFrame iframe{min-height:64vh;height:64vh}.modalActions>a{width:100%;justify-content:center}}
+
+/* Catalog readability */
+.catalogPage .card .body h2{color:#fff!important}
+.catalogPage .card .body p,.catalogPage .card .adaptLine,.catalogPage .card .meta{color:rgba(255,255,255,.78)!important}
+.catalogPage .card .adaptLine b{color:#fff!important}
+.catalogPage .card .open{color:#fff!important}

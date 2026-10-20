@@ -266,7 +266,7 @@ function App(){
 
           <div className="bloomHeroCopy">
             <span className="appleHeroKicker">SOCA</span>
-            <h1>Tu negocio puede <em>vender más.</em></h1>
+            <h1>No hacemos páginas web, <em>hacemos crecer tu negocio.</em></h1>
             <p>Hacemos que sea más fácil encontrarte, entender lo que ofrecés, consultarte y comprarte.</p>
             <a className="bloomMainCta liquidGlassStrong bloomInteract" href="https://wa.me/542236151152?text=Hola%20SOCA,%20quiero%20una%20propuesta" target="_blank" rel="noreferrer">
               <span>Quiero mejorar mi negocio</span><i><ArrowUpRight size={16}/></i>
