@@ -3,7 +3,7 @@ import{createRoot}from'react-dom/client';
 import{ArrowUpRight,X,MessageCircle,Layers3,Move3D,ChevronRight,SlidersHorizontal,ShoppingBag,CalendarDays,Database,PanelTop,WalletCards,Users,Search,Globe2,BarChart3,Check,Bot,Store,ReceiptText,Workflow,Boxes,Building2,Plug,Code2,ShieldCheck,FileText,BriefcaseBusiness,ChartNoAxesCombined,ArrowRight,Menu,ServerCog,Sparkles,Download,Wand2,BookOpen}from'lucide-react';
 import'./styles.css';
 import rawItems from'./catalog.json';
-import ComputeLanding from './ComputeLanding.jsx';
+import liveTemplates from './templates-live.json';
 
 const cleanTitle=t=>(t||'')
   .replace(/^\s*\[[^\]]+\]\s*/,'')
@@ -74,7 +74,8 @@ function profileFor(i){
   return {cat,ideals,features,objective};
 }
 
-const allItems=visibleItems.map(i=>({...i,tituloVisible:cleanTitle(i.titulo),...profileFor(i)}));
+const liveById=new Map(liveTemplates.map(i=>[i.id,i.live]).filter(([,url])=>url));
+const allItems=visibleItems.map(i=>({...i,live:i.fuente==='Landings'?liveById.get(i.id)||null:null,tituloVisible:cleanTitle(i.titulo),...profileFor(i)}));
 const commercialCats=['Todo',...Array.from(new Set(allItems.map(i=>i.cat))).sort()];
 const groups=[['Todo','Todo'],['Sitios completos','Landings'],['Con animación','Motion Sites']];
 const faqs=[
@@ -100,20 +101,20 @@ const agencyServices=[
 ];
 
 const agencyFaqs=[
-  ['¿Hacen solo páginas web?','No. Desarrollamos páginas comerciales, tiendas online, sistemas internos, automatizaciones, paneles, bases de datos e inteligencia artificial.'],
-  ['¿Pueden empezar por una página comercial y crecer después?','Sí. Podemos lanzar una primera versión y luego sumar tienda online, usuarios, pagos, paneles y automatizaciones.'],
-  ['¿Integran pagos y facturación?','Sí. Podemos integrar Mercado Pago, Stripe, PayPal y procesos de facturación según el sistema y el país.'],
-  ['¿Trabajan con sistemas existentes?','Sí. Podemos conectar sistemas de clientes, gestión, bases de datos, proveedores de pago y herramientas que la empresa ya utiliza.'],
-  ['¿Qué pasa después de publicar?','Seguimos cuidando tu sitio. Podemos ocuparnos de mantenimiento, mejoras, seguridad, contenido y nuevas funciones a medida que tu negocio crece.']
+  ['¿Hacen solamente páginas web?','No. Hacemos que toda la experiencia de tu negocio funcione mejor: desde la primera visita hasta la consulta, la compra y el seguimiento.'],
+  ['¿Puedo empezar con algo simple?','Sí. Podemos empezar por lo que hoy más necesita tu negocio y sumar nuevas posibilidades a medida que crece.'],
+  ['¿Puedo cobrar o recibir reservas desde la web?','Sí. Si tu negocio lo necesita, la persona puede consultar, reservar, comprar o pagar sin complicaciones.'],
+  ['¿Pueden conectarlo con lo que ya uso?','Sí. No hace falta tirar todo y empezar de cero. Vemos qué herramientas ya usás y aprovechamos lo que tenga sentido conservar.'],
+  ['¿Qué pasa después de publicar?','Podemos seguir acompañándote, mejorando la experiencia y sumando nuevas funciones cuando tu negocio las necesite.']
 ];
 
 const transformationSteps=[
-  ['01','DESCUBRIR','Hacemos que la primera impresión explique rápido qué ofrecés, por qué importa y cuál es el próximo paso.','Una experiencia que convierte atención en interés.'],
-  ['02','INTERESARSE','Ordenamos productos, servicios y contenido alrededor de lo que la persona realmente necesita encontrar.','Menos fricción. Más intención.'],
-  ['03','CONSULTAR','Conectamos formularios, WhatsApp, reservas y consultas para que una oportunidad no termine perdida en distintos lugares.','Cada consulta entra al mismo sistema.'],
-  ['04','SEGUIR','La conversación no termina cuando alguien cierra la pestaña. Organizamos datos, seguimiento y automatizaciones.','Sabés quién preguntó, qué le interesó y qué hacer después.'],
-  ['05','COMPRAR','Diseñamos el recorrido hasta la acción: reservar, contratar, comprar o pagar sin saltos innecesarios.','El camino a la venta se vuelve más corto.'],
-  ['06','VOLVER','Postventa, recordatorios, nuevas oportunidades y datos para que una venta pueda convertirse en una relación.','El sistema sigue trabajando después de cobrar.']
+  ['01','DESCUBRIR','La primera impresión tiene que explicar rápido qué ofrecés y por qué alguien debería seguir mirando.','Que llegar a tu negocio genere interés.'],
+  ['02','INTERESARSE','Mostramos tus productos o servicios de una forma clara para que cada persona encuentre lo que está buscando.','Menos dudas. Más ganas de avanzar.'],
+  ['03','CONSULTAR','Hacemos que preguntar sea simple, ya sea por WhatsApp, un formulario o una reserva.','Que ninguna consulta se pierda.'],
+  ['04','SEGUIR','Si alguien preguntó y todavía no compró, no tiene por qué desaparecer para siempre.','Sabés quién se interesó y podés continuar la conversación.'],
+  ['05','COMPRAR','Acortamos el camino para reservar, contratar, comprar o pagar.','Menos pasos entre el interés y la venta.'],
+  ['06','VOLVER','Después de una compra también hay oportunidades para volver a hablar con ese cliente.','Una venta puede convertirse en muchas más.']
 ];
 
 const featuredDesigns=[1575,1004,1580,1008,1007,171]
@@ -235,7 +236,7 @@ function App(){
     <section className="catalogPageHero">
       <div className="sectionTag">Modelos de diseño</div>
       <h1>Encontrá una dirección visual para tu negocio.</h1>
-      <p>Este es el catálogo completo. Elegí una estética que te represente y nosotros la convertimos en una experiencia adaptada a tu marca, tu oferta y el sistema que necesites.</p>
+      <p>Este es el catálogo completo. Elegí una estética que te represente y nosotros la adaptamos a tu marca, tus productos o servicios y lo que necesitás conseguir.</p>
     </section>
     <section id="catalogo" className="catalogHead">
       <div className="segment">{groups.map(([label,value])=><button key={value} className={source===value?'active':''} onClick={()=>setSource(value)}>{label}</button>)}</div>
@@ -244,8 +245,8 @@ function App(){
     {filtersOpen&&<section className="filterPanel"><div className="filterGroup"><span>Rubro</span><div className="chips">{commercialCats.map(x=><button key={x} className={cat===x?'active':''} onClick={()=>setCat(x)}>{x}</button>)}</div></div><p className="filterHint">Todos los diseños se pueden adaptar a otro rubro. Este filtro solo te ayuda a encontrar referencias más rápido.</p></section>}
     <div className="result"><span><b>{filtered.length}</b> opciones</span><span>Elegí una estética. Después la adaptamos a tu negocio.</span></div>
     <section className="grid">{filtered.map(i=><button className="card" key={i.id} onClick={()=>setSel(i)}><div className="media">{i.imagen?<img src={i.imagen} loading="lazy" alt=""/>:<div className="fallback"><Layers3 size={42}/><span>Vista previa en preparación</span></div>}<div className="badge">{sourceLabel(i)}</div></div><div className="body"><div className="meta">{i.cat}</div><h2>{i.tituloVisible}</h2><p>{i.objective}</p><div className="adaptLine"><b>Se puede adaptar para:</b> {i.ideals.slice(0,3).join(', ')}.</div><div className="open">Ver posibilidades</div></div></button>)}</section>
-    <footer className="agencyFooter"><b>SOCA</b><span>Diseño al servicio de un sistema que vende.</span><small>© 2026 SOCA</small></footer>
-    {sel&&<div className="back pageBack" onMouseDown={()=>setSel(null)}><article className="modal modalPage" onMouseDown={e=>e.stopPropagation()}><header className="modalTopbar"><div><b>SOCA</b><span>{sel.cat}</span></div><button className="close" onClick={()=>setSel(null)}><X/></button></header><div className="modalHero"><div className="modalHeroCopy"><div className="modalKicker">Diseño adaptable a tu negocio</div><h2>{sel.tituloVisible}</h2><p className="lead">Usamos esta estética como punto de partida y construimos alrededor el recorrido, las funciones y las conexiones que necesite tu negocio.</p><a className="cta heroCta" target="_blank" rel="noreferrer" href={`https://wa.me/542236151152?text=${encodeURIComponent(`Hola SOCA, quiero adaptar el diseño ${sel.tituloVisible} a mi negocio`)}`}>Quiero este diseño</a></div><div className="modalPreviewFrame">{sel.imagen?<img src={sel.imagen} draggable="false" onContextMenu={e=>e.preventDefault()}/>:null}</div></div></article></div>}
+    <footer className="agencyFooter"><b>SOCA</b><span>Diseño pensado para ayudar a tu negocio a crecer.</span><small>© 2026 SOCA</small></footer>
+    {sel&&<div className="back pageBack" onMouseDown={()=>setSel(null)}><article className="modal modalPage" onMouseDown={e=>e.stopPropagation()}><header className="modalTopbar"><div><b>SOCA</b><span>{sel.cat}</span></div><button className="close" onClick={()=>setSel(null)}><X/></button></header><div className="modalHero"><div className="modalHeroCopy"><div className="modalKicker">Diseño adaptable a tu negocio</div><h2>{sel.tituloVisible}</h2><p className="lead">Usamos esta estética como punto de partida y la adaptamos a tu marca, tu contenido y lo que querés que hagan tus clientes.</p><div className="modalActions">{sel.live&&<a className="liveCta" href={sel.live} target="_blank" rel="noreferrer">Ver sitio funcionando ↗</a>}<a className="cta heroCta" target="_blank" rel="noreferrer" href={`https://wa.me/542236151152?text=${encodeURIComponent(`Hola SOCA, quiero adaptar el diseño ${sel.tituloVisible} a mi negocio`)}`}>Quiero este diseño</a></div></div><div className="modalPreviewFrame livePreviewFrame">{sel.live?<iframe src={sel.live} title={`Vista en vivo de ${sel.tituloVisible}`} loading="lazy" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"/>:sel.imagen?<img src={sel.imagen} draggable="false" onContextMenu={e=>e.preventDefault()}/>:null}</div></div></article></div>}
   </main>;
 
   return <main>
@@ -265,15 +266,15 @@ function App(){
 
           <div className="bloomHeroCopy">
             <span className="appleHeroKicker">SOCA</span>
-            <h1>Transformamos negocios en <em>sistemas digitales que venden.</em></h1>
-            <p>Conectamos cada punto entre una persona que descubre tu negocio y una persona que compra.</p>
+            <h1>Tu negocio puede <em>vender más.</em></h1>
+            <p>Hacemos que sea más fácil encontrarte, entender lo que ofrecés, consultarte y comprarte.</p>
             <a className="bloomMainCta liquidGlassStrong bloomInteract" href="https://wa.me/542236151152?text=Hola%20SOCA,%20quiero%20una%20propuesta" target="_blank" rel="noreferrer">
-              <span>Quiero transformar mi negocio</span><i><ArrowUpRight size={16}/></i>
+              <span>Quiero mejorar mi negocio</span><i><ArrowUpRight size={16}/></i>
             </a>
             <div className="bloomPills">
-              <span className="liquidGlass">Captación</span>
-              <span className="liquidGlass">Venta</span>
-              <span className="liquidGlass">Seguimiento</span>
+              <span className="liquidGlass">Más consultas</span>
+              <span className="liquidGlass">Más ventas</span>
+              <span className="liquidGlass">Menos oportunidades perdidas</span>
             </div>
           </div>
 
@@ -282,12 +283,12 @@ function App(){
               <div className="appleBrowserBar"><span/><span/><span/><b>soca / experiencia digital</b></div>
               <img src={featuredDesigns.find(i=>i.fuente==='Landings')?.imagen||featuredDesigns[0]?.imagen} alt="Ejemplo de experiencia digital SOCA"/>
             </div>
-            <div className="appleFloatingCallout"><div><b>Diseño + sistema</b><span>Una experiencia pensada para convertir.</span></div><a href="#contacto">Hablemos</a></div>
+            <div className="appleFloatingCallout"><div><b>Diseño que trabaja</b><span>Una experiencia pensada para conseguir resultados.</span></div><a href="#contacto">Hablemos</a></div>
           </div>
 
           <div className="bloomQuote">
-            <span>DISEÑO + NEGOCIO + SISTEMAS</span>
-            <p>No te preguntamos cuántas páginas necesitás. <em>Te preguntamos qué tiene que lograr tu negocio.</em></p>
+            <span>DISEÑO PENSADO PARA TU NEGOCIO</span>
+            <p>No se trata de tener una web más. <em>Se trata de hacer más fácil que alguien termine eligiéndote.</em></p>
             <b>SOCA</b>
           </div>
         </section>
@@ -296,35 +297,35 @@ function App(){
     </section>
 
     <section className="socaManifesto">
-      <div className="sectionTag">El problema no es tener o no tener una web</div>
-      <h2>Rediseñamos el camino <em>hasta la venta.</em></h2>
-      <p>La experiencia, la captación, el seguimiento, la venta, la automatización y la postventa dejan de ser piezas separadas. Las diseñamos como una sola experiencia.</p>
+      <div className="sectionTag">Una web linda no alcanza</div>
+      <h2>Hacemos más fácil el camino <em>hasta elegirte.</em></h2>
+      <p>Si alguien llega a tu negocio, tiene que entender rápido qué ofrecés, encontrar lo que necesita y saber qué hacer después. Diseñamos todo ese recorrido.</p>
     </section>
 
     <section className="journeySection" id="servicios">
-      <div className="journeyIntro"><div className="sectionTag">Un solo sistema</div><h2>De descubrirte a volver a comprarte.</h2><p>Cada etapa resuelve una pérdida concreta. No sumamos tecnología porque sí: conectamos lo necesario para que el negocio funcione mejor.</p></div>
+      <div className="journeyIntro"><div className="sectionTag">De la primera visita a la venta</div><h2>Que te encuentren es solo el comienzo.</h2><p>Lo importante es lo que pasa después: que entiendan, pregunten, avancen, compren y tengan motivos para volver.</p></div>
       <div className="journeySteps">{transformationSteps.map(([n,title,text,result])=><article key={n}><span>{n}</span><div><b>{title}</b><p>{text}</p><strong>{result}</strong></div></article>)}</div>
     </section>
 
     <section className="scenarioSection" id="sistemas">
-      <div className="sectionTag">Imaginá esto</div>
-      <div className="scenarioGrid"><div><span>HOY</span><h2>Una persona llega. Mira. Pregunta. Se va.</h2><p>WhatsApp por un lado. Formularios por otro. Pagos, clientes y datos separados. Muchas oportunidades terminan sin seguimiento.</p></div><div className="scenarioAfter"><span>DESPUÉS</span><h2>La visita deja de ser anónima.</h2><p>Entiende qué ofrecés, encuentra lo indicado, consulta, entra al sistema, puede reservar o pagar y la conversación puede continuar.</p></div></div>
+      <div className="sectionTag">¿Te pasa esto?</div>
+      <div className="scenarioGrid"><div><span>HOY</span><h2>Una persona llega. Mira. Pregunta. Se va.</h2><p>Te escribe por un lado, consulta por otro y después nadie recuerda qué quería. Muchas oportunidades se pierden simplemente porque nadie las siguió.</p></div><div className="scenarioAfter"><span>DESPUÉS</span><h2>Sabés quién se interesó y qué necesita.</h2><p>Entiende qué ofrecés, encuentra lo indicado, consulta y puede reservar, comprar o pagar. Y si todavía no decidió, la conversación puede continuar.</p></div></div>
       <div className="journeyLine"><span>DESCUBRIR</span><i>→</i><span>INTERESARSE</span><i>→</i><span>CONSULTAR</span><i>→</i><span>SEGUIR</span><i>→</i><span>COMPRAR</span><i>→</i><span>VOLVER</span></div>
     </section>
 
     <section className="resultSection">
-      <div><div className="sectionTag">La tecnología no es lo importante</div><h2>Tu cliente no compra tecnología. <em>Vos tampoco deberías hacerlo.</em></h2></div>
+      <div><div className="sectionTag">Lo que realmente importa</div><h2>No necesitás más tecnología. <em>Necesitás mejores resultados.</em></h2></div>
       <div className="resultWords"><span>Menos oportunidades perdidas.</span><span>Más conversaciones.</span><span>Más clientes.</span><span>Más ventas.</span></div>
     </section>
 
-    <section className="valueSection"><p>¿Cuánto vale una web?</p><h2>La pregunta interesante es: <em>¿cuánto vale convertir mejor?</em></h2><p>No calculamos un proyecto por cantidad de páginas. Lo pensamos por el problema que tiene que resolver y por lo que el sistema tiene que lograr.</p></section>
+    <section className="valueSection"><p>Una pregunta diferente</p><h2>¿Cuánto vale para tu negocio <em>un cliente nuevo?</em></h2><p>No pensamos tu proyecto por cantidad de páginas. Primero entendemos qué querés conseguir y qué está impidiendo que hoy pase más seguido.</p></section>
 
-    <section className="methodSection"><div className="methodIntro"><div className="sectionTag">Cómo trabajamos</div><h2>Primero entendemos. Después diseñamos. Recién entonces construimos.</h2></div><div className="methodSteps"><article><span>01</span><b>OBSERVAMOS</b><p>Cómo llegan las personas y dónde se corta hoy el recorrido.</p></article><article><span>02</span><b>ENCONTRAMOS</b><p>Las oportunidades que la estructura actual está dejando pasar.</p></article><article><span>03</span><b>DISEÑAMOS</b><p>Una experiencia alrededor de cómo realmente decide y compra una persona.</p></article><article><span>04</span><b>CONECTAMOS</b><p>Web, consultas, datos, seguimiento, ventas y automatizaciones.</p></article><article><span>05</span><b>MEDIMOS</b><p>Qué cambió y dónde podemos seguir mejorando.</p></article></div></section>
+    <section className="methodSection"><div className="methodIntro"><div className="sectionTag">Cómo trabajamos</div><h2>Primero entendemos tu negocio. Después hacemos lo que realmente necesita.</h2></div><div className="methodSteps"><article><span>01</span><b>MIRAMOS</b><p>Cómo llegan hoy tus clientes y qué sucede cuando se interesan.</p></article><article><span>02</span><b>ENCONTRAMOS</b><p>Dónde se están perdiendo consultas, oportunidades o ventas.</p></article><article><span>03</span><b>DISEÑAMOS</b><p>Una experiencia clara, atractiva y fácil de recorrer.</p></article><article><span>04</span><b>HACEMOS</b><p>Construimos lo necesario para que ese recorrido funcione de verdad.</p></article><article><span>05</span><b>MEJORAMOS</b><p>Vemos qué funciona y qué podemos hacer todavía mejor.</p></article></div></section>
 
     <section className="designEvidence">
-      <div className="designEvidenceHead"><div><div className="sectionTag">El diseño también importa</div><h2>Tu próxima web no debería ser solamente más linda. <em>Debería hacer más.</em></h2></div><p>Estas son apenas algunas direcciones visuales. El catálogo completo vive aparte; acá mostramos diseño como evidencia, no como producto.</p></div>
+      <div className="designEvidenceHead"><div><div className="sectionTag">Inspirate en estos modelos</div><h2>Encontrá un estilo que se parezca <em>a lo que imaginás.</em></h2></div><p>Elegí una dirección visual que te guste. Nosotros la adaptamos a tu marca, tu contenido y lo que necesitás lograr.</p></div>
       <div className="featuredDesignGrid">{featuredDesigns.map(i=><a href="#modelos" key={i.id} onClick={()=>setCatalogMode(true)}><img src={i.imagen} alt={i.tituloVisible}/><span>{i.tituloVisible}</span></a>)}</div>
-      <a className="modelsCta" href="#modelos" onClick={()=>setCatalogMode(true)}>Explorar todos los modelos <span>→</span></a>
+      <a className="modelsCta" href="#modelos" onClick={()=>setCatalogMode(true)}>Ver todos los modelos <span>→</span></a>
     </section>
 
     <section className="agencyFaqSection">
@@ -333,11 +334,11 @@ function App(){
     </section>
 
     <section className="agencyFinalCta" id="contacto">
-      <div><span>SOCA / HABLEMOS</span><h2>No te preguntamos cuántas páginas necesitás. Te preguntamos qué tiene que lograr tu negocio.</h2></div>
+      <div><span>SOCA / HABLEMOS</span><h2>Contanos qué querés conseguir. Nosotros pensamos cómo hacerlo más fácil para tu negocio y para tus clientes.</h2></div>
       <a href="https://wa.me/542236151152?text=Hola%20SOCA,%20quiero%20transformar%20mi%20negocio" target="_blank" rel="noreferrer">Hablemos de tu negocio <ArrowUpRight size={20}/></a>
     </section>
 
-    <footer className="agencyFooter"><b>SOCA</b><span>Diseñamos sistemas digitales para negocios que quieren crecer.</span><small>© 2026 SOCA</small></footer>
+    <footer className="agencyFooter"><b>SOCA</b><span>Diseñamos experiencias digitales para negocios que quieren crecer.</span><small>© 2026 SOCA</small></footer>
 
     {sel&&<div className="back pageBack" onMouseDown={()=>setSel(null)}><article className="modal modalPage" onMouseDown={e=>e.stopPropagation()}>
       <header className="modalTopbar">
@@ -353,7 +354,7 @@ function App(){
           <div className="idealChips">{sel.ideals.map(x=><span key={x}>{x}</span>)}</div>
           <a className="cta heroCta" target="_blank" rel="noreferrer" href={`https://wa.me/542236151152?text=${encodeURIComponent(`Hola SOCA, quiero adaptar el diseño ${sel.tituloVisible} a mi negocio`)}`}><MessageCircle size={18}/> Quiero adaptar este diseño</a>
         </div>
-        <div className="modalPreviewFrame">{sel.imagen?<img src={sel.imagen} draggable="false" onContextMenu={e=>e.preventDefault()} />:<div className="fallback"><Move3D size={58}/></div>}<div className="previewShield"/></div>
+        <div className="modalPreviewFrame livePreviewFrame">{sel.live?<iframe src={sel.live} title={`Vista en vivo de ${sel.tituloVisible}`} loading="lazy" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"/>:sel.imagen?<img src={sel.imagen} draggable="false" onContextMenu={e=>e.preventDefault()} />:<div className="fallback"><Move3D size={58}/></div>}{sel.live&&<a className="openLiveSite" href={sel.live} target="_blank" rel="noreferrer">Abrir sitio completo ↗</a>}</div>
       </div>
 
       <section className="modalSection introSection">
@@ -402,5 +403,4 @@ function App(){
   </main>
 }
 
-const computeMode=!window.location.hash.startsWith('#modelos');
-createRoot(document.getElementById('root')).render(computeMode?<ComputeLanding/>:<App/>);
+createRoot(document.getElementById('root')).render(<App/>);
